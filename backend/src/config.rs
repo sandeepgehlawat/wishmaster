@@ -1,0 +1,92 @@
+#![allow(dead_code)]
+
+use std::env;
+use anyhow::Result;
+
+#[derive(Clone, Debug)]
+pub struct Config {
+    // Server
+    pub server_addr: String,
+
+    // Database
+    pub database_url: String,
+    pub db_max_connections: u32,
+
+    // Redis
+    pub redis_url: Option<String>,
+
+    // JWT
+    pub jwt_secret: String,
+    pub jwt_expiry_hours: i64,
+
+    // Solana
+    pub solana_rpc_url: String,
+    pub escrow_program_id: String,
+    pub usdc_mint: String,
+    pub platform_wallet: String,
+
+    // Platform fees (basis points)
+    pub fee_new_agent_bps: u16,
+    pub fee_rising_agent_bps: u16,
+    pub fee_established_agent_bps: u16,
+    pub fee_top_rated_agent_bps: u16,
+}
+
+impl Config {
+    pub fn from_env() -> Result<Self> {
+        Ok(Self {
+            // Server
+            server_addr: env::var("SERVER_ADDR").unwrap_or_else(|_| "0.0.0.0:3001".to_string()),
+
+            // Database
+            database_url: env::var("DATABASE_URL")
+                .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/agenthive".to_string()),
+            db_max_connections: env::var("DB_MAX_CONNECTIONS")
+                .unwrap_or_else(|_| "10".to_string())
+                .parse()?,
+
+            // Redis
+            redis_url: env::var("REDIS_URL").ok(),
+
+            // JWT
+            jwt_secret: env::var("JWT_SECRET")
+                .unwrap_or_else(|_| "dev_secret_change_in_production".to_string()),
+            jwt_expiry_hours: env::var("JWT_EXPIRY_HOURS")
+                .unwrap_or_else(|_| "24".to_string())
+                .parse()?,
+
+            // Solana (devnet defaults)
+            solana_rpc_url: env::var("SOLANA_RPC_URL")
+                .unwrap_or_else(|_| "https://api.devnet.solana.com".to_string()),
+            escrow_program_id: env::var("ESCROW_PROGRAM_ID")
+                .unwrap_or_else(|_| "11111111111111111111111111111111".to_string()),
+            usdc_mint: env::var("USDC_MINT")
+                .unwrap_or_else(|_| "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()), // devnet USDC
+            platform_wallet: env::var("PLATFORM_WALLET")
+                .unwrap_or_else(|_| "11111111111111111111111111111111".to_string()),
+
+            // Fees (basis points: 100 = 1%)
+            fee_new_agent_bps: env::var("FEE_NEW_AGENT_BPS")
+                .unwrap_or_else(|_| "1500".to_string())
+                .parse()?,
+            fee_rising_agent_bps: env::var("FEE_RISING_AGENT_BPS")
+                .unwrap_or_else(|_| "1200".to_string())
+                .parse()?,
+            fee_established_agent_bps: env::var("FEE_ESTABLISHED_AGENT_BPS")
+                .unwrap_or_else(|_| "1000".to_string())
+                .parse()?,
+            fee_top_rated_agent_bps: env::var("FEE_TOP_RATED_AGENT_BPS")
+                .unwrap_or_else(|_| "800".to_string())
+                .parse()?,
+        })
+    }
+
+    pub fn get_fee_bps(&self, trust_tier: &str) -> u16 {
+        match trust_tier {
+            "top_rated" => self.fee_top_rated_agent_bps,
+            "established" => self.fee_established_agent_bps,
+            "rising" => self.fee_rising_agent_bps,
+            _ => self.fee_new_agent_bps,
+        }
+    }
+}
