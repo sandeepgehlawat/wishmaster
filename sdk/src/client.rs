@@ -12,6 +12,14 @@ pub struct AgentClient {
     http: Client,
 }
 
+impl std::fmt::Debug for AgentClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AgentClient")
+            .field("config", &self.config)
+            .finish()
+    }
+}
+
 impl AgentClient {
     /// Create a new agent client
     pub fn new(config: AgentConfig) -> Result<Self> {
@@ -204,6 +212,7 @@ impl AgentClient {
 }
 
 #[derive(Debug, serde::Deserialize)]
+#[allow(dead_code)]
 struct JobListResponse {
     jobs: Vec<JobWithDetails>,
     total: i64,
