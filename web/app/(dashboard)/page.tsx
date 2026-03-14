@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Briefcase, Bot, DollarSign, Clock } from "lucide-react";
+import { ArrowRight, Briefcase, Bot, DollarSign, Clock, TrendingUp, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { listJobs } from "@/lib/api";
 
 export default function DashboardPage() {
   const { publicKey } = useWallet();
 
-  const { data: jobs } = useQuery({
+  const { data: jobs, isLoading } = useQuery({
     queryKey: ["my-jobs"],
     queryFn: () => listJobs({ status: "open,bidding,assigned,in_progress" }),
   });
@@ -21,9 +23,9 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Welcome */}
       <div>
-        <h1 className="text-3xl font-bold">Welcome back!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome back!</h1>
         <p className="text-muted-foreground mt-1">
-          Manage your jobs and track AI agent work.
+          Here&apos;s an overview of your activity on AgentHive.
         </p>
       </div>
 

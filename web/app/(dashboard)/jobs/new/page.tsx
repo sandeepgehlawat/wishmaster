@@ -3,16 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Code, Search, FileText, Database, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { createJob, publishJob } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 
 const TASK_TYPES = [
-  { id: "coding", name: "Coding", description: "Build features, fix bugs, write code" },
-  { id: "research", name: "Research", description: "Find information, analyze data" },
-  { id: "content", name: "Content", description: "Write articles, documentation, copy" },
-  { id: "data", name: "Data", description: "Process, analyze, transform data" },
+  { id: "coding", name: "Coding", description: "Build features, fix bugs, write code", icon: Code },
+  { id: "research", name: "Research", description: "Find information, analyze data", icon: Search },
+  { id: "content", name: "Content", description: "Write articles, documentation, copy", icon: FileText },
+  { id: "data", name: "Data", description: "Process, analyze, transform data", icon: Database },
 ];
 
 const SKILLS = [
@@ -83,15 +88,29 @@ export default function NewJobPage() {
       </div>
 
       {/* Progress */}
-      <div className="flex items-center gap-2 mb-8">
-        {[1, 2, 3, 4].map((s) => (
-          <div
-            key={s}
-            className={`h-2 flex-1 rounded-full ${
-              s <= step ? "bg-primary" : "bg-muted"
-            }`}
-          />
-        ))}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          {["Task Type", "Details", "Skills", "Budget"].map((label, i) => (
+            <div
+              key={label}
+              className={`text-xs font-medium ${
+                i + 1 <= step ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          {[1, 2, 3, 4].map((s) => (
+            <div
+              key={s}
+              className={`h-2 flex-1 rounded-full transition-colors ${
+                s <= step ? "bg-primary" : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Step 1: Task Type */}
@@ -99,20 +118,32 @@ export default function NewJobPage() {
         <div className="space-y-6">
           <h2 className="text-xl font-semibold">What type of task is this?</h2>
           <div className="grid gap-4">
-            {TASK_TYPES.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => updateForm({ task_type: type.id })}
-                className={`p-4 rounded-lg border text-left transition-colors ${
-                  form.task_type === type.id
-                    ? "border-primary bg-primary/5"
-                    : "hover:border-primary/50"
-                }`}
-              >
-                <p className="font-medium">{type.name}</p>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
-              </button>
-            ))}
+            {TASK_TYPES.map((type) => {
+              const Icon = type.icon;
+              return (
+                <button
+                  key={type.id}
+                  onClick={() => updateForm({ task_type: type.id })}
+                  className={`p-4 rounded-lg border text-left transition-all flex items-start gap-4 ${
+                    form.task_type === type.id
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "hover:border-primary/50 hover:bg-muted/50"
+                  }`}
+                >
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    form.task_type === type.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  }`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{type.name}</p>
+                    <p className="text-sm text-muted-foreground">{type.description}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
           <Button
             onClick={() => setStep(2)}
@@ -131,23 +162,20 @@ export default function NewJobPage() {
 
           <div>
             <label className="block text-sm font-medium mb-2">Job Title</label>
-            <input
-              type="text"
+            <Input
               value={form.title}
               onChange={(e) => updateForm({ title: e.target.value })}
               placeholder="e.g., Build REST API for user authentication"
-              className="w-full px-4 py-2 rounded-lg border bg-background"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">Description</label>
-            <textarea
+            <Textarea
               value={form.description}
               onChange={(e) => updateForm({ description: e.target.value })}
-              placeholder="Describe what you need done in detail..."
+              placeholder="Describe what you need done in detail. Be specific about requirements, expected deliverables, and any technical constraints..."
               rows={6}
-              className="w-full px-4 py-2 rounded-lg border bg-background resize-none"
             />
           </div>
 
@@ -214,28 +242,26 @@ export default function NewJobPage() {
               <label className="block text-sm font-medium mb-2">
                 Minimum ($)
               </label>
-              <input
+              <Input
                 type="number"
                 value={form.budget_min}
                 onChange={(e) =>
                   updateForm({ budget_min: parseInt(e.target.value) || 0 })
                 }
                 min={10}
-                className="w-full px-4 py-2 rounded-lg border bg-background"
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
                 Maximum ($)
               </label>
-              <input
+              <Input
                 type="number"
                 value={form.budget_max}
                 onChange={(e) =>
                   updateForm({ budget_max: parseInt(e.target.value) || 0 })
                 }
                 min={form.budget_min}
-                className="w-full px-4 py-2 rounded-lg border bg-background"
               />
             </div>
           </div>
@@ -245,35 +271,56 @@ export default function NewJobPage() {
             <select
               value={form.complexity}
               onChange={(e) => updateForm({ complexity: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border bg-background"
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
-              <option value="simple">Simple</option>
-              <option value="moderate">Moderate</option>
-              <option value="complex">Complex</option>
+              <option value="simple">Simple - Quick task, minimal research</option>
+              <option value="moderate">Moderate - Standard complexity</option>
+              <option value="complex">Complex - Deep work, multiple components</option>
             </select>
           </div>
 
-          <div className="p-4 rounded-lg bg-muted/50">
-            <h3 className="font-medium mb-2">Summary</h3>
-            <div className="space-y-1 text-sm">
-              <p>
-                <span className="text-muted-foreground">Type:</span>{" "}
-                {form.task_type}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Title:</span>{" "}
-                {form.title}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Budget:</span> $
-                {form.budget_min} - ${form.budget_max}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Skills:</span>{" "}
-                {form.required_skills.join(", ") || "None"}
-              </p>
-            </div>
-          </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Check className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">Review Summary</h3>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-muted-foreground">Task Type</span>
+                  <Badge variant="secondary" className="capitalize">{form.task_type}</Badge>
+                </div>
+                <div className="flex justify-between items-start py-2 border-b">
+                  <span className="text-muted-foreground">Title</span>
+                  <span className="font-medium text-right max-w-[200px] truncate">{form.title}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-muted-foreground">Budget Range</span>
+                  <span className="font-semibold text-primary">
+                    ${form.budget_min} - ${form.budget_max}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-muted-foreground">Complexity</span>
+                  <Badge variant="outline" className="capitalize">{form.complexity}</Badge>
+                </div>
+                <div className="py-2">
+                  <span className="text-muted-foreground block mb-2">Required Skills</span>
+                  <div className="flex flex-wrap gap-1">
+                    {form.required_skills.length > 0 ? (
+                      form.required_skills.map((skill) => (
+                        <Badge key={skill} variant="secondary" className="font-normal">
+                          {skill}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground text-xs">No specific skills required</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="flex gap-4">
             <Button variant="outline" onClick={() => setStep(3)}>

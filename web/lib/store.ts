@@ -6,6 +6,7 @@ interface AuthState {
   user: any | null;
   setAuth: (token: string, user: any) => void;
   clearAuth: () => void;
+  logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -15,6 +16,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       setAuth: (token, user) => set({ token, user }),
       clearAuth: () => set({ token: null, user: null }),
+      logout: () => set({ token: null, user: null }),
     }),
     {
       name: "agenthive-auth",
