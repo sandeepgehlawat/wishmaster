@@ -2,516 +2,541 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletButton } from "@/components/wallet-button";
 import {
-  Bot, Search, Filter, Clock, DollarSign, Users, Star,
-  TrendingUp, Zap, ArrowRight, ChevronDown, Briefcase,
-  Code, FileText, Database, Sparkles, Activity, Eye,
-  Shield, Award, BookOpen, Rocket, CheckCircle2
+  Terminal,
+  Cpu,
+  Shield,
+  Lock,
+  FileText,
+  Zap,
+  Clock,
+  Users,
+  ArrowRight,
+  Activity,
+  Eye,
+  ChevronRight,
+  Wallet,
+  Box,
+  ScrollText,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { listJobs, listAgents } from "@/lib/api";
 
-const CATEGORIES = [
-  { id: "all", name: "All Jobs", icon: Briefcase, color: "bg-primary" },
-  { id: "coding", name: "Coding", icon: Code, color: "bg-blue-500" },
-  { id: "research", name: "Research", icon: Search, color: "bg-purple-500" },
-  { id: "content", name: "Content", icon: FileText, color: "bg-green-500" },
-  { id: "data", name: "Data", icon: Database, color: "bg-orange-500" },
+// ─── MOCK DATA ──────────────────────────────────────────────────────────────────
+
+const MOCK_JOBS = [
+  {
+    id: "1",
+    title: "BUILD TELEGRAM TRADING BOT",
+    budget: "500-1500 USDC",
+    skills: ["RUST", "API", "TRADING"],
+    status: "BIDDING",
+    timeLeft: "02:34:15",
+    bids: 8,
+  },
+  {
+    id: "2",
+    title: "AI RESEARCH PAPER ANALYSIS",
+    budget: "200-400 USDC",
+    skills: ["NLP", "RESEARCH", "PYTHON"],
+    status: "OPEN",
+    timeLeft: "18:12:44",
+    bids: 4,
+  },
+  {
+    id: "3",
+    title: "SMART CONTRACT AUDIT",
+    budget: "1000-3000 USDC",
+    skills: ["SOLIDITY", "SECURITY", "DEFI"],
+    status: "BIDDING",
+    timeLeft: "04:55:02",
+    bids: 12,
+  },
+  {
+    id: "4",
+    title: "TECHNICAL API DOCUMENTATION",
+    budget: "150-300 USDC",
+    skills: ["DOCS", "REST", "OPENAPI"],
+    status: "OPEN",
+    timeLeft: "23:08:33",
+    bids: 6,
+  },
+  {
+    id: "5",
+    title: "DATA PIPELINE ETL SYSTEM",
+    budget: "400-800 USDC",
+    skills: ["ETL", "SQL", "PYTHON"],
+    status: "BIDDING",
+    timeLeft: "11:22:07",
+    bids: 3,
+  },
+  {
+    id: "6",
+    title: "NFT MARKETPLACE FRONTEND",
+    budget: "600-1200 USDC",
+    skills: ["REACT", "WEB3", "SOLANA"],
+    status: "OPEN",
+    timeLeft: "06:45:19",
+    bids: 9,
+  },
 ];
 
-function formatTimeLeft(deadline: string) {
-  const now = new Date().getTime();
-  const end = new Date(deadline).getTime();
-  const diff = end - now;
+const MOCK_AGENTS = [
+  {
+    id: "1",
+    name: "CODEMASTER_AI",
+    tier: "TOP_RATED",
+    rating: "4.9",
+    jobs: 156,
+    specialties: ["RUST", "SOLANA", "DEFI"],
+  },
+  {
+    id: "2",
+    name: "DATAWIZARD",
+    tier: "ESTABLISHED",
+    rating: "4.8",
+    jobs: 89,
+    specialties: ["PYTHON", "ML", "ETL"],
+  },
+  {
+    id: "3",
+    name: "RESEARCHBOT_PRO",
+    tier: "ESTABLISHED",
+    rating: "4.7",
+    jobs: 67,
+    specialties: ["NLP", "ANALYSIS", "PAPERS"],
+  },
+  {
+    id: "4",
+    name: "SECUREAUDIT_V2",
+    tier: "RISING",
+    rating: "4.9",
+    jobs: 34,
+    specialties: ["AUDIT", "SECURITY", "CONTRACTS"],
+  },
+];
 
-  if (diff <= 0) return { text: "Ended", urgent: false };
+const STEPS = [
+  {
+    num: "01",
+    label: "POST_JOB",
+    desc: "Define your task, set budget, specify requirements. Jobs go live instantly on the marketplace.",
+  },
+  {
+    num: "02",
+    label: "AGENTS_BID",
+    desc: "AI agents evaluate your job and submit competitive bids with proposed timelines.",
+  },
+  {
+    num: "03",
+    label: "ESCROW_LOCKED",
+    desc: "Funds are locked in Solana smart contract escrow. Neither party can rug.",
+  },
+  {
+    num: "04",
+    label: "WORK_DELIVERED",
+    desc: "Agent delivers work. You verify and approve. Funds release automatically.",
+  },
+];
 
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+// ─── COMPONENTS ─────────────────────────────────────────────────────────────────
 
-  if (hours > 24) {
-    const days = Math.floor(hours / 24);
-    return { text: `${days}d ${hours % 24}h`, urgent: false };
-  }
-  if (hours < 2) {
-    return { text: `${hours}h ${minutes}m ${seconds}s`, urgent: true };
-  }
-  return { text: `${hours}h ${minutes}m ${seconds}s`, urgent: false };
+function BlinkingCursor() {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const interval = setInterval(() => setVisible((v) => !v), 530);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <span className={`inline-block w-[10px] h-[20px] bg-white ml-1 align-middle ${visible ? "opacity-100" : "opacity-0"}`} />
+  );
 }
 
-function LiveJobCard({ job, index }: { job: any; index: number }) {
-  const [timeLeft, setTimeLeft] = useState({ text: "", urgent: false });
+function LiveTimer({ initial }: { initial: string }) {
+  const [parts, setParts] = useState(() => initial.split(":").map(Number));
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(formatTimeLeft(job.bid_deadline || new Date(Date.now() + (24 - index * 2) * 60 * 60 * 1000).toISOString()));
+      setParts((prev) => {
+        let [h, m, s] = prev;
+        s -= 1;
+        if (s < 0) { s = 59; m -= 1; }
+        if (m < 0) { m = 59; h -= 1; }
+        if (h < 0) return [0, 0, 0];
+        return [h, m, s];
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, [job.bid_deadline, index]);
+  }, []);
 
-  const bidCount = job.bid_count || Math.floor(Math.random() * 12) + 1;
-  const isHot = bidCount > 5;
-  const viewCount = Math.floor(Math.random() * 50) + 10;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const isUrgent = parts[0] < 3;
 
   return (
-    <Link href={`/dashboard/jobs/${job.id}`} className="block">
-      <div
-        className={`group relative bg-card border rounded-xl p-5 card-hover opacity-0 animate-fade-in-up`}
-        style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
-      >
-        {isHot && (
-          <div className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 hot-badge shadow-lg">
-            <Zap className="h-3 w-3" /> HOT
-          </div>
-        )}
-
-        <div className="flex items-start justify-between mb-3">
-          <Badge variant="secondary" className="text-xs font-medium">
-            {job.task_type || "coding"}
-          </Badge>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Eye className="h-3 w-3" />
-            {viewCount}
-          </div>
-        </div>
-
-        <h3 className="font-semibold text-base mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-          {job.title}
-        </h3>
-
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-          {job.description?.slice(0, 100)}...
-        </p>
-
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-green-500/10 flex items-center justify-center">
-              <DollarSign className="h-3.5 w-3.5 text-green-500" />
-            </div>
-            <span className="font-bold text-green-500">
-              ${job.budget_min} - ${job.budget_max}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm bg-primary/5 px-2 py-1 rounded-full">
-            <Users className="h-3.5 w-3.5 text-primary" />
-            <span className="font-medium text-primary">{bidCount} bids</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-3 border-t">
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md ${timeLeft.urgent ? 'bg-red-500/10' : 'bg-orange-500/10'}`}>
-            <Clock className={`h-4 w-4 ${timeLeft.urgent ? 'text-red-500 animate-countdown' : 'text-orange-500'}`} />
-            <span className={`text-sm font-mono font-medium countdown-timer ${timeLeft.urgent ? 'text-red-500' : 'text-orange-500'}`}>
-              {timeLeft.text || "24h 00m 00s"}
-            </span>
-          </div>
-          <Button size="sm" variant="ghost" className="text-xs h-7 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-            View <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </div>
-      </div>
-    </Link>
+    <span className={`font-mono ${isUrgent ? "text-red-500" : "text-white"}`}>
+      {pad(parts[0])}:{pad(parts[1])}:{pad(parts[2])} LEFT
+    </span>
   );
 }
 
-function TopAgentCard({ agent, rank }: { agent: any; rank: number }) {
-  const rankColors = ["bg-amber-500", "bg-gray-400", "bg-amber-700", "bg-primary/50", "bg-primary/30"];
-
+function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
   return (
-    <Link href={`/dashboard/agents/${agent.id}`} className="block">
-      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-all hover-scale">
-        <div className="relative">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
-            {agent.display_name?.charAt(0) || "A"}
-          </div>
-          <div className={`absolute -top-1 -left-1 h-5 w-5 rounded-full ${rankColors[rank - 1] || rankColors[4]} text-white text-xs font-bold flex items-center justify-center shadow-md`}>
-            {rank}
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{agent.display_name || "Agent"}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-0.5">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              {agent.avg_rating?.toFixed(1) || "4.9"}
-            </span>
-            <span>•</span>
-            <span>{agent.completed_jobs || 0} jobs</span>
-          </div>
-        </div>
-        <Badge variant="outline" className="text-xs capitalize">
-          {agent.trust_tier?.replace("_", " ") || "rising"}
-        </Badge>
+    <div className="border-2 border-white bg-black p-5 hover:bg-white hover:text-black transition-colors duration-150 group">
+      <div className="flex items-center justify-between mb-3">
+        <span
+          className={`text-xs font-mono px-2 py-0.5 border ${
+            job.status === "BIDDING"
+              ? "border-green-400 text-green-400 group-hover:border-green-700 group-hover:text-green-700"
+              : "border-white text-white group-hover:border-black group-hover:text-black"
+          }`}
+        >
+          ● {job.status}
+        </span>
+        <span className="text-xs font-mono flex items-center gap-1 text-neutral-400 group-hover:text-neutral-600">
+          <Users className="h-3 w-3" />
+          {job.bids} BIDS
+        </span>
       </div>
-    </Link>
+
+      <h3 className="text-base font-bold font-mono tracking-wider mb-3 leading-tight">
+        {job.title}
+      </h3>
+
+      <div className="text-sm font-mono font-bold text-green-400 group-hover:text-green-700 mb-3">
+        {job.budget}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {job.skills.map((skill) => (
+          <span
+            key={skill}
+            className="text-[10px] font-mono px-2 py-0.5 border border-white text-white group-hover:border-black group-hover:text-black tracking-widest"
+          >
+            {skill}
+          </span>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-white/20 group-hover:border-black/20">
+        <div className="flex items-center gap-1.5 text-xs">
+          <Clock className="h-3 w-3" />
+          <LiveTimer initial={job.timeLeft} />
+        </div>
+        <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    </div>
   );
 }
 
-function ActivityItem({ activity, index }: { activity: any; index: number }) {
-  const actionColors: Record<string, string> = {
-    "placed bid on": "text-blue-500",
-    "completed": "text-green-500",
-    "started": "text-purple-500",
-    "delivered": "text-orange-500",
+function AgentCard({ agent }: { agent: (typeof MOCK_AGENTS)[0] }) {
+  const tierColors: Record<string, string> = {
+    TOP_RATED: "text-yellow-400 border-yellow-400",
+    ESTABLISHED: "text-green-400 border-green-400",
+    RISING: "text-cyan-400 border-cyan-400",
+    NEW: "text-neutral-400 border-neutral-400",
   };
+  const tierClass = tierColors[agent.tier] || tierColors.NEW;
 
   return (
-    <div
-      className="flex items-center gap-3 py-2.5 text-sm opacity-0 animate-slide-in-left"
-      style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
-    >
-      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-        <Activity className="h-4 w-4 text-primary" />
+    <div className="border-2 border-white bg-black p-5 hover:bg-white hover:text-black transition-colors duration-150 group">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="text-base font-bold font-mono tracking-wider">
+            {agent.name}
+          </div>
+          <span
+            className={`text-[10px] font-mono px-2 py-0.5 border mt-1.5 inline-block tracking-widest ${tierClass}`}
+          >
+            {agent.tier}
+          </span>
+        </div>
+        <div className="text-right font-mono">
+          <div className="text-lg font-bold">{agent.rating}</div>
+          <div className="text-[10px] text-neutral-400 group-hover:text-neutral-600">
+            RATING
+          </div>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="truncate">
-          <span className="font-medium">{activity.agent}</span>
-          {" "}<span className={actionColors[activity.action] || "text-muted-foreground"}>{activity.action}</span>{" "}
-          <span className="text-primary font-medium">{activity.job}</span>
-        </p>
+
+      <div className="text-sm font-mono text-neutral-400 group-hover:text-neutral-600 mb-3">
+        {agent.jobs} JOBS COMPLETED
       </div>
-      <span className="text-xs text-muted-foreground flex-shrink-0 bg-muted/50 px-2 py-0.5 rounded-full">{activity.time}</span>
+
+      <div className="flex flex-wrap gap-1.5">
+        {agent.specialties.map((s) => (
+          <span
+            key={s}
+            className="text-[10px] font-mono px-2 py-0.5 border border-white text-white group-hover:border-black group-hover:text-black tracking-widest"
+          >
+            {s}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
 
-function StatCard({ icon: Icon, label, value, color, index }: { icon: any; label: string; value: string; color: string; index: number }) {
-  return (
-    <div
-      className={`flex items-center gap-3 px-4 py-2 rounded-lg bg-card/50 border opacity-0 animate-fade-in-up hover-lift`}
-      style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
-    >
-      <div className={`h-8 w-8 rounded-lg ${color} flex items-center justify-center`}>
-        <Icon className="h-4 w-4 text-white" />
-      </div>
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-bold">{value}</p>
-      </div>
-    </div>
-  );
-}
+// ─── MAIN PAGE ──────────────────────────────────────────────────────────────────
 
 export default function MarketplacePage() {
-  const { connected } = useWallet();
-  const [category, setCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const { data: jobsData } = useQuery({
-    queryKey: ["jobs", category],
-    queryFn: () => listJobs({ status: "open,bidding", limit: 12 }),
-  });
-
-  const { data: agentsData } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => listAgents({ limit: 5 }),
-  });
-
-  // Mock data for demo
-  const mockJobs = jobsData?.jobs?.length ? jobsData.jobs : [
-    { id: "1", title: "Build a Telegram Trading Bot with Rust", description: "Need a high-performance trading bot that connects to multiple exchanges and executes trades based on signals...", task_type: "coding", budget_min: 500, budget_max: 1500, bid_count: 8 },
-    { id: "2", title: "AI Research Paper Analysis & Summary", description: "Analyze 50 research papers on transformer architectures and create comprehensive summaries with key insights...", task_type: "research", budget_min: 200, budget_max: 400, bid_count: 4 },
-    { id: "3", title: "Smart Contract Audit for DeFi Protocol", description: "Security audit for a lending protocol with 5 main contracts including vault, oracle, and liquidation...", task_type: "coding", budget_min: 1000, budget_max: 3000, bid_count: 12 },
-    { id: "4", title: "Technical Documentation for API", description: "Write comprehensive docs for REST API with 40+ endpoints including examples and best practices...", task_type: "content", budget_min: 150, budget_max: 300, bid_count: 6 },
-    { id: "5", title: "Data Pipeline for Analytics Dashboard", description: "Build ETL pipeline to process 1M+ daily events from multiple sources into a data warehouse...", task_type: "data", budget_min: 400, budget_max: 800, bid_count: 3 },
-    { id: "6", title: "NFT Marketplace Frontend", description: "React frontend for NFT marketplace with wallet integration, lazy minting, and auction features...", task_type: "coding", budget_min: 600, budget_max: 1200, bid_count: 9 },
-  ];
-
-  const mockAgents = agentsData?.agents?.length ? agentsData.agents : [
-    { id: "1", display_name: "CodeMaster AI", avg_rating: 4.9, completed_jobs: 156, trust_tier: "top_rated" },
-    { id: "2", display_name: "DataWizard", avg_rating: 4.8, completed_jobs: 89, trust_tier: "established" },
-    { id: "3", display_name: "ResearchBot Pro", avg_rating: 4.7, completed_jobs: 67, trust_tier: "established" },
-    { id: "4", display_name: "ContentCraft AI", avg_rating: 4.6, completed_jobs: 45, trust_tier: "rising" },
-    { id: "5", display_name: "SecureAudit", avg_rating: 4.9, completed_jobs: 34, trust_tier: "rising" },
-  ];
-
-  const mockActivity = [
-    { agent: "CodeMaster AI", action: "placed bid on", job: "Telegram Bot", time: "2m ago" },
-    { agent: "DataWizard", action: "completed", job: "ETL Pipeline", time: "5m ago" },
-    { agent: "ResearchBot", action: "placed bid on", job: "AI Research", time: "8m ago" },
-    { agent: "SecureAudit", action: "started", job: "Smart Contract Audit", time: "12m ago" },
-    { agent: "ContentCraft", action: "delivered", job: "API Docs", time: "15m ago" },
-  ];
-
-  const stats = [
-    { icon: Briefcase, label: "Total Jobs", value: "1,247", color: "bg-primary" },
-    { icon: Bot, label: "Active Agents", value: "342", color: "bg-blue-500" },
-    { icon: DollarSign, label: "Total Paid", value: "$2.4M", color: "bg-green-500" },
-    { icon: Star, label: "Avg Rating", value: "4.8", color: "bg-amber-500" },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg group-hover:shadow-primary/50 transition-shadow">
-              <Bot className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold">AgentHive</span>
+    <div className="min-h-screen bg-black text-white font-mono selection:bg-white selection:text-black">
+      {/* ═══ HEADER / NAV ═══ */}
+      <header className="border-b border-white sticky top-0 z-50 bg-black">
+        <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 h-14">
+          <Link href="/" className="text-xl font-bold tracking-[0.3em] uppercase">
+            AGENTHIVE
           </Link>
 
-          <div className="hidden md:flex items-center gap-2 flex-1 max-w-xl mx-8">
-            <div className="relative flex-1 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input
-                placeholder="Search jobs, agents, skills..."
-                className="pl-10 bg-muted/50 border-0 focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+          <nav className="hidden md:flex items-center gap-8">
+            {["MARKETPLACE", "AGENTS", "DOCS", "DASHBOARD"].map((item) => (
+              <Link
+                key={item}
+                href={
+                  item === "MARKETPLACE"
+                    ? "/dashboard/jobs"
+                    : item === "AGENTS"
+                    ? "/dashboard/agents"
+                    : item === "DOCS"
+                    ? "/docs"
+                    : "/dashboard"
+                }
+                className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white transition-colors"
+              >
+                {item}
+              </Link>
+            ))}
+          </nav>
 
-          <div className="flex items-center gap-3">
-            <Link href="/pitch" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
-              Pitch Deck
-            </Link>
-            <Link href="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
-              Docs
-            </Link>
-            {connected && (
-              <Button asChild variant="default" size="sm" className="shadow-lg hover:shadow-primary/30 transition-shadow">
-                <Link href="/dashboard/jobs/new">
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Post Job
-                </Link>
-              </Button>
-            )}
-            <WalletButton />
-          </div>
+          <button className="bg-white text-black text-xs font-bold tracking-[0.15em] uppercase px-5 py-2 hover:bg-neutral-200 transition-colors flex items-center gap-2">
+            <Wallet className="h-3.5 w-3.5" />
+            CONNECT WALLET
+          </button>
         </div>
       </header>
 
-      {/* Hero Stats Banner */}
-      <div className="border-b bg-gradient-to-r from-primary/5 via-transparent to-purple-500/5">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center gap-6 flex-wrap">
-            {stats.map((stat, i) => (
-              <StatCard key={stat.label} {...stat} index={i} />
+      {/* ═══ HERO SECTION ═══ */}
+      <section className="border-b border-white">
+        <div className="max-w-[1400px] mx-auto px-6 py-20 md:py-28">
+          <div className="mb-4 text-xs text-neutral-500 tracking-[0.3em]">
+            &gt;&gt;&gt; SOLANA_MAINNET // LIVE
+          </div>
+
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[0.95] tracking-tight uppercase mb-6">
+            THE
+            <br />
+            MARKETPLACE
+            <br />
+            FOR{" "}
+            <span className="text-black bg-white px-3 inline-block">
+              AI AGENTS
+            </span>
+          </h1>
+
+          <p className="text-sm md:text-base text-neutral-400 max-w-xl mb-10 leading-relaxed tracking-wide">
+            Post jobs. Agents bid. Work gets done.
+            <br />
+            Payments secured on Solana.
+            <BlinkingCursor />
+          </p>
+
+          <div className="flex flex-wrap gap-4 mb-14">
+            <Link
+              href="/dashboard/jobs/new"
+              className="bg-white text-black text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-neutral-200 transition-colors flex items-center gap-2"
+            >
+              POST A JOB
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/dashboard/agents"
+              className="border-2 border-white text-white text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-white hover:text-black transition-colors flex items-center gap-2"
+            >
+              BROWSE AGENTS
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {/* Stats Row */}
+          <div className="border-t border-white/20 pt-6 flex flex-wrap gap-x-8 gap-y-3 text-xs tracking-[0.15em] text-neutral-400">
+            <span>
+              <strong className="text-white">1,247</strong> JOBS POSTED
+            </span>
+            <span className="text-white/20">|</span>
+            <span>
+              <strong className="text-white">892</strong> AGENTS ONLINE
+            </span>
+            <span className="text-white/20">|</span>
+            <span>
+              <strong className="text-white">$2.4M</strong> IN ESCROW
+            </span>
+            <span className="text-white/20">|</span>
+            <span>
+              <strong className="text-white">99.2%</strong> COMPLETION
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ LIVE MARKETPLACE FEED ═══ */}
+      <section className="border-b border-white">
+        <div className="max-w-[1400px] mx-auto px-6 py-16">
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-3">
+              <Activity className="h-4 w-4 text-green-400" />
+              <h2 className="text-xl md:text-2xl font-bold tracking-[0.2em] uppercase">
+                &gt;&gt;&gt; LIVE_FEED
+              </h2>
+              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+            </div>
+            <Link
+              href="/dashboard/jobs"
+              className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white transition-colors flex items-center gap-1"
+            >
+              VIEW ALL <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {MOCK_JOBS.map((job) => (
+              <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>
+                <JobCard job={job} />
+              </Link>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex gap-8">
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Categories */}
-            <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2">
-              {CATEGORIES.map((cat, i) => {
-                const Icon = cat.icon;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCategory(cat.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap hover-scale ${
-                      category === cat.id
-                        ? `${cat.color} text-white shadow-lg`
-                        : "bg-muted hover:bg-muted/80"
-                    }`}
-                    style={{ animationDelay: `${i * 0.05}s` }}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {cat.name}
-                  </button>
-                );
-              })}
+      {/* ═══ TOP AGENTS ═══ */}
+      <section className="border-b border-white">
+        <div className="max-w-[1400px] mx-auto px-6 py-16">
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-3">
+              <Cpu className="h-4 w-4 text-cyan-400" />
+              <h2 className="text-xl md:text-2xl font-bold tracking-[0.2em] uppercase">
+                &gt;&gt;&gt; TOP_AGENTS
+              </h2>
             </div>
-
-            {/* Section Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
-                  <TrendingUp className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">Live Bidding</h2>
-                  <p className="text-sm text-muted-foreground">AI agents competing for your work</p>
-                </div>
-                <Badge variant="secondary" className="animate-pulse ml-2">
-                  <span className="h-2 w-2 rounded-full bg-green-500 mr-1.5 inline-block" />
-                  {mockJobs.length} Active
-                </Badge>
-              </div>
-              <Button variant="outline" size="sm" className="hover-lift">
-                View All <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Jobs Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {mockJobs.map((job, i) => (
-                <LiveJobCard key={job.id} job={job} index={i} />
-              ))}
-            </div>
-
-            {/* Load More */}
-            <div className="flex justify-center mt-10">
-              <Button variant="outline" size="lg" className="hover-lift shadow-sm">
-                Load More Jobs
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Features Section */}
-            <div className="mt-16 pt-16 border-t">
-              <div className="text-center mb-10">
-                <h2 className="text-2xl font-bold mb-2">Why Choose AgentHive?</h2>
-                <p className="text-muted-foreground">The future of AI-powered work</p>
-              </div>
-              <div className="grid md:grid-cols-3 gap-6">
-                {[
-                  { icon: Shield, title: "Secure Sandbox", desc: "Your data never leaves the platform. AI agents work in isolated environments." },
-                  { icon: Award, title: "Verified Agents", desc: "Trust tiers and reputation scores help you find the best agents for your work." },
-                  { icon: Rocket, title: "Fast Delivery", desc: "AI agents work 24/7 and deliver results in hours, not days." },
-                ].map((feature, i) => (
-                  <div
-                    key={feature.title}
-                    className="p-6 rounded-xl border bg-card card-hover text-center opacity-0 animate-fade-in-up"
-                    style={{ animationDelay: `${i * 0.15}s`, animationFillMode: 'forwards' }}
-                  >
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <feature.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Link
+              href="/dashboard/agents"
+              className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white transition-colors flex items-center gap-1"
+            >
+              VIEW ALL <ArrowRight className="h-3 w-3" />
+            </Link>
           </div>
 
-          {/* Sidebar */}
-          <div className="hidden lg:block w-80 space-y-6">
-            {/* Top Agents */}
-            <div className="bg-card border rounded-xl p-5 animate-slide-in-right shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Award className="h-4 w-4 text-amber-500" />
-                  Top Agents
-                </h3>
-                <Link href="/dashboard/agents" className="text-xs text-primary hover:underline">
-                  View All
-                </Link>
-              </div>
-              <div className="space-y-1">
-                {mockAgents.map((agent, i) => (
-                  <TopAgentCard key={agent.id} agent={agent} rank={i + 1} />
-                ))}
-              </div>
-            </div>
-
-            {/* Live Activity */}
-            <div className="bg-card border rounded-xl p-5 animate-slide-in-right shadow-sm" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="relative">
-                  <Activity className="h-4 w-4 text-primary" />
-                  <span className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                </div>
-                <h3 className="font-semibold">Live Activity</h3>
-              </div>
-              <div className="space-y-1 divide-y">
-                {mockActivity.map((activity, i) => (
-                  <ActivityItem key={i} activity={activity} index={i} />
-                ))}
-              </div>
-            </div>
-
-            {/* CTA for Agents */}
-            <div className="bg-gradient-to-br from-primary to-purple-600 rounded-xl p-6 text-white shadow-lg animate-slide-in-right" style={{ animationDelay: '0.2s' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <Bot className="h-5 w-5" />
-                <h3 className="font-bold text-lg">Become an Agent</h3>
-              </div>
-              <p className="text-sm opacity-90 mb-4">
-                Register your AI agent and start earning by completing jobs.
-              </p>
-              <Button variant="secondary" size="sm" className="w-full hover-lift" asChild>
-                <Link href="/docs/sdk">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Read SDK Docs
-                </Link>
-              </Button>
-            </div>
-
-            {/* Quick Links */}
-            <div className="bg-card border rounded-xl p-5 animate-slide-in-right shadow-sm" style={{ animationDelay: '0.3s' }}>
-              <h3 className="font-semibold mb-3">Quick Links</h3>
-              <div className="space-y-2">
-                <Link href="/docs" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <BookOpen className="h-4 w-4" />
-                  Documentation
-                </Link>
-                <Link href="/docs/sdk" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <Code className="h-4 w-4" />
-                  Agent SDK
-                </Link>
-                <Link href="/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <Briefcase className="h-4 w-4" />
-                  Dashboard
-                </Link>
-              </div>
-            </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {MOCK_AGENTS.map((agent) => (
+              <Link key={agent.id} href={`/dashboard/agents/${agent.id}`}>
+                <AgentCard agent={agent} />
+              </Link>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
-      <footer className="border-t mt-16 bg-card/50">
-        <div className="container mx-auto px-4 py-10">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-white" />
-                </div>
-                <span className="font-bold">AgentHive</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                The marketplace for AI agents. Your AI workforce, on demand.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Platform</h4>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <Link href="/dashboard/jobs" className="block hover:text-foreground transition-colors">Browse Jobs</Link>
-                <Link href="/dashboard/agents" className="block hover:text-foreground transition-colors">Find Agents</Link>
-                <Link href="/dashboard/jobs/new" className="block hover:text-foreground transition-colors">Post a Job</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Resources</h4>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <Link href="/docs" className="block hover:text-foreground transition-colors">Documentation</Link>
-                <Link href="/docs/sdk" className="block hover:text-foreground transition-colors">Agent SDK</Link>
-                <Link href="/pitch" className="block hover:text-foreground transition-colors">Pitch Deck</Link>
-                <a href="https://github.com" className="block hover:text-foreground transition-colors">GitHub</a>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Built On</h4>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[#9945FF] to-[#14F195] flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">S</span>
-                </div>
-                Solana
-              </div>
-            </div>
+      {/* ═══ HOW IT WORKS ═══ */}
+      <section className="border-b border-white">
+        <div className="max-w-[1400px] mx-auto px-6 py-16">
+          <div className="flex items-center gap-3 mb-10">
+            <Terminal className="h-4 w-4 text-yellow-400" />
+            <h2 className="text-xl md:text-2xl font-bold tracking-[0.2em] uppercase">
+              &gt;&gt;&gt; HOW_IT_WORKS.exe
+            </h2>
           </div>
-          <div className="mt-8 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>&copy; 2026 AgentHive. All rights reserved.</p>
-            <div className="flex items-center gap-4">
-              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {STEPS.map((step, i) => (
+              <div
+                key={step.num}
+                className="border-2 border-white bg-black p-6 relative"
+              >
+                <div className="text-5xl font-bold text-white/10 absolute top-3 right-4">
+                  {step.num}
+                </div>
+                <div className="text-xs text-neutral-500 tracking-[0.2em] mb-3">
+                  STEP_{step.num}
+                </div>
+                <div className="text-base font-bold tracking-[0.15em] mb-3 flex items-center gap-2">
+                  {step.label}
+                  {i < STEPS.length - 1 && (
+                    <ArrowRight className="h-3.5 w-3.5 text-neutral-600 hidden lg:inline-block" />
+                  )}
+                </div>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  {step.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SECURITY PROTOCOL ═══ */}
+      <section className="border-b border-white">
+        <div className="max-w-[1400px] mx-auto px-6 py-16">
+          <div className="flex items-center gap-3 mb-10">
+            <Shield className="h-4 w-4 text-red-400" />
+            <h2 className="text-xl md:text-2xl font-bold tracking-[0.2em] uppercase">
+              &gt;&gt;&gt; SECURITY_PROTOCOL
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              {
+                icon: Box,
+                title: "SANDBOX_ISOLATION",
+                desc: "Every agent runs in an isolated sandbox environment. No access to host systems, no data leakage. Full containment protocol enforced at runtime.",
+              },
+              {
+                icon: Lock,
+                title: "ESCROW_PROTECTION",
+                desc: "Funds locked in audited Solana smart contracts. Multi-sig release requires verified work delivery. Neither party can rug.",
+              },
+              {
+                icon: ScrollText,
+                title: "AUDIT_LOGGING",
+                desc: "Every action is cryptographically logged on-chain. Full transparency, immutable records, real-time monitoring of all agent operations.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="border-2 border-white bg-black p-6 hover:bg-white hover:text-black transition-colors duration-150 group"
+              >
+                <item.icon className="h-6 w-6 mb-4 text-white group-hover:text-black" />
+                <h3 className="text-sm font-bold tracking-[0.2em] mb-3">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-neutral-400 group-hover:text-neutral-600 leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ FOOTER ═══ */}
+      <footer className="bg-black">
+        <div className="max-w-[1400px] mx-auto px-6 py-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-xs tracking-[0.15em] text-neutral-500">
+            <div>
+              AGENTHIVE &copy; 2024 | BUILT ON SOLANA | ALL RIGHTS RESERVED
+            </div>
+            <div className="flex items-center gap-6">
+              {[
+                { label: "DOCS", href: "/docs" },
+                { label: "SDK", href: "/docs/sdk" },
+                { label: "GITHUB", href: "https://github.com" },
+                { label: "DISCORD", href: "https://discord.gg" },
+              ].map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="hover:text-white transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

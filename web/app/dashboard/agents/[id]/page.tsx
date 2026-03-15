@@ -1,455 +1,174 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Star,
-  CheckCircle2,
-  Briefcase,
-  Clock,
-  TrendingUp,
-  Shield,
-  Award,
-  Calendar,
-  DollarSign,
-  ExternalLink,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getAgent } from "@/lib/api";
+
+const MOCK_AGENTS: Record<string, any> = {
+  a1: {
+    id: "a1",
+    name: "AuditBot-7",
+    tier: "TOP_RATED",
+    rating: 4.8,
+    completedJobs: 34,
+    jss: 96,
+    earnings: "12,400 USDC",
+    about:
+      "Specialized AI agent focused on smart contract security audits. Expertise in Solana/Anchor, Ethereum/Solidity, and cross-chain protocols. Trained on 10,000+ audit reports and vulnerability databases. Consistently delivers thorough, actionable security assessments.",
+    skills: ["Rust", "Solidity", "Smart Contracts", "Security", "Anchor", "Formal Verification"],
+    recentJobs: [
+      { title: "DEX Protocol Audit", budget: "600 USDC", status: "COMPLETED", date: "2026-03-10" },
+      { title: "Lending Protocol Security Review", budget: "450 USDC", status: "COMPLETED", date: "2026-02-28" },
+      { title: "NFT Marketplace Audit", budget: "350 USDC", status: "COMPLETED", date: "2026-02-15" },
+    ],
+    ratings: [
+      { from: "0x7a2f...d3e1", score: 5, comment: "Thorough audit, found critical reentrancy issue.", date: "2026-03-10" },
+      { from: "0x3b1c...8f4a", score: 5, comment: "Excellent report quality and fast turnaround.", date: "2026-02-28" },
+      { from: "0x9d5e...2c7b", score: 4, comment: "Good work, could improve documentation format.", date: "2026-02-15" },
+    ],
+  },
+};
+
+const FALLBACK_AGENT = {
+  id: "unknown",
+  name: "Unknown Agent",
+  tier: "NEW",
+  rating: 0,
+  completedJobs: 0,
+  jss: 0,
+  earnings: "0 USDC",
+  about: "No information available for this agent.",
+  skills: [],
+  recentJobs: [],
+  ratings: [],
+};
 
 export default function AgentDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const agentId = params.id as string;
-
-  const { data: agent, isLoading } = useQuery({
-    queryKey: ["agent", agentId],
-    queryFn: () => getAgent(agentId),
-  });
-
-  const getTierInfo = (tier: string) => {
-    switch (tier) {
-      case "top_rated":
-        return {
-          label: "Top Rated",
-          description: "Elite agent with exceptional track record",
-          color: "text-amber-500",
-          bgColor: "bg-amber-500/10",
-          fee: "8%",
-        };
-      case "established":
-        return {
-          label: "Established",
-          description: "Verified agent with proven expertise",
-          color: "text-blue-500",
-          bgColor: "bg-blue-500/10",
-          fee: "10%",
-        };
-      case "rising":
-        return {
-          label: "Rising",
-          description: "Growing reputation with good ratings",
-          color: "text-green-500",
-          bgColor: "bg-green-500/10",
-          fee: "12%",
-        };
-      default:
-        return {
-          label: "New",
-          description: "Recently joined the platform",
-          color: "text-gray-500",
-          bgColor: "bg-gray-500/10",
-          fee: "15%",
-        };
-    }
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-8 w-8" />
-          <Skeleton className="h-8 w-64" />
-        </div>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="h-48" />
-            <Skeleton className="h-64" />
-          </div>
-          <div>
-            <Skeleton className="h-64" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!agent) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold mb-2">Agent not found</h2>
-        <p className="text-muted-foreground mb-4">
-          This agent may have been removed or is no longer available.
-        </p>
-        <Button onClick={() => router.back()}>Go Back</Button>
-      </div>
-    );
-  }
-
-  const tierInfo = getTierInfo(agent.trust_tier);
-  const reputation = agent.reputation || {};
+  const agent = MOCK_AGENTS[agentId] || { ...FALLBACK_AGENT, id: agentId };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 font-mono">
+      {/* Back */}
+      <Link
+        href="/dashboard/agents"
+        className="text-xs text-white/50 hover:text-white tracking-wider"
+      >
+        {"<"} BACK TO AGENTS
+      </Link>
+
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl font-bold tracking-wider">{agent.name}</h1>
+        <span className="border-2 border-white px-3 py-1 text-xs tracking-wider">
+          {agent.tier}
+        </span>
+      </div>
 
-        <div className="flex-1">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
-                  {agent.display_name?.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl font-bold">{agent.display_name}</h1>
-                  {reputation.job_success_score > 90 && (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant={agent.trust_tier as any}>
-                    <Award className="h-3 w-3 mr-1" />
-                    {tierInfo.label}
-                  </Badge>
-                  {agent.is_active ? (
-                    <span className="flex items-center gap-1 text-sm text-green-600">
-                      <span className="h-2 w-2 rounded-full bg-green-500" />
-                      Available
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <span className="h-2 w-2 rounded-full bg-gray-400" />
-                      Busy
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <Button>
-              <Briefcase className="h-4 w-4 mr-2" />
-              Invite to Job
-            </Button>
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
+        {[
+          { label: "RATING", value: `${agent.rating} / 5.0` },
+          { label: "COMPLETED", value: agent.completedJobs },
+          { label: "JSS", value: `${agent.jss}%` },
+          { label: "EARNINGS", value: agent.earnings },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="border-2 border-white p-4 -mt-[2px] first:mt-0 md:mt-0 md:-ml-[2px] md:first:ml-0"
+          >
+            <p className="text-xs text-white/50 tracking-wider">{stat.label}</p>
+            <p className="text-xl font-bold mt-1">{stat.value}</p>
           </div>
+        ))}
+      </div>
+
+      {/* About */}
+      <div>
+        <h2 className="text-xs text-white/50 tracking-wider mb-3">ABOUT</h2>
+        <p className="text-sm leading-relaxed">{agent.about}</p>
+      </div>
+
+      {/* Skills */}
+      <div>
+        <h2 className="text-xs text-white/50 tracking-wider mb-3">SKILLS</h2>
+        <div className="flex flex-wrap gap-2">
+          {agent.skills.map((skill: string) => (
+            <span
+              key={skill}
+              className="border border-white px-3 py-1 text-xs tracking-wider"
+            >
+              {skill}
+            </span>
+          ))}
+          {agent.skills.length === 0 && (
+            <span className="text-white/40 text-sm">NO_SKILLS_LISTED</span>
+          )}
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* About */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">About</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                {agent.description || "No description provided."}
-              </p>
-
-              <div className="mt-6">
-                <h4 className="text-sm font-medium mb-3">Skills</h4>
-                <div className="flex flex-wrap gap-2">
-                  {(agent.skills || []).map((skill: string) => (
-                    <Badge key={skill} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))}
-                  {(!agent.skills || agent.skills.length === 0) && (
-                    <span className="text-sm text-muted-foreground">
-                      No skills listed
-                    </span>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Stats Grid */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-3xl font-bold text-primary">
-                  {reputation.completed_jobs || 0}
-                </div>
-                <p className="text-sm text-muted-foreground">Jobs Completed</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="flex items-center justify-center gap-1 text-3xl font-bold">
-                  <Star className="h-6 w-6 text-amber-500 fill-amber-500" />
-                  {reputation.avg_rating?.toFixed(1) || "-"}
-                </div>
-                <p className="text-sm text-muted-foreground">Average Rating</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-3xl font-bold text-green-600">
-                  {reputation.completion_rate
-                    ? `${(reputation.completion_rate * 100).toFixed(0)}%`
-                    : "-"}
-                </div>
-                <p className="text-sm text-muted-foreground">Completion Rate</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-3xl font-bold">
-                  ${((reputation.total_earnings_usdc || 0) / 1000).toFixed(1)}k
-                </div>
-                <p className="text-sm text-muted-foreground">Total Earned</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Job Success Score */}
-          {reputation.job_success_score > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Job Success Score (JSS)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-4xl font-bold">
-                      {reputation.job_success_score?.toFixed(0)}%
-                    </span>
-                    <Badge
-                      variant={
-                        reputation.job_success_score >= 90
-                          ? "success"
-                          : reputation.job_success_score >= 80
-                          ? "default"
-                          : "warning"
-                      }
-                    >
-                      {reputation.job_success_score >= 90
-                        ? "Excellent"
-                        : reputation.job_success_score >= 80
-                        ? "Good"
-                        : "Average"}
-                    </Badge>
-                  </div>
-                  <Progress value={reputation.job_success_score} className="h-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Based on client feedback, completion rate, and overall performance.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Performance Breakdown */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Performance Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span>Quality</span>
-                    <span className="font-medium">
-                      {reputation.quality_score?.toFixed(1) || "-"}/5.0
-                    </span>
-                  </div>
-                  <Progress
-                    value={(reputation.quality_score || 0) * 20}
-                    className="h-2"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span>Speed</span>
-                    <span className="font-medium">
-                      {reputation.speed_score?.toFixed(1) || "-"}/5.0
-                    </span>
-                  </div>
-                  <Progress
-                    value={(reputation.speed_score || 0) * 20}
-                    className="h-2"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span>Communication</span>
-                    <span className="font-medium">
-                      {reputation.communication_score?.toFixed(1) || "-"}/5.0
-                    </span>
-                  </div>
-                  <Progress
-                    value={(reputation.communication_score || 0) * 20}
-                    className="h-2"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Trust Tier Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Trust Level
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+      {/* Recent Jobs */}
+      <div>
+        <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> RECENT_JOBS`}</h2>
+        {agent.recentJobs.length > 0 ? (
+          <div className="border-2 border-white">
+            <div className="grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 border-b-2 border-white text-xs text-white/50 tracking-wider">
+              <span>TITLE</span>
+              <span>BUDGET</span>
+              <span>STATUS</span>
+              <span>DATE</span>
+            </div>
+            {agent.recentJobs.map((job: any, i: number) => (
               <div
-                className={`p-4 rounded-lg ${tierInfo.bgColor} mb-4`}
+                key={i}
+                className={`grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 text-sm ${
+                  i !== agent.recentJobs.length - 1 ? "border-b border-white/30" : ""
+                }`}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Award className={`h-5 w-5 ${tierInfo.color}`} />
-                  <span className={`font-semibold ${tierInfo.color}`}>
-                    {tierInfo.label}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {tierInfo.description}
-                </p>
-              </div>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Platform Fee</span>
-                  <span className="font-medium">{tierInfo.fee}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Sandbox</span>
-                  <span className="font-medium">
-                    {agent.is_sandbox_required ? "Required" : "Optional"}
-                  </span>
-                </div>
-                {agent.security_deposit_usdc > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Security Deposit</span>
-                    <span className="font-medium">
-                      ${agent.security_deposit_usdc}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Member Since */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Member Since</p>
-                  <p className="font-medium">
-                    {formatDate(agent.created_at)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Ratings Summary */}
-          {reputation.total_ratings > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Ratings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="text-4xl font-bold">
-                    {reputation.avg_rating?.toFixed(1)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-4 w-4 ${
-                            star <= Math.round(reputation.avg_rating || 0)
-                              ? "text-amber-500 fill-amber-500"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {reputation.total_ratings} reviews
-                    </p>
-                  </div>
-                </div>
-
-                {/* Rating distribution - simplified */}
-                <div className="space-y-2">
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <div key={rating} className="flex items-center gap-2">
-                      <span className="text-sm w-3">{rating}</span>
-                      <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                      <Progress
-                        value={rating === 5 ? 70 : rating === 4 ? 20 : 10}
-                        className="flex-1 h-2"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Wallet */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Wallet Address
+                <span>{job.title}</span>
+                <span>{job.budget}</span>
+                <span className="text-xs">
+                  <span className="border border-white px-2 py-0.5">{job.status}</span>
                 </span>
-                <code className="text-xs bg-muted px-2 py-1 rounded">
-                  {agent.wallet_address?.slice(0, 4)}...
-                  {agent.wallet_address?.slice(-4)}
-                </code>
+                <span className="text-white/50">{job.date}</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="border-2 border-white p-8 text-center text-white/50">
+            NO_JOBS_YET
+          </div>
+        )}
+      </div>
+
+      {/* Ratings */}
+      <div>
+        <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> RATINGS (${agent.ratings.length})`}</h2>
+        {agent.ratings.length > 0 ? (
+          <div className="border-2 border-white">
+            {agent.ratings.map((r: any, i: number) => (
+              <div
+                key={i}
+                className={`p-4 ${
+                  i !== agent.ratings.length - 1 ? "border-b border-white/30" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-white/50">{r.from}</span>
+                  <span className="text-sm">
+                    {"* ".repeat(r.score)}({r.score}/5)
+                  </span>
+                </div>
+                <p className="text-sm text-white/80">{r.comment}</p>
+                <p className="text-xs text-white/30 mt-2">{r.date}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="border-2 border-white p-8 text-center text-white/50">
+            NO_RATINGS_YET
+          </div>
+        )}
       </div>
     </div>
   );

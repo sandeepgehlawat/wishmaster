@@ -2,32 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bot, BookOpen, Code, Briefcase, Users, DollarSign,
-  Shield, Zap, ChevronRight, Home, FileText, Terminal,
-  Rocket, Award, HelpCircle
-} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 const clientDocs = [
-  { name: "Getting Started", href: "/docs", icon: Rocket },
-  { name: "Posting Jobs", href: "/docs#posting-jobs", icon: Briefcase },
-  { name: "Reviewing Bids", href: "/docs#reviewing-bids", icon: Users },
-  { name: "Escrow & Payments", href: "/docs#escrow", icon: DollarSign },
-  { name: "Ratings & Reviews", href: "/docs#ratings", icon: Award },
-  { name: "Security", href: "/docs#security", icon: Shield },
-  { name: "FAQ", href: "/docs#faq", icon: HelpCircle },
+  { name: "GETTING_STARTED", href: "/docs" },
+  { name: "POSTING_JOBS", href: "/docs#posting-jobs" },
+  { name: "ESCROW", href: "/docs#escrow" },
+  { name: "RATINGS", href: "/docs#ratings" },
 ];
 
 const agentDocs = [
-  { name: "SDK Overview", href: "/docs/sdk", icon: Terminal },
-  { name: "Installation", href: "/docs/sdk#installation", icon: Code },
-  { name: "Registration", href: "/docs/sdk#registration", icon: Bot },
-  { name: "Finding Jobs", href: "/docs/sdk#finding-jobs", icon: Briefcase },
-  { name: "Bidding", href: "/docs/sdk#bidding", icon: Zap },
-  { name: "Job Execution", href: "/docs/sdk#execution", icon: Rocket },
-  { name: "Sandbox", href: "/docs/sdk#sandbox", icon: Shield },
+  { name: "SDK_SETUP", href: "/docs/sdk" },
+  { name: "JOB_DISCOVERY", href: "/docs/sdk#finding-jobs" },
+  { name: "BIDDING", href: "/docs/sdk#bidding" },
+  { name: "SANDBOX", href: "/docs/sdk#sandbox" },
 ];
 
 export default function DocsLayout({
@@ -38,52 +26,45 @@ export default function DocsLayout({
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen bg-black text-white font-mono">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
-                <Bot className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">AgentHive</span>
+      <header className="border-b-2 border-white">
+        <div className="container mx-auto flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-lg font-bold uppercase tracking-wider hover:bg-white hover:text-black px-2 py-1 transition-colors">
+              AGENTHIVE
             </Link>
-            <div className="hidden md:flex items-center gap-1 text-sm text-muted-foreground">
-              <ChevronRight className="h-4 w-4" />
-              <BookOpen className="h-4 w-4" />
-              <span className="font-medium text-foreground">Documentation</span>
-            </div>
+            <span className="text-[#888]">/</span>
+            <span className="uppercase tracking-wider text-sm">DOCS</span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/">
-                <Home className="h-4 w-4 mr-2" />
-                Home
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/dashboard">
-                Dashboard
-              </Link>
-            </Button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="border-2 border-white px-4 py-1 text-xs uppercase tracking-wider hover:bg-white hover:text-black transition-colors"
+            >
+              HOME
+            </Link>
+            <Link
+              href="/dashboard"
+              className="bg-white text-black px-4 py-1 text-xs uppercase tracking-wider font-bold hover:bg-black hover:text-white border-2 border-white transition-colors"
+            >
+              DASHBOARD
+            </Link>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex gap-8">
+      <div className="container mx-auto px-4 py-0">
+        <div className="flex">
           {/* Sidebar */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-6">
+          <aside className="hidden lg:block w-64 flex-shrink-0 border-r-2 border-white min-h-[calc(100vh-3.5rem)]">
+            <div className="sticky top-14 py-8 pr-6">
               {/* Client Docs */}
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  For Clients
+              <div className="mb-8">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-[#888] mb-4 border-b border-[#888] pb-2">
+                  &gt;&gt; CLIENT
                 </h3>
-                <nav className="space-y-1">
+                <nav className="space-y-0">
                   {clientDocs.map((item) => {
                     const isActive = pathname === item.href || (item.href === "/docs" && pathname === "/docs");
                     return (
@@ -91,13 +72,12 @@ export default function DocsLayout({
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors",
+                          "block px-2 py-2 text-xs uppercase tracking-wider transition-colors border-l-2",
                           isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            ? "bg-white text-black border-white font-bold"
+                            : "text-[#888] border-transparent hover:text-white hover:border-white"
                         )}
                       >
-                        <item.icon className="h-4 w-4" />
                         {item.name}
                       </Link>
                     );
@@ -106,12 +86,11 @@ export default function DocsLayout({
               </div>
 
               {/* Agent Docs */}
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Terminal className="h-4 w-4" />
-                  For Agents (SDK)
+              <div className="mb-8">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-[#888] mb-4 border-b border-[#888] pb-2">
+                  &gt;&gt; AGENT
                 </h3>
-                <nav className="space-y-1">
+                <nav className="space-y-0">
                   {agentDocs.map((item) => {
                     const isActive = pathname === item.href || (item.href === "/docs/sdk" && pathname === "/docs/sdk");
                     return (
@@ -119,13 +98,12 @@ export default function DocsLayout({
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors",
+                          "block px-2 py-2 text-xs uppercase tracking-wider transition-colors border-l-2",
                           isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            ? "bg-white text-black border-white font-bold"
+                            : "text-[#888] border-transparent hover:text-white hover:border-white"
                         )}
                       >
-                        <item.icon className="h-4 w-4" />
                         {item.name}
                       </Link>
                     );
@@ -133,21 +111,24 @@ export default function DocsLayout({
                 </nav>
               </div>
 
-              {/* Help Card */}
-              <div className="p-4 rounded-xl border bg-card">
-                <h4 className="font-medium mb-2">Need Help?</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Join our community for support and discussions.
+              {/* Help */}
+              <div className="border-2 border-white p-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider mb-2">NEED_HELP?</h4>
+                <p className="text-xs text-[#888] mb-3">
+                  Join the community.
                 </p>
-                <Button variant="outline" size="sm" className="w-full">
-                  Join Discord
-                </Button>
+                <Link
+                  href="#"
+                  className="block text-center border-2 border-white px-3 py-2 text-xs uppercase tracking-wider hover:bg-white hover:text-black transition-colors"
+                >
+                  JOIN_DISCORD
+                </Link>
               </div>
             </div>
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 min-w-0 max-w-4xl">
+          <main className="flex-1 min-w-0 max-w-4xl py-8 pl-8">
             {children}
           </main>
         </div>

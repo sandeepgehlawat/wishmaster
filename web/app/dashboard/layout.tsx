@@ -2,19 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Bot, Briefcase, Users, Settings, Home, Plus, Bell, Search, LogIn } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
 
-const navigation = [
-  { name: "Overview", href: "/dashboard", icon: Home },
-  { name: "My Jobs", href: "/dashboard/jobs", icon: Briefcase },
-  { name: "Agents", href: "/dashboard/agents", icon: Users },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+const NAV_ITEMS = [
+  { name: "OVERVIEW", href: "/dashboard" },
+  { name: "JOBS", href: "/dashboard/jobs" },
+  { name: "AGENTS", href: "/dashboard/agents" },
+  { name: "SETTINGS", href: "/dashboard/settings" },
 ];
 
 export default function DashboardLayout({
@@ -23,93 +16,21 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { connected, publicKey } = useWallet();
-  const { isAuthenticated, isLoading, signIn, error } = useAuth();
 
-  if (!connected) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
-        <div className="text-center max-w-md p-8 animate-fade-in-up">
-          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-            <Bot className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Connect Your Wallet</h1>
-          <p className="text-muted-foreground mb-8">
-            Connect your Solana wallet to access the AgentHive dashboard and start hiring AI agents.
-          </p>
-          <WalletMultiButton />
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
-        <div className="text-center max-w-md p-8 animate-fade-in-up">
-          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 animate-pulse">
-            <Bot className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Signing In...</h1>
-          <p className="text-muted-foreground">
-            Please approve the signature request in your wallet.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
-        <div className="text-center max-w-md p-8 animate-fade-in-up">
-          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-            <LogIn className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Sign In Required</h1>
-          <p className="text-muted-foreground mb-6">
-            Sign a message with your wallet to verify ownership and access the dashboard.
-          </p>
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-            </div>
-          )}
-          <Button onClick={signIn} size="lg">
-            <LogIn className="h-4 w-4 mr-2" />
-            Sign In with Wallet
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const shortAddress = publicKey?.toBase58().slice(0, 4) + "..." + publicKey?.toBase58().slice(-4);
+  const walletAddress = "7xKp...9fDq";
 
   return (
-    <div className="min-h-screen flex bg-muted/30">
+    <div className="min-h-screen flex bg-black text-white font-mono">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-card flex flex-col">
-        <div className="flex h-16 items-center gap-2 px-6 border-b">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <Bot className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold">AgentHive</span>
+      <aside className="w-[240px] flex-shrink-0 border-r-2 border-white bg-black flex flex-col fixed h-screen">
+        <div className="p-6 border-b-2 border-white">
+          <Link href="/" className="text-xl font-bold tracking-widest">
+            AGENTHIVE
           </Link>
         </div>
 
-        <div className="p-4">
-          <Button asChild className="w-full" size="sm">
-            <Link href="/dashboard/jobs/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Post New Job
-            </Link>
-          </Button>
-        </div>
-
-        <nav className="flex-1 px-3 space-y-1">
-          {navigation.map((item) => {
+        <nav className="flex-1 flex flex-col py-2">
+          {NAV_ITEMS.map((item) => {
             const isActive =
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -117,57 +38,28 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                className={`px-6 py-3 text-sm tracking-wider transition-colors ${
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
+                    ? "bg-white text-black"
+                    : "text-white hover:bg-white hover:text-black"
+                }`}
               >
-                <item.icon className="h-4 w-4" />
                 {item.name}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-medium text-primary">
-                {shortAddress?.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{shortAddress}</p>
-              <p className="text-xs text-muted-foreground">Client</p>
-            </div>
-          </div>
+        <div className="p-4 border-t-2 border-white">
+          <p className="text-xs tracking-wider text-white/60">WALLET</p>
+          <p className="text-sm mt-1 font-mono">{walletAddress}</p>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b bg-card flex items-center justify-between px-6 gap-4">
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search jobs, agents..."
-                className="pl-9 bg-muted/50 border-0"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
-            </Button>
-            <WalletMultiButton />
-          </div>
-        </header>
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
-      </div>
+      <main className="flex-1 ml-[240px] p-8 overflow-auto min-h-screen">
+        {children}
+      </main>
     </div>
   );
 }

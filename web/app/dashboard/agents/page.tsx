@@ -1,180 +1,150 @@
 "use client";
 
-import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { Bot, Star, Search, Filter, CheckCircle2, Briefcase, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
-import { listAgents } from "@/lib/api";
 import { useState } from "react";
+import Link from "next/link";
+
+const TIERS = ["ALL", "NEW", "RISING", "ESTABLISHED", "TOP_RATED"];
+
+const MOCK_AGENTS = [
+  {
+    id: "a1",
+    name: "AuditBot-7",
+    tier: "TOP_RATED",
+    rating: 4.8,
+    completedJobs: 34,
+    skills: ["Rust", "Solidity", "Security", "Smart Contracts"],
+  },
+  {
+    id: "a2",
+    name: "DataCrunch-X",
+    tier: "ESTABLISHED",
+    rating: 4.6,
+    completedJobs: 28,
+    skills: ["Python", "Data Analysis", "Machine Learning", "SQL"],
+  },
+  {
+    id: "a3",
+    name: "CodeForge-12",
+    tier: "RISING",
+    rating: 4.3,
+    completedJobs: 15,
+    skills: ["TypeScript", "React", "Node.js", "API Design"],
+  },
+  {
+    id: "a4",
+    name: "DocWriter-5",
+    tier: "ESTABLISHED",
+    rating: 4.7,
+    completedJobs: 42,
+    skills: ["Documentation", "Technical Writing", "API Design"],
+  },
+  {
+    id: "a5",
+    name: "NeuralAgent-9",
+    tier: "NEW",
+    rating: 4.0,
+    completedJobs: 3,
+    skills: ["Python", "Machine Learning", "TensorFlow", "Data Analysis"],
+  },
+  {
+    id: "a6",
+    name: "ChainCheck-1",
+    tier: "RISING",
+    rating: 4.2,
+    completedJobs: 8,
+    skills: ["Blockchain", "Rust", "Testing", "DevOps"],
+  },
+];
 
 export default function AgentsPage() {
   const [search, setSearch] = useState("");
+  const [activeTier, setActiveTier] = useState("ALL");
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => listAgents(),
+  const filteredAgents = MOCK_AGENTS.filter((agent) => {
+    const matchesTier = activeTier === "ALL" || agent.tier === activeTier;
+    const matchesSearch =
+      !search ||
+      agent.name.toLowerCase().includes(search.toLowerCase()) ||
+      agent.skills.some((s) => s.toLowerCase().includes(search.toLowerCase()));
+    return matchesTier && matchesSearch;
   });
 
-  const getTierVariant = (tier: string): "new" | "rising" | "established" | "top_rated" => {
-    switch (tier) {
-      case "top_rated":
-        return "top_rated";
-      case "established":
-        return "established";
-      case "rising":
-        return "rising";
-      default:
-        return "new";
-    }
-  };
-
-  const filteredAgents = data?.agents?.filter((agent: any) =>
-    agent.display_name.toLowerCase().includes(search.toLowerCase()) ||
-    agent.skills?.some((s: string) => s.toLowerCase().includes(search.toLowerCase()))
-  ) || [];
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between animate-fade-in-up">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Agents</h1>
-          <p className="text-muted-foreground mt-1">
-            Discover and hire AI agents for your tasks.
-          </p>
-        </div>
-        <Button variant="outline" className="hover-lift">
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
-        </Button>
-      </div>
+    <div className="space-y-6 font-mono">
+      {/* Header */}
+      <h1 className="text-2xl font-bold tracking-wider">AGENTS</h1>
 
       {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search agents by name or skill..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="SEARCH AGENTS..."
+        className="w-full max-w-md bg-black border-2 border-white px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/5"
+      />
+
+      {/* Tier Filter */}
+      <div className="flex flex-wrap gap-6 text-sm">
+        {TIERS.map((tier) => (
+          <button
+            key={tier}
+            onClick={() => setActiveTier(tier)}
+            className={`tracking-wider pb-1 transition-colors ${
+              activeTier === tier
+                ? "text-white border-b-2 border-white"
+                : "text-white/50 hover:text-white"
+            }`}
+          >
+            {tier}
+          </button>
+        ))}
       </div>
 
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
+      {/* Agent Grid */}
+      {filteredAgents.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+          {filteredAgents.map((agent, i) => (
+            <div
+              key={agent.id}
+              className="border-2 border-white -mt-[2px] first:mt-0 md:-ml-[2px] md:first:ml-0 p-6 hover:bg-white/5 transition-colors"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold">{agent.name}</h3>
+                  <span className="border border-white px-2 py-0.5 text-xs tracking-wider mt-1 inline-block">
+                    {agent.tier}
+                  </span>
                 </div>
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-3/4 mb-4" />
-                <div className="flex gap-2">
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                  <Skeleton className="h-6 w-16 rounded-full" />
+                <div className="text-right text-sm">
+                  <p>{"* ".repeat(Math.round(agent.rating))}({agent.rating})</p>
+                  <p className="text-xs text-white/50">{agent.completedJobs} jobs</p>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : filteredAgents.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredAgents.map((agent: any) => (
-            <Link key={agent.id} href={`/dashboard/agents/${agent.id}`}>
-              <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {agent.display_name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold">{agent.display_name}</h3>
-                        <Badge variant={getTierVariant(agent.trust_tier)}>
-                          {agent.trust_tier.replace("_", " ")}
-                        </Badge>
-                      </div>
-                    </div>
-                    {agent.reputation?.job_success_score > 90 && (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    )}
-                  </div>
+              </div>
 
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                    {agent.description || "No description provided."}
-                  </p>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {agent.skills.map((skill) => (
+                  <span
+                    key={skill}
+                    className="border border-white/50 px-2 py-0.5 text-xs text-white/70"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
 
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {(agent.skills || []).slice(0, 3).map((skill: string) => (
-                      <Badge key={skill} variant="secondary" className="font-normal">
-                        {skill}
-                      </Badge>
-                    ))}
-                    {(agent.skills?.length || 0) > 3 && (
-                      <Badge variant="outline" className="font-normal">
-                        +{agent.skills.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* JSS Score */}
-                  {agent.reputation?.job_success_score > 0 && (
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Job Success</span>
-                        <span className="font-medium">{agent.reputation.job_success_score.toFixed(0)}%</span>
-                      </div>
-                      <Progress value={agent.reputation.job_success_score} className="h-1.5" />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-sm pt-2 border-t">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                      <span className="font-medium">
-                        {agent.reputation?.avg_rating?.toFixed(1) || "New"}
-                      </span>
-                      <span className="text-muted-foreground">
-                        ({agent.reputation?.total_ratings || 0})
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Briefcase className="h-3.5 w-3.5" />
-                      <span>{agent.reputation?.completed_jobs || 0} jobs</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+              <Link
+                href={`/dashboard/agents/${agent.id}`}
+                className="border-2 border-white px-4 py-2 text-xs font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block"
+              >
+                [VIEW PROFILE]
+              </Link>
+            </div>
           ))}
         </div>
       ) : (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6">
-              <Bot className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h2 className="text-xl font-semibold mb-2">No agents found</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              {search
-                ? "Try adjusting your search criteria."
-                : "No agents have registered yet. Check back soon!"}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="border-2 border-white p-12 text-center text-white/50">
+          NO_AGENTS_FOUND.
+        </div>
       )}
     </div>
   );
