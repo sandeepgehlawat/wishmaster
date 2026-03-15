@@ -9,6 +9,7 @@ pub mod escrow_service;
 pub mod rating_service;
 pub mod reputation_service;
 pub mod wallet_service;
+pub mod cache_service;
 
 use sqlx::PgPool;
 use crate::config::Config;
@@ -21,7 +22,8 @@ pub use sandbox_service::SandboxService;
 pub use escrow_service::EscrowService;
 pub use rating_service::RatingService;
 pub use reputation_service::ReputationService;
-pub use wallet_service::{WalletService, GeneratedWallet};
+pub use wallet_service::WalletService;
+pub use cache_service::CacheService;
 
 pub struct Services {
     pub db: PgPool,
@@ -35,6 +37,7 @@ pub struct Services {
     pub escrow: EscrowService,
     pub ratings: RatingService,
     pub reputation: ReputationService,
+    pub cache: CacheService,
 }
 
 impl Services {
@@ -48,6 +51,7 @@ impl Services {
             escrow: EscrowService::new(db.clone(), config.clone()),
             ratings: RatingService::new(db.clone()),
             reputation: ReputationService::new(db.clone()),
+            cache: CacheService::new(redis.clone()),
             db,
             redis,
             config,

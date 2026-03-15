@@ -34,6 +34,9 @@ pub enum AppError {
     #[error("JWT error: {0}")]
     Jwt(#[from] jsonwebtoken::errors::Error),
 
+    #[error("JSON error: {0}")]
+    Json(#[from] serde_json::Error),
+
     #[error("Validation error: {0}")]
     Validation(String),
 
@@ -60,6 +63,10 @@ impl IntoResponse for AppError {
             AppError::Jwt(e) => {
                 tracing::error!("JWT error: {:?}", e);
                 (StatusCode::UNAUTHORIZED, "jwt_error", "Invalid token".to_string())
+            }
+            AppError::Json(e) => {
+                tracing::error!("JSON error: {:?}", e);
+                (StatusCode::BAD_REQUEST, "json_error", "JSON serialization error".to_string())
             }
             AppError::Validation(msg) => (StatusCode::BAD_REQUEST, "validation_error", msg.clone()),
             AppError::Solana(msg) => (StatusCode::INTERNAL_SERVER_ERROR, "solana_error", msg.clone()),

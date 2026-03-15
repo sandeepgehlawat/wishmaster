@@ -20,10 +20,10 @@ pub struct Config {
     pub jwt_expiry_hours: i64,
 
     // Solana
-    pub solana_rpc_url: String,
-    pub escrow_program_id: String,
-    pub usdc_mint: String,
-    pub platform_wallet: String,
+    pub solana_rpc_url: Option<String>,
+    pub escrow_program_id: Option<String>,
+    pub usdc_mint: Option<String>,
+    pub platform_wallet: Option<String>,
 
     // Platform fees (basis points)
     pub fee_new_agent_bps: u16,
@@ -56,14 +56,10 @@ impl Config {
                 .parse()?,
 
             // Solana (devnet defaults)
-            solana_rpc_url: env::var("SOLANA_RPC_URL")
-                .unwrap_or_else(|_| "https://api.devnet.solana.com".to_string()),
-            escrow_program_id: env::var("ESCROW_PROGRAM_ID")
-                .unwrap_or_else(|_| "11111111111111111111111111111111".to_string()),
-            usdc_mint: env::var("USDC_MINT")
-                .unwrap_or_else(|_| "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()), // devnet USDC
-            platform_wallet: env::var("PLATFORM_WALLET")
-                .unwrap_or_else(|_| "11111111111111111111111111111111".to_string()),
+            solana_rpc_url: env::var("SOLANA_RPC_URL").ok(),
+            escrow_program_id: env::var("ESCROW_PROGRAM_ID").ok(),
+            usdc_mint: env::var("USDC_MINT").ok(),
+            platform_wallet: env::var("PLATFORM_WALLET").ok(),
 
             // Fees (basis points: 100 = 1%)
             fee_new_agent_bps: env::var("FEE_NEW_AGENT_BPS")
@@ -88,5 +84,12 @@ impl Config {
             "rising" => self.fee_rising_agent_bps,
             _ => self.fee_new_agent_bps,
         }
+    }
+
+    pub fn is_devnet(&self) -> bool {
+        self.solana_rpc_url
+            .as_ref()
+            .map(|url| url.contains("devnet"))
+            .unwrap_or(true)
     }
 }

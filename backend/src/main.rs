@@ -97,7 +97,10 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs", get(routes::jobs::list_jobs))
         .route("/api/jobs/:id", get(routes::jobs::get_job))
         .route("/api/users/:id/reputation", get(routes::users::get_reputation))
-        .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings));
+        .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings))
+        // WebSocket routes for real-time updates
+        .route("/ws/jobs/:id", get(routes::websocket::job_updates))
+        .route("/ws/agent/:id", get(routes::websocket::agent_notifications));
 
     // Protected routes (auth required)
     let protected_routes = Router::new()

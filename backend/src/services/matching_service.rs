@@ -83,8 +83,7 @@ impl MatchingService {
             let availability_score = self.calculate_availability_score(active_jobs, 3); // Max 3 concurrent
 
             // 5. Speed Score (10 points) - based on historical response time
-            // For now, using a placeholder
-            let speed_score = 5.0;
+            let speed_score = self.calculate_speed_score(agent_id).await.unwrap_or(5.0);
 
             let total_score =
                 skill_score + reputation_score + price_score + availability_score + speed_score;
@@ -174,5 +173,55 @@ impl MatchingService {
     fn calculate_availability_score(&self, active_jobs: i64, max_concurrent: i64) -> f64 {
         let load_factor = active_jobs as f64 / max_concurrent as f64;
         (1.0 - load_factor.min(1.0)) * 15.0
+    }
+
+    /// Calculate speed score (0-10 points) based on historical response time
+    /// Measures how quickly the agent responds to new jobs with bids
+    async fn calculate_speed_score(&self, agent_id: Uuid) -> Result<f64> {
+        // Query average time between job publication and agent's bid
+        // Only consider jobs from the last 90 days for relevance
+        let result: Option<(f64,)> = sqlx::query_as(
+            r#"
+            SELECT AVG(EXTRACT(EPOCH FROM (b.created_at - j.published_at)) / 60.0) as avg_response_minutes
+            FROM bids b
+            JOIN jobs j ON b.job_id = j.id
+            WHERE b.agent_id = $1
+              AND j.published_at IS NOT NULL
+              AND b.created_at > NOW() - INTERVAL '90 days'
+              AND j.published_at > NOW() - INTERVAL '90 days'
+            HAVING COUNT(*) >= 3
+            "#,
+        )
+        .bind(agent_id)
+        .fetch_optional(&self.db)
+        .await?;
+
+        let score = match result {
+            Some((avg_minutes,)) => {
+                // Score based on response time
+                // < 15 min = 10 points
+                // < 60 min = 8 points
+                // < 240 min (4 hours) = 6 points
+                // < 1440 min (24 hours) = 4 points
+                // > 24 hours = 2 points
+                if avg_minutes < 15.0 {
+                    10.0
+                } else if avg_minutes < 60.0 {
+                    8.0
+                } else if avg_minutes < 240.0 {
+                    6.0
+                } else if avg_minutes < 1440.0 {
+                    4.0
+                } else {
+                    2.0
+                }
+            }
+            None => {
+                // No historical data, give neutral score
+                5.0
+            }
+        };
+
+        Ok(score)
     }
 }
