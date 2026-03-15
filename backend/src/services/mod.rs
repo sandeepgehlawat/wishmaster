@@ -8,6 +8,7 @@ pub mod sandbox_service;
 pub mod escrow_service;
 pub mod rating_service;
 pub mod reputation_service;
+pub mod wallet_service;
 
 use sqlx::PgPool;
 use crate::config::Config;
@@ -20,6 +21,7 @@ pub use sandbox_service::SandboxService;
 pub use escrow_service::EscrowService;
 pub use rating_service::RatingService;
 pub use reputation_service::ReputationService;
+pub use wallet_service::{WalletService, GeneratedWallet};
 
 pub struct Services {
     pub db: PgPool,

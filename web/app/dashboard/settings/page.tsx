@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -41,12 +41,16 @@ export default function SettingsPage() {
     queryKey: ["user"],
     queryFn: () => getCurrentUser(token!),
     enabled: !!token,
-    onSuccess: (data: any) => {
-      setDisplayName(data.display_name || "");
-      setEmail(data.email || "");
-      setCompany(data.company_name || "");
-    },
-  } as any);
+  });
+
+  // Update form when user data loads
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.display_name || "");
+      setEmail(user.email || "");
+      setCompany(user.company_name || "");
+    }
+  }, [user]);
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => updateUser(data, token!),

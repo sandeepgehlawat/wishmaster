@@ -1,9 +1,9 @@
 use crate::error::{AppError, Result};
 use crate::models::{
     Agent, AgentListQuery, AgentListResponse, AgentWithReputation, RegisterAgent,
-    RegisterAgentResponse,
+    RegisterAgentResponse, GeneratedWalletResponse,
 };
-use crate::services::{AuthService, Services};
+use crate::services::{AuthService, Services, WalletService};
 use axum::{
     extract::{Path, Query},
     Extension, Json,
@@ -57,20 +57,50 @@ pub async fn list_agents(
 }
 
 /// Register a new agent (via SDK)
+/// If no wallet_address is provided, a new Solana wallet will be generated
 pub async fn register_agent(
     Extension(services): Extension<Arc<Services>>,
     Json(input): Json<RegisterAgent>,
 ) -> Result<Json<RegisterAgentResponse>> {
+    // Determine if we need to generate a wallet
+    let should_generate = input.generate_wallet.unwrap_or(input.wallet_address.is_none());
+
+    // Generate or use provided wallet
+    let (wallet_address, generated_wallet) = if should_generate && input.wallet_address.is_none() {
+        // Generate a new Solana wallet
+        let wallet = WalletService::generate_keypair();
+        let address = wallet.address.clone();
+        let response = GeneratedWalletResponse {
+            address: wallet.address,
+            private_key: wallet.private_key,
+            secret_key: wallet.secret_key,
+            warning: "IMPORTANT: Save your private key securely! It cannot be recovered. Never share it with anyone.".to_string(),
+        };
+        (address, Some(response))
+    } else if let Some(addr) = &input.wallet_address {
+        // Validate provided wallet address (should be 32-44 chars base58)
+        if addr.len() < 32 || addr.len() > 44 {
+            return Err(AppError::Validation("Invalid wallet address format".to_string()));
+        }
+        // Verify it's valid base58
+        if bs58::decode(addr).into_vec().is_err() {
+            return Err(AppError::Validation("Invalid wallet address: not valid base58".to_string()));
+        }
+        (addr.clone(), None)
+    } else {
+        return Err(AppError::Validation("Either wallet_address must be provided or generate_wallet must be true".to_string()));
+    };
+
     // Check if agent already exists
     let existing: Option<Agent> = sqlx::query_as(
         "SELECT * FROM agents WHERE wallet_address = $1"
     )
-    .bind(&input.wallet_address)
+    .bind(&wallet_address)
     .fetch_optional(&services.db)
     .await?;
 
     if existing.is_some() {
-        return Err(AppError::Conflict("Agent already registered".to_string()));
+        return Err(AppError::Conflict("Agent already registered with this wallet".to_string()));
     }
 
     // Generate API key
@@ -93,7 +123,7 @@ pub async fn register_agent(
         "#,
     )
     .bind(id)
-    .bind(&input.wallet_address)
+    .bind(&wallet_address)
     .bind(&api_key_hash)
     .bind(&input.display_name)
     .bind(&input.description)
@@ -112,7 +142,18 @@ pub async fn register_agent(
     .execute(&services.db)
     .await?;
 
-    Ok(Json(RegisterAgentResponse { agent, api_key }))
+    tracing::info!(
+        agent_id = %id,
+        wallet = %wallet_address,
+        generated = generated_wallet.is_some(),
+        "Agent registered successfully"
+    );
+
+    Ok(Json(RegisterAgentResponse {
+        agent,
+        api_key,
+        wallet: generated_wallet,
+    }))
 }
 
 /// Get agent by ID

@@ -47,12 +47,20 @@ impl AuthService {
     ) -> Result<bool> {
         use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 
+        tracing::info!("Verifying signature for wallet: {}", wallet_address);
+        tracing::debug!("Message: {}", message);
+        tracing::debug!("Signature (first 20 chars): {}...", &signature[..signature.len().min(20)]);
+
         // Decode wallet address (base58 Solana pubkey)
         let pubkey_bytes = bs58::decode(wallet_address)
             .into_vec()
-            .map_err(|e| AppError::BadRequest(format!("Invalid wallet address: {}", e)))?;
+            .map_err(|e| {
+                tracing::error!("Failed to decode wallet address: {}", e);
+                AppError::BadRequest(format!("Invalid wallet address: {}", e))
+            })?;
 
         if pubkey_bytes.len() != 32 {
+            tracing::error!("Invalid wallet address length: {}", pubkey_bytes.len());
             return Err(AppError::BadRequest("Invalid wallet address length".to_string()));
         }
 
@@ -61,22 +69,32 @@ impl AuthService {
             .map_err(|_| AppError::BadRequest("Invalid pubkey bytes".to_string()))?;
 
         let verifying_key = VerifyingKey::from_bytes(&pubkey_array)
-            .map_err(|e| AppError::BadRequest(format!("Invalid public key: {}", e)))?;
+            .map_err(|e| {
+                tracing::error!("Failed to create verifying key: {}", e);
+                AppError::BadRequest(format!("Invalid public key: {}", e))
+            })?;
 
-        // Decode signature (base58 or base64)
-        let sig_bytes = if signature.len() == 88 {
-            // Likely base64
-            base64::Engine::decode(&base64::engine::general_purpose::STANDARD, signature)
-                .map_err(|e| AppError::BadRequest(format!("Invalid signature encoding: {}", e)))?
-        } else {
-            // Try base58
-            bs58::decode(signature)
-                .into_vec()
-                .map_err(|e| AppError::BadRequest(format!("Invalid signature: {}", e)))?
-        };
+        // Decode signature - always try base58 first since Solana wallets use it
+        let sig_bytes = bs58::decode(signature)
+            .into_vec()
+            .or_else(|_| {
+                // Fallback to base64 if base58 fails
+                tracing::debug!("Base58 decode failed, trying base64");
+                base64::Engine::decode(&base64::engine::general_purpose::STANDARD, signature)
+            })
+            .map_err(|e| {
+                tracing::error!("Failed to decode signature: {}", e);
+                AppError::BadRequest(format!("Invalid signature encoding: {}", e))
+            })?;
+
+        tracing::debug!("Decoded signature length: {}", sig_bytes.len());
 
         if sig_bytes.len() != 64 {
-            return Err(AppError::BadRequest("Invalid signature length".to_string()));
+            tracing::error!("Invalid signature length: {} (expected 64)", sig_bytes.len());
+            return Err(AppError::BadRequest(format!(
+                "Invalid signature length: {} (expected 64)",
+                sig_bytes.len()
+            )));
         }
 
         let sig_array: [u8; 64] = sig_bytes
@@ -85,7 +103,10 @@ impl AuthService {
 
         let signature = Signature::from_bytes(&sig_array);
 
-        Ok(verifying_key.verify(message.as_bytes(), &signature).is_ok())
+        let is_valid = verifying_key.verify(message.as_bytes(), &signature).is_ok();
+        tracing::info!("Signature verification result: {}", is_valid);
+
+        Ok(is_valid)
     }
 
     /// Create a JWT token for a user

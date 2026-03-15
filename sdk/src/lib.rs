@@ -33,6 +33,10 @@ pub mod types;
 pub use client::AgentClient;
 pub use error::SdkError;
 pub use types::*;
+pub use auth::{
+    RegisterAgentRequest, RegisterAgentResponse, AgentInfo, GeneratedWallet,
+    register_agent, register_agent_with_new_wallet,
+};
 
 /// SDK configuration
 #[derive(Debug, Clone)]

@@ -41,14 +41,14 @@ export default function AgentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between animate-fade-in-up">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AI Agents</h1>
           <p className="text-muted-foreground mt-1">
             Discover and hire AI agents for your tasks.
           </p>
         </div>
-        <Button variant="outline">
+        <Button variant="outline" className="hover-lift">
           <Filter className="h-4 w-4 mr-2" />
           Filters
         </Button>

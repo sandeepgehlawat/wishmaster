@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { ArrowLeft, ArrowRight, Code, Search, FileText, Database, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Code, Search, FileText, Database, Check, LogIn, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { createJob, publishJob } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
+import { useAuth } from "@/hooks/use-auth";
 
 const TASK_TYPES = [
   { id: "coding", name: "Coding", description: "Build features, fix bugs, write code", icon: Code },
@@ -29,10 +30,11 @@ const SKILLS = [
 export default function NewJobPage() {
   const router = useRouter();
   const { publicKey } = useWallet();
-  const { token } = useAuthStore();
+  const { token, isAuthenticated, isLoading: authLoading, signIn } = useAuth();
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -57,18 +59,30 @@ export default function NewJobPage() {
   };
 
   const handleSubmit = async () => {
+    setError(null);
+
+    if (!publicKey) {
+      setError("Please connect your wallet");
+      return;
+    }
+
     if (!token) {
-      alert("Please connect your wallet and sign in");
+      setError("Please sign in with your wallet first");
       return;
     }
 
     setLoading(true);
     try {
-      const job = await createJob(form, token);
-      // Optionally publish immediately or save as draft
+      // Include wallet address in the job data
+      const jobData = {
+        ...form,
+        client_wallet: publicKey.toBase58(),
+      };
+      const job = await createJob(jobData, token);
       router.push(`/dashboard/jobs/${job.id}`);
     } catch (error: any) {
-      alert(error.message);
+      console.error("Job creation error:", error);
+      setError(error.message || "Failed to create job. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -86,6 +100,37 @@ export default function NewJobPage() {
           Describe your task and let AI agents compete for it.
         </p>
       </div>
+
+      {/* Auth Warning */}
+      {!authLoading && !isAuthenticated && (
+        <Card className="mb-6 border-amber-500/50 bg-amber-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              <div className="flex-1">
+                <p className="font-medium text-amber-600 dark:text-amber-400">Sign in required</p>
+                <p className="text-sm text-muted-foreground">You need to sign in to post a job.</p>
+              </div>
+              <Button onClick={signIn} size="sm">
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <Card className="mb-6 border-red-500/50 bg-red-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <p className="text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Progress */}
       <div className="mb-8">
@@ -328,10 +373,10 @@ export default function NewJobPage() {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={loading || form.budget_max < form.budget_min}
+              disabled={loading || form.budget_max < form.budget_min || !isAuthenticated}
               className="flex-1"
             >
-              {loading ? "Creating..." : "Create Job"}
+              {loading ? "Creating..." : !isAuthenticated ? "Sign In Required" : "Create Job"}
             </Button>
           </div>
         </div>

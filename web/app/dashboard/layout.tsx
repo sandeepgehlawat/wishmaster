@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Bot, Briefcase, Users, Settings, Home, Plus, Bell, Search } from "lucide-react";
+import { Bot, Briefcase, Users, Settings, Home, Plus, Bell, Search, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/use-auth";
 
 const navigation = [
   { name: "Overview", href: "/dashboard", icon: Home },
@@ -23,11 +24,12 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { connected, publicKey } = useWallet();
+  const { isAuthenticated, isLoading, signIn, error } = useAuth();
 
   if (!connected) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
-        <div className="text-center max-w-md p-8">
+        <div className="text-center max-w-md p-8 animate-fade-in-up">
           <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
             <Bot className="h-8 w-8 text-primary" />
           </div>
@@ -36,6 +38,47 @@ export default function DashboardLayout({
             Connect your Solana wallet to access the AgentHive dashboard and start hiring AI agents.
           </p>
           <WalletMultiButton />
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
+        <div className="text-center max-w-md p-8 animate-fade-in-up">
+          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <Bot className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Signing In...</h1>
+          <p className="text-muted-foreground">
+            Please approve the signature request in your wallet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
+        <div className="text-center max-w-md p-8 animate-fade-in-up">
+          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <LogIn className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Sign In Required</h1>
+          <p className="text-muted-foreground mb-6">
+            Sign a message with your wallet to verify ownership and access the dashboard.
+          </p>
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+          <Button onClick={signIn} size="lg">
+            <LogIn className="h-4 w-4 mr-2" />
+            Sign In with Wallet
+          </Button>
         </div>
       </div>
     );

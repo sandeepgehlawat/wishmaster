@@ -4,6 +4,7 @@ use axum::{
     routing::{get, post, patch, delete},
     http::Method,
     Extension,
+    middleware as axum_mw,
 };
 use tower_http::cors::{CorsLayer, Any};
 use tower_http::trace::TraceLayer;
@@ -82,31 +83,28 @@ fn build_router(services: Arc<Services>) -> Router {
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE, Method::OPTIONS])
         .allow_headers(Any);
 
-    Router::new()
-        // Health check
+    // Public routes (no auth required)
+    let public_routes = Router::new()
         .route("/health", get(routes::health::health_check))
-
-        // Auth routes
         .route("/api/auth/challenge", post(routes::auth::get_challenge))
         .route("/api/auth/verify", post(routes::auth::verify_signature))
         .route("/api/auth/refresh", post(routes::auth::refresh_token))
-
-        // User routes
-        .route("/api/users/me", get(routes::users::get_current_user))
-        .route("/api/users/me", patch(routes::users::update_current_user))
-        .route("/api/users/:id/reputation", get(routes::users::get_reputation))
-
-        // Agent routes
         .route("/api/agents", get(routes::agents::list_agents))
-        .route("/api/agents", post(routes::agents::register_agent))
         .route("/api/agents/:id", get(routes::agents::get_agent))
         .route("/api/agents/:id/reputation", get(routes::agents::get_agent_reputation))
         .route("/api/agents/:id/portfolio", get(routes::agents::get_portfolio))
-
-        // Job routes
+        .route("/api/agents/:id/ratings", get(routes::ratings::get_agent_ratings))
         .route("/api/jobs", get(routes::jobs::list_jobs))
-        .route("/api/jobs", post(routes::jobs::create_job))
         .route("/api/jobs/:id", get(routes::jobs::get_job))
+        .route("/api/users/:id/reputation", get(routes::users::get_reputation))
+        .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings));
+
+    // Protected routes (auth required)
+    let protected_routes = Router::new()
+        .route("/api/users/me", get(routes::users::get_current_user))
+        .route("/api/users/me", patch(routes::users::update_current_user))
+        .route("/api/agents", post(routes::agents::register_agent))
+        .route("/api/jobs", post(routes::jobs::create_job))
         .route("/api/jobs/:id", patch(routes::jobs::update_job))
         .route("/api/jobs/:id/publish", post(routes::jobs::publish_job))
         .route("/api/jobs/:id/cancel", post(routes::jobs::cancel_job))
@@ -114,31 +112,29 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/approve", post(routes::jobs::approve_job))
         .route("/api/jobs/:id/revision", post(routes::jobs::request_revision))
         .route("/api/jobs/:id/dispute", post(routes::jobs::dispute_job))
-
-        // Bid routes
         .route("/api/jobs/:id/bids", get(routes::bids::list_bids))
         .route("/api/jobs/:id/bids", post(routes::bids::submit_bid))
         .route("/api/bids/:id", patch(routes::bids::update_bid))
         .route("/api/bids/:id", delete(routes::bids::withdraw_bid))
-
-        // Sandbox routes (for agent SDK)
         .route("/api/sandbox/claim", post(routes::sandbox::claim_job))
         .route("/api/sandbox/data/:file", get(routes::sandbox::stream_data))
         .route("/api/sandbox/progress", post(routes::sandbox::report_progress))
         .route("/api/sandbox/submit", post(routes::sandbox::submit_results))
         .route("/api/sandbox/heartbeat", post(routes::sandbox::heartbeat))
-
-        // Escrow routes
         .route("/api/escrow/:job_id", get(routes::escrow::get_escrow))
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))
         .route("/api/escrow/:job_id/release", post(routes::escrow::release_escrow))
-
-        // Rating routes
         .route("/api/jobs/:id/rating", post(routes::ratings::submit_rating))
-        .route("/api/agents/:id/ratings", get(routes::ratings::get_agent_ratings))
-        .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings))
+        .layer(axum_mw::from_fn_with_state(
+            services.clone(),
+            |axum::extract::State(services): axum::extract::State<Arc<Services>>, req, next| async move {
+                crate::middleware::auth::auth_middleware(Extension(services), req, next).await
+            }
+        ));
 
-        // Middleware
+    Router::new()
+        .merge(public_routes)
+        .merge(protected_routes)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .layer(Extension(services))

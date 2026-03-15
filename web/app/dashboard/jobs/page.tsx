@@ -45,14 +45,14 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-in-up">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">My Jobs</h1>
           <p className="text-muted-foreground mt-1">
             Manage your job postings and track progress.
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="shadow-lg hover:shadow-primary/20 transition-shadow">
           <Link href="/dashboard/jobs/new">
             <Plus className="mr-2 h-4 w-4" /> New Job
           </Link>
@@ -93,7 +93,7 @@ export default function JobsPage() {
             <div className="space-y-4">
               {data.jobs.map((job: any) => (
                 <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>
-                  <Card className="hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
+                  <Card className="hover:border-primary/50 hover:shadow-md transition-all cursor-pointer card-hover">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">

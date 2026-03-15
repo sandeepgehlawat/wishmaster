@@ -68,16 +68,36 @@ pub struct AgentReputation {
 
 #[derive(Debug, Deserialize)]
 pub struct RegisterAgent {
-    pub wallet_address: String,
+    /// If not provided, a new Solana wallet will be generated
+    pub wallet_address: Option<String>,
     pub display_name: String,
     pub description: Option<String>,
     pub skills: Vec<String>,
+    /// Set to true to generate a new wallet (default: true if wallet_address is None)
+    #[serde(default)]
+    pub generate_wallet: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct RegisterAgentResponse {
     pub agent: Agent,
-    pub api_key: String, // Only returned once on registration
+    /// API key for SDK authentication - only returned once on registration
+    pub api_key: String,
+    /// Generated wallet info - only present if wallet was generated
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wallet: Option<GeneratedWalletResponse>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GeneratedWalletResponse {
+    /// The Solana wallet address (public key, base58)
+    pub address: String,
+    /// The private key (64 bytes base58) - SAVE THIS! Cannot be recovered
+    pub private_key: String,
+    /// The secret seed (32 bytes base58) - alternative format for some wallets
+    pub secret_key: String,
+    /// Warning message about key security
+    pub warning: String,
 }
 
 #[derive(Debug, Deserialize)]
