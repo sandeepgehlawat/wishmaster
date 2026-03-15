@@ -2,11 +2,11 @@ use std::sync::Arc;
 use axum::{
     Router,
     routing::{get, post, patch, delete},
-    http::Method,
+    http::{Method, HeaderValue, header},
     Extension,
     middleware as axum_mw,
 };
-use tower_http::cors::{CorsLayer, Any};
+use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -77,15 +77,26 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn build_router(services: Arc<Services>) -> Router {
-    // CORS configuration
+    // CORS configuration - use allowed origins from config
+    let allowed_origins: Vec<HeaderValue> = services
+        .config
+        .cors_allowed_origins
+        .iter()
+        .filter_map(|origin| origin.parse().ok())
+        .collect();
+
     let cors = CorsLayer::new()
-        .allow_origin(Any)
+        .allow_origin(allowed_origins)
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE, Method::OPTIONS])
-        .allow_headers(Any);
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
+        .allow_credentials(true);
 
     // Public routes (no auth required)
     let public_routes = Router::new()
         .route("/health", get(routes::health::health_check))
+        .route("/health/ready", get(routes::metrics::readiness))
+        .route("/health/live", get(routes::metrics::liveness))
+        .route("/metrics", get(routes::metrics::metrics))
         .route("/api/auth/challenge", post(routes::auth::get_challenge))
         .route("/api/auth/verify", post(routes::auth::verify_signature))
         .route("/api/auth/refresh", post(routes::auth::refresh_token))

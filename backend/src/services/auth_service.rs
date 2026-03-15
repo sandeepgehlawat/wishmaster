@@ -179,3 +179,136 @@ impl AuthService {
         Self::hash_api_key(api_key) == hash
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_config() -> Config {
+        Config {
+            server_addr: "127.0.0.1:3001".to_string(),
+            database_url: "postgres://test:test@localhost/test".to_string(),
+            db_max_connections: 5,
+            redis_url: None,
+            jwt_secret: "test_secret_key_for_testing_purposes".to_string(),
+            jwt_expiry_hours: 24,
+            solana_rpc_url: None,
+            escrow_program_id: None,
+            usdc_mint: None,
+            platform_wallet: None,
+            fee_new_agent_bps: 1500,
+            fee_rising_agent_bps: 1200,
+            fee_established_agent_bps: 1000,
+            fee_top_rated_agent_bps: 800,
+            cors_allowed_origins: vec!["http://localhost:3000".to_string()],
+            rate_limit_requests_per_minute: 60,
+            rate_limit_burst: 10,
+        }
+    }
+
+    #[test]
+    fn test_challenge_generation() {
+        let auth = AuthService::new(test_config());
+        let wallet = "7xKXEePxzEQwvFdQdqGwq2hzTpxGqDkT8aN9JwSiNFt";
+
+        let (message, hash) = auth.generate_challenge(wallet);
+
+        assert!(message.contains("AgentHive"));
+        assert!(message.contains(wallet));
+        assert!(!hash.is_empty());
+        assert_eq!(hash.len(), 64); // SHA256 hex is 64 chars
+    }
+
+    #[test]
+    fn test_jwt_user_token_creation() {
+        let auth = AuthService::new(test_config());
+        let user_id = Uuid::new_v4();
+        let wallet = "7xKXEePxzEQwvFdQdqGwq2hzTpxGqDkT8aN9JwSiNFt";
+
+        let token = auth.create_user_token(user_id, wallet).unwrap();
+
+        assert!(!token.is_empty());
+        assert!(token.contains('.')); // JWT has 3 parts separated by dots
+    }
+
+    #[test]
+    fn test_jwt_agent_token_creation() {
+        let auth = AuthService::new(test_config());
+        let agent_id = Uuid::new_v4();
+        let wallet = "7xKXEePxzEQwvFdQdqGwq2hzTpxGqDkT8aN9JwSiNFt";
+
+        let token = auth.create_agent_token(agent_id, wallet).unwrap();
+
+        assert!(!token.is_empty());
+        let claims = auth.verify_token(&token).unwrap();
+        assert_eq!(claims.typ, "agent");
+        assert_eq!(claims.id, agent_id);
+    }
+
+    #[test]
+    fn test_jwt_verification() {
+        let auth = AuthService::new(test_config());
+        let user_id = Uuid::new_v4();
+        let wallet = "7xKXEePxzEQwvFdQdqGwq2hzTpxGqDkT8aN9JwSiNFt";
+
+        let token = auth.create_user_token(user_id, wallet).unwrap();
+        let claims = auth.verify_token(&token).unwrap();
+
+        assert_eq!(claims.sub, wallet);
+        assert_eq!(claims.typ, "user");
+        assert_eq!(claims.id, user_id);
+        assert!(claims.exp > Utc::now().timestamp());
+    }
+
+    #[test]
+    fn test_jwt_invalid_token() {
+        let auth = AuthService::new(test_config());
+
+        let result = auth.verify_token("invalid.token.here");
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_jwt_wrong_secret() {
+        let auth1 = AuthService::new(test_config());
+        let mut config2 = test_config();
+        config2.jwt_secret = "different_secret".to_string();
+        let auth2 = AuthService::new(config2);
+
+        let token = auth1.create_user_token(Uuid::new_v4(), "wallet").unwrap();
+        let result = auth2.verify_token(&token);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_api_key_generation() {
+        let key1 = AuthService::generate_api_key();
+        let key2 = AuthService::generate_api_key();
+
+        assert!(key1.starts_with("ahk_"));
+        assert!(key2.starts_with("ahk_"));
+        assert_ne!(key1, key2); // Should be unique
+        assert_eq!(key1.len(), 4 + 64); // "ahk_" + 32 bytes hex
+    }
+
+    #[test]
+    fn test_api_key_hashing() {
+        let api_key = AuthService::generate_api_key();
+        let hash = AuthService::hash_api_key(&api_key);
+
+        assert_eq!(hash.len(), 64); // SHA256 hex
+        assert!(AuthService::verify_api_key(&api_key, &hash));
+        assert!(!AuthService::verify_api_key("wrong_key", &hash));
+    }
+
+    #[test]
+    fn test_api_key_hash_consistency() {
+        let api_key = "ahk_test_key_12345";
+        let hash1 = AuthService::hash_api_key(api_key);
+        let hash2 = AuthService::hash_api_key(api_key);
+
+        assert_eq!(hash1, hash2);
+    }
+}

@@ -10,6 +10,7 @@ pub mod rating_service;
 pub mod reputation_service;
 pub mod wallet_service;
 pub mod cache_service;
+pub mod audit_service;
 
 use sqlx::PgPool;
 use crate::config::Config;
@@ -24,6 +25,7 @@ pub use rating_service::RatingService;
 pub use reputation_service::ReputationService;
 pub use wallet_service::WalletService;
 pub use cache_service::CacheService;
+pub use audit_service::{AuditService, AuditAction};
 
 pub struct Services {
     pub db: PgPool,
@@ -38,6 +40,7 @@ pub struct Services {
     pub ratings: RatingService,
     pub reputation: ReputationService,
     pub cache: CacheService,
+    pub audit: AuditService,
 }
 
 impl Services {
@@ -52,6 +55,7 @@ impl Services {
             ratings: RatingService::new(db.clone()),
             reputation: ReputationService::new(db.clone()),
             cache: CacheService::new(redis.clone()),
+            audit: AuditService::new(db.clone()),
             db,
             redis,
             config,

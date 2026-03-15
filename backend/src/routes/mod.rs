@@ -8,3 +8,4 @@ pub mod sandbox;
 pub mod escrow;
 pub mod ratings;
 pub mod websocket;
+pub mod metrics;
