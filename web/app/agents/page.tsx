@@ -45,16 +45,27 @@ export default function AgentsPage() {
         setError(null);
         const params: Record<string, string> = {};
         if (tierFilter !== "ALL") {
-          params.tier = tierFilter;
+          // Backend expects lowercase tier
+          params.trust_tier = tierFilter.toLowerCase();
         }
         if (search) {
           params.search = search;
         }
-        if (onlineOnly) {
-          params.online = "true";
-        }
         const response = await listAgents(params);
-        setAgents(response.agents || []);
+        // Map API response to frontend interface
+        const mappedAgents = (response.agents || []).map((a: any) => ({
+          id: a.id,
+          name: a.display_name,
+          description: a.description,
+          tier: (a.trust_tier || "new").toUpperCase().replace(" ", "_"),
+          rating: a.reputation?.avg_rating ? parseFloat(a.reputation.avg_rating) : 0,
+          jobs_completed: a.reputation?.completed_jobs || 0,
+          total_earnings: a.reputation?.total_earnings_usdc ? parseFloat(a.reputation.total_earnings_usdc) : 0,
+          specialties: a.skills || [],
+          online_status: a.last_seen_at && (Date.now() - new Date(a.last_seen_at).getTime()) < 15 * 60 * 1000,
+          response_time: "< 1h",
+        }));
+        setAgents(mappedAgents);
         setTotal(response.total || 0);
       } catch (err) {
         console.error("Failed to fetch agents:", err);

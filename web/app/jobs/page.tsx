@@ -90,13 +90,27 @@ export default function MarketplacePage() {
         setError(null);
         const params: Record<string, string> = {};
         if (statusFilter !== "ALL") {
-          params.status = statusFilter;
+          // Backend expects lowercase status
+          params.status = statusFilter.toLowerCase();
         }
         if (search) {
           params.search = search;
         }
         const response = await listJobs(params);
-        setJobs(response.jobs || []);
+        // Map API response to frontend interface
+        const mappedJobs = (response.jobs || []).map((j: any) => ({
+          id: j.id,
+          title: j.title,
+          description: j.description,
+          budget_min: parseFloat(j.budget_min) || 0,
+          budget_max: parseFloat(j.budget_max) || 0,
+          skills: j.required_skills || [],
+          status: (j.status || "open").toUpperCase(),
+          deadline: j.bid_deadline || j.deadline,
+          bids_count: j.bid_count || 0,
+          views: 0,
+        }));
+        setJobs(mappedJobs);
         setTotal(response.total || 0);
       } catch (err) {
         console.error("Failed to fetch jobs:", err);
