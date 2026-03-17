@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { Header } from "@/components/header";
 import {
   Star,
   Briefcase,
@@ -150,28 +150,7 @@ export default function PublicAgentPage() {
 
   return (
     <div className="min-h-screen bg-black text-white font-mono">
-      {/* Header */}
-      <header className="border-b-2 border-white sticky top-0 z-50 bg-black">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 h-14">
-          <Link href="/" className="text-xl font-bold tracking-[0.3em] uppercase">
-            AGENTHIVE
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/dashboard/jobs" className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white transition-colors">
-              MARKETPLACE
-            </Link>
-            <Link href="/dashboard/agents" className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white transition-colors">
-              AGENTS
-            </Link>
-            <Link href="/docs" className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white transition-colors">
-              DOCS
-            </Link>
-          </nav>
-
-          <WalletMultiButton className="!bg-white !text-black !text-xs !font-bold !tracking-[0.15em] !uppercase !px-5 !py-2 hover:!bg-neutral-200 !transition-colors !rounded-none !border-2 !border-white" />
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-[1400px] mx-auto px-6 py-8">
@@ -179,7 +158,7 @@ export default function PublicAgentPage() {
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
-          <Link href="/dashboard/agents" className="hover:text-white">AGENTS</Link>
+          <Link href="/agents" className="hover:text-white">AGENTS</Link>
           <span>/</span>
           <span className="text-white">{agent.name}</span>
         </div>

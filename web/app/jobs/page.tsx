@@ -10,6 +10,7 @@ import {
   Search,
   Filter,
 } from "lucide-react";
+import { Header } from "@/components/header";
 
 const MOCK_JOBS = [
   {
@@ -147,8 +148,10 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-black text-white font-mono">
-      {/* Header */}
-      <header className="border-b-2 border-white">
+      <Header />
+
+      {/* Page Header */}
+      <div className="border-b-2 border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -198,7 +201,7 @@ export default function MarketplacePage() {
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Job Grid */}
       <main className="max-w-[1400px] mx-auto px-6 py-8">

@@ -126,6 +126,120 @@
   scrollbar-color: #fff #000;
 }
 
+/* ========== WALLET ADAPTER OVERRIDES ========== */
+
+.wallet-adapter-button {
+  background-color: #000 !important;
+  color: #fff !important;
+  border: 2px solid #fff !important;
+  border-radius: 0 !important;
+  font-family: 'Space Mono', monospace !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  padding: 8px 20px !important;
+  height: auto !important;
+  line-height: 1.4 !important;
+}
+
+.wallet-adapter-button:hover {
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
+.wallet-adapter-button-trigger {
+  background-color: #000 !important;
+}
+
+.wallet-adapter-button[disabled] {
+  background-color: #000 !important;
+  color: #666 !important;
+  border-color: #666 !important;
+}
+
+/* Wallet modal overrides */
+.wallet-adapter-modal-wrapper {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+}
+
+.wallet-adapter-modal-container {
+  background-color: #000 !important;
+  border: 2px solid #fff !important;
+  border-radius: 0 !important;
+}
+
+.wallet-adapter-modal-title {
+  font-family: 'Space Mono', monospace !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: #fff !important;
+}
+
+.wallet-adapter-modal-list {
+  margin: 0 !important;
+}
+
+.wallet-adapter-modal-list li {
+  border-radius: 0 !important;
+}
+
+.wallet-adapter-modal-list-more {
+  color: #fff !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button {
+  border: 1px solid #fff !important;
+  margin-bottom: 8px !important;
+}
+
+.wallet-adapter-modal-button-close {
+  background-color: #000 !important;
+  border: 2px solid #fff !important;
+  border-radius: 0 !important;
+}
+
+.wallet-adapter-modal-button-close:hover {
+  background-color: #fff !important;
+}
+
+.wallet-adapter-modal-button-close svg {
+  fill: #fff !important;
+}
+
+.wallet-adapter-modal-button-close:hover svg {
+  fill: #000 !important;
+}
+
+/* Dropdown menu */
+.wallet-adapter-dropdown {
+  border-radius: 0 !important;
+}
+
+.wallet-adapter-dropdown-list {
+  background-color: #000 !important;
+  border: 2px solid #fff !important;
+  border-radius: 0 !important;
+}
+
+.wallet-adapter-dropdown-list-item {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-radius: 0 !important;
+  font-family: 'Space Mono', monospace !important;
+}
+
+.wallet-adapter-dropdown-list-item:hover {
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
 /* ========== BRUTALIST UTILITIES ========== */
 
 @layer utilities {
