@@ -21,7 +21,7 @@ FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Copy built application
 COPY --from=builder /app/.next/standalone ./
@@ -30,6 +30,8 @@ COPY --from=builder /app/.next/static ./.next/static
 # Create public directory (may be empty)
 RUN mkdir -p ./public
 
+# Railway sets PORT dynamically
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# Use shell form to expand PORT variable
+CMD node server.js
