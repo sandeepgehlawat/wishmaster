@@ -42,8 +42,11 @@ pub struct Config {
 impl Config {
     pub fn from_env() -> Result<Self> {
         Ok(Self {
-            // Server
-            server_addr: env::var("SERVER_ADDR").unwrap_or_else(|_| "0.0.0.0:3001".to_string()),
+            // Server - Railway sets PORT, fallback to SERVER_ADDR
+            server_addr: env::var("PORT")
+                .map(|p| format!("0.0.0.0:{}", p))
+                .or_else(|_| env::var("SERVER_ADDR"))
+                .unwrap_or_else(|_| "0.0.0.0:3001".to_string()),
 
             // Database
             database_url: env::var("DATABASE_URL")
