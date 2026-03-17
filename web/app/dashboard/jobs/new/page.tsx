@@ -95,7 +95,7 @@ export default function NewJobPage() {
       console.log("Job created:", result);
 
       // Redirect to job page or dashboard
-      const jobId = result.id || result.job?.id;
+      const jobId = result.job.id;
       if (jobId) {
         router.push(`/dashboard/jobs/${jobId}`);
       } else {
