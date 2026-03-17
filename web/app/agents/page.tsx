@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Cpu,
@@ -9,107 +9,23 @@ import {
   TrendingUp,
   Shield,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { Header } from "@/components/header";
+import { listAgents } from "@/lib/api";
 
-const MOCK_AGENTS = [
-  {
-    id: "a1",
-    name: "CODEMASTER_AI",
-    tier: "TOP_RATED",
-    rating: 4.9,
-    jobs: 156,
-    earnings: "45,200 USDC",
-    specialties: ["RUST", "SOLANA", "DEFI"],
-    description: "Expert in blockchain development with focus on Solana ecosystem.",
-    online: true,
-    responseTime: "< 5 min",
-  },
-  {
-    id: "a2",
-    name: "DATAWIZARD",
-    tier: "ESTABLISHED",
-    rating: 4.8,
-    jobs: 89,
-    earnings: "23,400 USDC",
-    specialties: ["PYTHON", "ML", "ETL"],
-    description: "Data pipeline specialist with machine learning expertise.",
-    online: true,
-    responseTime: "< 15 min",
-  },
-  {
-    id: "a3",
-    name: "RESEARCHBOT_PRO",
-    tier: "ESTABLISHED",
-    rating: 4.7,
-    jobs: 67,
-    earnings: "18,900 USDC",
-    specialties: ["NLP", "ANALYSIS", "PAPERS"],
-    description: "Academic research analysis and paper summarization expert.",
-    online: false,
-    responseTime: "< 1 hour",
-  },
-  {
-    id: "a4",
-    name: "SECUREAUDIT_V2",
-    tier: "RISING",
-    rating: 4.9,
-    jobs: 34,
-    earnings: "28,600 USDC",
-    specialties: ["AUDIT", "SECURITY", "CONTRACTS"],
-    description: "Smart contract security auditor with formal verification skills.",
-    online: true,
-    responseTime: "< 30 min",
-  },
-  {
-    id: "a5",
-    name: "DOCWRITER_ELITE",
-    tier: "TOP_RATED",
-    rating: 4.8,
-    jobs: 203,
-    earnings: "31,500 USDC",
-    specialties: ["DOCS", "API", "TECHNICAL"],
-    description: "Technical documentation specialist for APIs and SDKs.",
-    online: true,
-    responseTime: "< 10 min",
-  },
-  {
-    id: "a6",
-    name: "TRADINGBOT_X",
-    tier: "RISING",
-    rating: 4.6,
-    jobs: 28,
-    earnings: "15,200 USDC",
-    specialties: ["TRADING", "BOTS", "DeFi"],
-    description: "Automated trading systems and DeFi integration specialist.",
-    online: false,
-    responseTime: "< 2 hours",
-  },
-  {
-    id: "a7",
-    name: "FRONTEND_NINJA",
-    tier: "ESTABLISHED",
-    rating: 4.7,
-    jobs: 112,
-    earnings: "29,800 USDC",
-    specialties: ["REACT", "NEXTJS", "WEB3"],
-    description: "Modern frontend development with Web3 integration expertise.",
-    online: true,
-    responseTime: "< 20 min",
-  },
-  {
-    id: "a8",
-    name: "MLOPS_AGENT",
-    tier: "NEW",
-    rating: 4.5,
-    jobs: 12,
-    earnings: "8,400 USDC",
-    specialties: ["ML", "DEVOPS", "CLOUD"],
-    description: "MLOps and cloud infrastructure automation specialist.",
-    online: true,
-    responseTime: "< 45 min",
-  },
-];
+interface Agent {
+  id: string;
+  name: string;
+  description?: string;
+  tier: string;
+  rating?: number;
+  jobs_completed?: number;
+  total_earnings?: number;
+  specialties: string[];
+  online_status?: boolean;
+  response_time?: string;
+}
 
 const TIERS = ["ALL", "TOP_RATED", "ESTABLISHED", "RISING", "NEW"];
 
@@ -117,23 +33,51 @@ export default function AgentsPage() {
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState("ALL");
   const [onlineOnly, setOnlineOnly] = useState(false);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
 
-  const filteredAgents = MOCK_AGENTS.filter((agent) => {
-    const matchesSearch = !search ||
-      agent.name.toLowerCase().includes(search.toLowerCase()) ||
-      agent.specialties.some(s => s.toLowerCase().includes(search.toLowerCase()));
-    const matchesTier = tierFilter === "ALL" || agent.tier === tierFilter;
-    const matchesOnline = !onlineOnly || agent.online;
-    return matchesSearch && matchesTier && matchesOnline;
-  });
+  useEffect(() => {
+    async function fetchAgents() {
+      try {
+        setLoading(true);
+        setError(null);
+        const params: Record<string, string> = {};
+        if (tierFilter !== "ALL") {
+          params.tier = tierFilter;
+        }
+        if (search) {
+          params.search = search;
+        }
+        if (onlineOnly) {
+          params.online = "true";
+        }
+        const response = await listAgents(params);
+        setAgents(response.agents || []);
+        setTotal(response.total || 0);
+      } catch (err) {
+        console.error("Failed to fetch agents:", err);
+        setError("Failed to load agents");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAgents();
+  }, [tierFilter, search, onlineOnly]);
 
-  const onlineCount = MOCK_AGENTS.filter(a => a.online).length;
+  const onlineCount = agents.filter(a => a.online_status).length;
 
   const tierColors: Record<string, string> = {
     TOP_RATED: "border-yellow-400 text-yellow-400",
     ESTABLISHED: "border-green-400 text-green-400",
     RISING: "border-cyan-400 text-cyan-400",
     NEW: "border-white/50 text-white/50",
+  };
+
+  const formatEarnings = (earnings?: number) => {
+    if (!earnings) return "0 USDC";
+    return `${earnings.toLocaleString()} USDC`;
   };
 
   return (
@@ -150,7 +94,7 @@ export default function AgentsPage() {
                 <h1 className="text-2xl font-bold tracking-wider">AGENTS</h1>
               </div>
               <p className="text-sm text-white/50">
-                {MOCK_AGENTS.length} REGISTERED • {onlineCount} ONLINE NOW
+                {total} REGISTERED • {onlineCount} ONLINE NOW
               </p>
             </div>
             <Link
@@ -207,67 +151,85 @@ export default function AgentsPage() {
 
       {/* Agent Grid */}
       <main className="max-w-[1400px] mx-auto px-6 py-8">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredAgents.map((agent) => (
-            <Link
-              key={agent.id}
-              href={`/agents/${agent.id}`}
-              className="block border-2 border-white p-5 hover:bg-white hover:text-black transition-colors group"
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+            <span className="ml-3 text-white/50">LOADING AGENTS...</span>
+          </div>
+        ) : error ? (
+          <div className="border-2 border-red-500 p-12 text-center">
+            <p className="text-red-500 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
             >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold tracking-wider">{agent.name}</span>
-                    {agent.online && (
-                      <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                    )}
+              [RETRY]
+            </button>
+          </div>
+        ) : agents.length > 0 ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {agents.map((agent) => (
+              <Link
+                key={agent.id}
+                href={`/agents/${agent.id}`}
+                className="block border-2 border-white p-5 hover:bg-white hover:text-black transition-colors group"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold tracking-wider">{agent.name}</span>
+                      {agent.online_status && (
+                        <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                      )}
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 border ${tierColors[agent.tier] || tierColors.NEW}`}>
+                      {agent.tier.replace("_", " ")}
+                    </span>
                   </div>
-                  <span className={`text-[10px] px-2 py-0.5 border ${tierColors[agent.tier]}`}>
-                    {agent.tier.replace("_", " ")}
+                  <div className="text-right">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 group-hover:text-yellow-600 group-hover:fill-yellow-600" />
+                      <span className="font-bold">{agent.rating?.toFixed(1) || "N/A"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-xs text-white/60 group-hover:text-black/60 mb-4 line-clamp-2">
+                  {agent.description || "AI agent ready to work"}
+                </p>
+
+                {/* Skills */}
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {(agent.specialties || []).slice(0, 4).map((skill) => (
+                    <span
+                      key={skill}
+                      className="text-[10px] px-2 py-0.5 border border-white/30 group-hover:border-black/30"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center justify-between pt-3 border-t border-white/20 group-hover:border-black/20 text-xs">
+                  <span className="text-white/50 group-hover:text-black/50">
+                    {agent.jobs_completed || 0} JOBS
+                  </span>
+                  <span className="text-green-400 group-hover:text-green-700 font-bold">
+                    {formatEarnings(agent.total_earnings)}
                   </span>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 group-hover:text-yellow-600 group-hover:fill-yellow-600" />
-                    <span className="font-bold">{agent.rating}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-white/60 group-hover:text-black/60 mb-4 line-clamp-2">
-                {agent.description}
-              </p>
-
-              {/* Skills */}
-              <div className="flex flex-wrap gap-1 mb-4">
-                {agent.specialties.map((skill) => (
-                  <span
-                    key={skill}
-                    className="text-[10px] px-2 py-0.5 border border-white/30 group-hover:border-black/30"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center justify-between pt-3 border-t border-white/20 group-hover:border-black/20 text-xs">
-                <span className="text-white/50 group-hover:text-black/50">
-                  {agent.jobs} JOBS
-                </span>
-                <span className="text-green-400 group-hover:text-green-700 font-bold">
-                  {agent.earnings}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {filteredAgents.length === 0 && (
+              </Link>
+            ))}
+          </div>
+        ) : (
           <div className="border-2 border-white p-12 text-center">
-            <p className="text-white/60">NO_AGENTS_FOUND</p>
+            <p className="text-white/60 mb-4">NO_AGENTS_FOUND</p>
+            <p className="text-white/40 text-sm">
+              No agents registered yet. Check back soon!
+            </p>
           </div>
         )}
       </main>

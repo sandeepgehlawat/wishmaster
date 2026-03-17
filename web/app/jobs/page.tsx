@@ -9,101 +9,44 @@ import {
   Activity,
   Search,
   Filter,
+  Loader2,
 } from "lucide-react";
 import { Header } from "@/components/header";
+import { listJobs } from "@/lib/api";
 
-const MOCK_JOBS = [
-  {
-    id: "1",
-    title: "BUILD TELEGRAM TRADING BOT",
-    description: "Create a high-frequency trading bot with Telegram integration for real-time alerts.",
-    budget: "500-1500 USDC",
-    skills: ["RUST", "API", "TRADING"],
-    status: "BIDDING",
-    timeLeft: "02:34:15",
-    bids: 8,
-    views: 234,
-  },
-  {
-    id: "2",
-    title: "AI RESEARCH PAPER ANALYSIS",
-    description: "Analyze and summarize 50 ML research papers with key insights extraction.",
-    budget: "200-400 USDC",
-    skills: ["NLP", "RESEARCH", "PYTHON"],
-    status: "OPEN",
-    timeLeft: "18:12:44",
-    bids: 4,
-    views: 156,
-  },
-  {
-    id: "3",
-    title: "SMART CONTRACT AUDIT",
-    description: "Comprehensive security audit of DeFi lending protocol on Solana.",
-    budget: "1000-3000 USDC",
-    skills: ["SOLIDITY", "SECURITY", "DEFI"],
-    status: "BIDDING",
-    timeLeft: "04:55:02",
-    bids: 12,
-    views: 489,
-  },
-  {
-    id: "4",
-    title: "TECHNICAL API DOCUMENTATION",
-    description: "Write comprehensive API docs with examples for REST and GraphQL endpoints.",
-    budget: "150-300 USDC",
-    skills: ["DOCS", "REST", "OPENAPI"],
-    status: "OPEN",
-    timeLeft: "23:08:33",
-    bids: 6,
-    views: 98,
-  },
-  {
-    id: "5",
-    title: "DATA PIPELINE ETL SYSTEM",
-    description: "Build scalable ETL pipeline processing 1M+ records daily.",
-    budget: "400-800 USDC",
-    skills: ["ETL", "SQL", "PYTHON"],
-    status: "BIDDING",
-    timeLeft: "11:22:07",
-    bids: 3,
-    views: 187,
-  },
-  {
-    id: "6",
-    title: "NFT MARKETPLACE FRONTEND",
-    description: "React-based NFT marketplace with Solana wallet integration.",
-    budget: "600-1200 USDC",
-    skills: ["REACT", "WEB3", "SOLANA"],
-    status: "OPEN",
-    timeLeft: "06:45:19",
-    bids: 9,
-    views: 312,
-  },
-  {
-    id: "7",
-    title: "DISCORD MODERATION BOT",
-    description: "AI-powered Discord bot for community moderation and engagement.",
-    budget: "200-500 USDC",
-    skills: ["DISCORD", "AI", "NODE"],
-    status: "BIDDING",
-    timeLeft: "15:30:00",
-    bids: 5,
-    views: 145,
-  },
-  {
-    id: "8",
-    title: "TOKENOMICS SIMULATOR",
-    description: "Build a Monte Carlo simulation for token economics modeling.",
-    budget: "800-1500 USDC",
-    skills: ["PYTHON", "FINANCE", "SIMULATION"],
-    status: "OPEN",
-    timeLeft: "48:00:00",
-    bids: 2,
-    views: 267,
-  },
-];
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  budget_min?: number;
+  budget_max?: number;
+  budget?: string;
+  skills: string[];
+  status: string;
+  deadline?: string;
+  bids_count?: number;
+  views?: number;
+}
 
-const CATEGORIES = ["ALL", "DEVELOPMENT", "SECURITY", "DATA", "DOCS", "TRADING"];
+function formatBudget(job: Job): string {
+  if (job.budget) return job.budget;
+  if (job.budget_min && job.budget_max) {
+    return `${job.budget_min}-${job.budget_max} USDC`;
+  }
+  return "TBD";
+}
+
+function getTimeLeft(deadline?: string): string {
+  if (!deadline) return "48:00:00";
+  const now = new Date();
+  const end = new Date(deadline);
+  const diff = end.getTime() - now.getTime();
+  if (diff <= 0) return "00:00:00";
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 
 function LiveTimer({ initial }: { initial: string }) {
   const [parts, setParts] = useState(() => initial.split(":").map(Number));
@@ -134,17 +77,39 @@ function LiveTimer({ initial }: { initial: string }) {
 
 export default function MarketplacePage() {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "OPEN" | "BIDDING">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "OPEN" | "BIDDING" | "IN_PROGRESS">("ALL");
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
 
-  const filteredJobs = MOCK_JOBS.filter((job) => {
-    const matchesSearch = !search || job.title.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "ALL" || job.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    async function fetchJobs() {
+      try {
+        setLoading(true);
+        setError(null);
+        const params: Record<string, string> = {};
+        if (statusFilter !== "ALL") {
+          params.status = statusFilter;
+        }
+        if (search) {
+          params.search = search;
+        }
+        const response = await listJobs(params);
+        setJobs(response.jobs || []);
+        setTotal(response.total || 0);
+      } catch (err) {
+        console.error("Failed to fetch jobs:", err);
+        setError("Failed to load jobs");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchJobs();
+  }, [statusFilter, search]);
 
-  const totalBids = MOCK_JOBS.reduce((sum, j) => sum + j.bids, 0);
-  const liveJobs = MOCK_JOBS.length;
+  const totalBids = jobs.reduce((sum, j) => sum + (j.bids_count || 0), 0);
+  const liveJobs = jobs.length;
 
   return (
     <div className="min-h-screen bg-black text-white font-mono">
@@ -161,7 +126,7 @@ export default function MarketplacePage() {
                 <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
               </div>
               <p className="text-sm text-white/50">
-                {liveJobs} LIVE JOBS • {totalBids} TOTAL BIDS
+                {total} LIVE JOBS • {totalBids} TOTAL BIDS
               </p>
             </div>
             <Link
@@ -185,7 +150,7 @@ export default function MarketplacePage() {
               />
             </div>
             <div className="flex gap-2">
-              {(["ALL", "OPEN", "BIDDING"] as const).map((status) => (
+              {(["ALL", "OPEN", "BIDDING", "IN_PROGRESS"] as const).map((status) => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
@@ -195,7 +160,7 @@ export default function MarketplacePage() {
                       : "border-white/50 text-white/50 hover:border-white hover:text-white"
                   }`}
                 >
-                  {status}
+                  {status.replace("_", " ")}
                 </button>
               ))}
             </div>
@@ -205,64 +170,80 @@ export default function MarketplacePage() {
 
       {/* Job Grid */}
       <main className="max-w-[1400px] mx-auto px-6 py-8">
-        <div className="grid md:grid-cols-2 gap-4">
-          {filteredJobs.map((job) => (
-            <Link
-              key={job.id}
-              href={`/jobs/${job.id}`}
-              className="block border-2 border-white p-5 hover:bg-white hover:text-black transition-colors group"
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+            <span className="ml-3 text-white/50">LOADING JOBS...</span>
+          </div>
+        ) : error ? (
+          <div className="border-2 border-red-500 p-12 text-center">
+            <p className="text-red-500 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
             >
-              <div className="flex items-center justify-between mb-3">
-                <span
-                  className={`text-xs px-2 py-0.5 border ${
-                    job.status === "BIDDING"
-                      ? "border-green-400 text-green-400 group-hover:border-green-700 group-hover:text-green-700"
-                      : "border-white text-white group-hover:border-black group-hover:text-black"
-                  }`}
-                >
-                  {job.status}
-                </span>
-                <div className="flex items-center gap-4 text-xs text-white/50 group-hover:text-black/50">
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {job.bids} BIDS
-                  </span>
-                  <span>{job.views} VIEWS</span>
-                </div>
-              </div>
-
-              <h2 className="text-lg font-bold tracking-wider mb-2">{job.title}</h2>
-              <p className="text-sm text-white/60 group-hover:text-black/60 mb-4 line-clamp-2">
-                {job.description}
-              </p>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {job.skills.map((skill) => (
+              [RETRY]
+            </button>
+          </div>
+        ) : jobs.length > 0 ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            {jobs.map((job) => (
+              <Link
+                key={job.id}
+                href={`/jobs/${job.id}`}
+                className="block border-2 border-white p-5 hover:bg-white hover:text-black transition-colors group"
+              >
+                <div className="flex items-center justify-between mb-3">
                   <span
-                    key={skill}
-                    className="text-[10px] px-2 py-0.5 border border-white/50 group-hover:border-black/50"
+                    className={`text-xs px-2 py-0.5 border ${
+                      job.status === "BIDDING" || job.status === "OPEN"
+                        ? "border-green-400 text-green-400 group-hover:border-green-700 group-hover:text-green-700"
+                        : "border-white text-white group-hover:border-black group-hover:text-black"
+                    }`}
                   >
-                    {skill}
+                    {job.status}
                   </span>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-white/20 group-hover:border-black/20">
-                <span className="text-lg font-bold text-green-400 group-hover:text-green-700">
-                  {job.budget}
-                </span>
-                <div className="flex items-center gap-2 text-xs">
-                  <Clock className="h-3 w-3" />
-                  <LiveTimer initial={job.timeLeft} />
+                  <div className="flex items-center gap-4 text-xs text-white/50 group-hover:text-black/50">
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {job.bids_count || 0} BIDS
+                    </span>
+                    <span>{job.views || 0} VIEWS</span>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
 
-        {filteredJobs.length === 0 && (
+                <h2 className="text-lg font-bold tracking-wider mb-2">{job.title}</h2>
+                <p className="text-sm text-white/60 group-hover:text-black/60 mb-4 line-clamp-2">
+                  {job.description}
+                </p>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {(job.skills || []).map((skill) => (
+                    <span
+                      key={skill}
+                      className="text-[10px] px-2 py-0.5 border border-white/50 group-hover:border-black/50"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-white/20 group-hover:border-black/20">
+                  <span className="text-lg font-bold text-green-400 group-hover:text-green-700">
+                    {formatBudget(job)}
+                  </span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <Clock className="h-3 w-3" />
+                    <LiveTimer initial={getTimeLeft(job.deadline)} />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
           <div className="border-2 border-white p-12 text-center">
             <p className="text-white/60 mb-4">NO_JOBS_FOUND</p>
+            <p className="text-white/40 text-sm mb-6">Be the first to post a job on AgentHive</p>
             <Link
               href="/dashboard/jobs/new"
               className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block"
