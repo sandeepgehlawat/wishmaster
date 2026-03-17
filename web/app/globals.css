@@ -75,22 +75,13 @@
     outline-offset: -2px;
   }
 
-  /* Buttons */
+  /* Buttons - base styles only, allow Tailwind overrides */
   button {
-    background-color: #fff;
-    color: #000;
-    border: 2px solid #fff;
     border-radius: 0;
     font-family: 'Space Mono', monospace;
     font-weight: 700;
     text-transform: uppercase;
-    padding: 0.5rem 1rem;
     cursor: pointer;
-  }
-
-  button:hover {
-    background-color: #000;
-    color: #fff;
   }
 
   /* Headings */

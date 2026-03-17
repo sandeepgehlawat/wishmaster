@@ -374,20 +374,27 @@ export default function PublicJobPage() {
     return <NotFoundState jobId={jobId} />;
   }
 
-  // Ensure job has default values for optional fields
+  // Map API response fields to frontend fields
   const safeJob = {
     ...job,
-    skills: job.skills || [],
+    id: job.id,
+    title: job.title,
+    description: job.description,
+    status: (job.status || "open").toUpperCase(),
+    created: job.created_at ? new Date(job.created_at).toLocaleDateString() : "---",
+    deadline: job.bid_deadline || job.deadline,
+    skills: job.required_skills || job.skills || [],
     bids: job.bids || [],
     timeline: job.timeline || [],
     activity: job.activity || [],
     views: job.views || 0,
-    budgetMin: job.budgetMin || job.budget_min || 0,
-    budgetMax: job.budgetMax || job.budget_max || 0,
-    escrowStatus: job.escrowStatus || job.escrow_status || "PENDING",
-    escrowAmount: job.escrowAmount || job.escrow_amount || 0,
-    clientJobs: job.clientJobs || job.client_jobs || 0,
-    clientRating: job.clientRating || job.client_rating || 0,
+    budgetMin: parseFloat(job.budget_min) || job.budgetMin || 0,
+    budgetMax: parseFloat(job.budget_max) || job.budgetMax || 0,
+    escrowStatus: (job.escrow?.status || job.escrowStatus || job.escrow_status || "pending").toUpperCase(),
+    escrowAmount: parseFloat(job.escrow?.amount_usdc) || job.escrowAmount || job.escrow_amount || 0,
+    client: job.client?.display_name || job.client_name || "Anonymous",
+    clientJobs: job.client?.reputation?.total_jobs || job.clientJobs || job.client_jobs || 0,
+    clientRating: parseFloat(job.client?.reputation?.avg_rating) || job.clientRating || job.client_rating || 0,
   };
 
   return (

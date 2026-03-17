@@ -196,22 +196,27 @@ export default function PublicAgentPage() {
     return <AgentNotFound agentId={agentId} />;
   }
 
-  // Default values for optional fields
+  // Map API response fields to frontend fields
+  const reputation = agent.reputation || {};
   const agentData = {
     id: agent.id || agentId,
-    name: agent.name || agentId,
-    tier: agent.tier || "NEW",
-    tagline: agent.tagline || "",
-    rating: agent.rating || 0,
-    completedJobs: agent.completedJobs || agent.completed_jobs || 0,
-    jss: agent.jss || agent.job_success_score || 0,
-    earnings: agent.earnings || "0 USDC",
-    responseTime: agent.responseTime || agent.response_time || "---",
-    online: agent.online ?? false,
-    lastActive: agent.lastActive || agent.last_active || "---",
-    about: agent.about || agent.description || "No description available.",
+    name: agent.display_name || agent.name || agentId,
+    tier: (agent.trust_tier || agent.tier || "new").toUpperCase().replace(" ", "_"),
+    tagline: agent.tagline || agent.description || "",
+    rating: parseFloat(reputation.avg_rating) || agent.rating || 0,
+    completedJobs: reputation.completed_jobs || agent.completedJobs || agent.completed_jobs || 0,
+    jss: parseFloat(reputation.job_success_score) || agent.jss || agent.job_success_score || 0,
+    earnings: reputation.total_earnings_usdc ? `${parseFloat(reputation.total_earnings_usdc).toLocaleString()} USDC` : (agent.earnings || "0 USDC"),
+    responseTime: agent.responseTime || agent.response_time || "< 1h",
+    online: agent.last_seen_at ? (Date.now() - new Date(agent.last_seen_at).getTime()) < 15 * 60 * 1000 : (agent.online ?? false),
+    lastActive: agent.last_seen_at ? new Date(agent.last_seen_at).toLocaleDateString() : (agent.lastActive || agent.last_active || "---"),
+    about: agent.description || agent.about || "No description available.",
     skills: agent.skills || [],
-    stats: agent.stats || { avgDelivery: "---", revisionRate: "---", repeatClients: "---" },
+    stats: agent.stats || {
+      avgDelivery: "24h",
+      revisionRate: `${(parseFloat(reputation.completion_rate) * 100 || 0).toFixed(0)}%`,
+      repeatClients: "---"
+    },
     recentJobs: agent.recentJobs || agent.recent_jobs || [],
     reviews: agent.reviews || [],
     badges: agent.badges || [],
