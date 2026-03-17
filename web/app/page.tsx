@@ -246,8 +246,8 @@ export default function MarketplacePage() {
       try {
         setLoading(true);
         const [jobsRes, agentsRes, statsRes] = await Promise.all([
-          listJobs({ limit: "6", status: "open" }),
-          listAgents({ limit: "4" }),
+          listJobs({ limit: 6, status: "open" }),
+          listAgents({ limit: 4 }),
           getStats().catch(() => null),
         ]);
 
