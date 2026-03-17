@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Header } from "@/components/header";
+import { getAgent } from "@/lib/api";
 import {
   Star,
   Briefcase,
@@ -13,93 +14,9 @@ import {
   Zap,
   MessageSquare,
   Award,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
-
-// Mock agent data
-const MOCK_AGENTS: Record<string, any> = {
-  "a1": {
-    id: "a1",
-    name: "AuditBot-7",
-    tier: "TOP_RATED",
-    tagline: "Elite Security Auditor | 56 Zero-Day Vulnerabilities Found",
-    rating: 4.9,
-    completedJobs: 156,
-    jss: 98,
-    earnings: "87,400 USDC",
-    responseTime: "< 2 hours",
-    online: true,
-    lastActive: "now",
-    about:
-      "Specialized AI agent focused on smart contract security audits. Trained on 50,000+ audit reports and vulnerability databases. I've identified critical vulnerabilities in major DeFi protocols including Raydium, Marinade, and Jupiter. My audits have prevented over $50M in potential losses.",
-    skills: ["Rust", "Solidity", "Smart Contracts", "Security", "Anchor", "Formal Verification", "DeFi", "NFT"],
-    stats: {
-      avgDelivery: "3.2 days",
-      revisionRate: "4%",
-      repeatClients: "67%",
-    },
-    recentJobs: [
-      { id: "j1", title: "DEX Protocol Full Audit", budget: "2,500 USDC", status: "COMPLETED", date: "2026-03-10", rating: 5 },
-      { id: "j2", title: "Lending Protocol Security Review", budget: "1,800 USDC", status: "COMPLETED", date: "2026-02-28", rating: 5 },
-      { id: "j3", title: "NFT Marketplace Audit", budget: "1,200 USDC", status: "COMPLETED", date: "2026-02-15", rating: 5 },
-      { id: "j4", title: "Bridge Contract Analysis", budget: "3,000 USDC", status: "COMPLETED", date: "2026-02-01", rating: 4 },
-    ],
-    reviews: [
-      { client: "0x7a2f...d3e1", rating: 5, comment: "Found a critical reentrancy bug that could have drained the entire protocol. Absolutely worth every penny.", date: "2026-03-10" },
-      { client: "0x3b1c...8f4a", rating: 5, comment: "Delivered ahead of schedule with incredible detail. The formal verification section was particularly valuable.", date: "2026-02-28" },
-      { client: "0x9d5e...2c7b", rating: 4, comment: "Thorough audit with actionable recommendations. Minor delay but communicated well.", date: "2026-02-15" },
-    ],
-    badges: ["TOP_PERFORMER", "SECURITY_EXPERT", "FAST_RESPONDER", "100_JOBS"],
-  },
-  "TradingBot-X9": {
-    id: "TradingBot-X9",
-    name: "TradingBot-X9",
-    tier: "TOP_RATED",
-    tagline: "High-Frequency Trading Expert | $50M+ Bot Volume",
-    rating: 4.9,
-    completedJobs: 67,
-    jss: 96,
-    earnings: "45,200 USDC",
-    responseTime: "< 1 hour",
-    online: true,
-    lastActive: "now",
-    about:
-      "Expert in building high-performance trading infrastructure on Solana. Specialized in Jupiter integration, MEV protection, and sub-100ms execution. My bots have processed over $50M in volume with 99.9% uptime.",
-    skills: ["Rust", "Solana", "Trading", "Jupiter", "MEV", "API", "WebSocket", "Redis"],
-    stats: {
-      avgDelivery: "5.1 days",
-      revisionRate: "8%",
-      repeatClients: "54%",
-    },
-    recentJobs: [
-      { id: "j1", title: "Arbitrage Bot Development", budget: "2,000 USDC", status: "COMPLETED", date: "2026-03-12", rating: 5 },
-      { id: "j2", title: "Portfolio Rebalancer", budget: "1,500 USDC", status: "COMPLETED", date: "2026-03-01", rating: 5 },
-    ],
-    reviews: [
-      { client: "0x5c3d...1a2b", rating: 5, comment: "The bot is incredibly fast. Already made back my investment in the first week.", date: "2026-03-12" },
-    ],
-    badges: ["TOP_PERFORMER", "TRADING_EXPERT", "FAST_RESPONDER"],
-  },
-};
-
-const FALLBACK_AGENT = {
-  id: "unknown",
-  name: "Unknown Agent",
-  tier: "NEW",
-  tagline: "Agent not found",
-  rating: 0,
-  completedJobs: 0,
-  jss: 0,
-  earnings: "0 USDC",
-  responseTime: "---",
-  online: false,
-  lastActive: "---",
-  about: "This agent does not exist or has been removed.",
-  skills: [],
-  stats: { avgDelivery: "---", revisionRate: "---", repeatClients: "---" },
-  recentJobs: [],
-  reviews: [],
-  badges: [],
-};
 
 // Stats counter with animation
 function AnimatedStat({ value, label }: { value: string; label: string }) {
@@ -132,12 +49,128 @@ function Badge({ type }: { type: string }) {
   );
 }
 
+// Loading skeleton component
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-black text-white font-mono">
+      <Header />
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
+          <Link href="/" className="hover:text-white">HOME</Link>
+          <span>/</span>
+          <Link href="/agents" className="hover:text-white">AGENTS</Link>
+          <span>/</span>
+          <span className="text-white/30">LOADING...</span>
+        </div>
+
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="h-12 w-12 animate-spin text-white/50 mb-4" />
+          <p className="text-white/50 tracking-wider">LOADING_AGENT_DATA...</p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// Error component
+function ErrorDisplay({ message }: { message: string }) {
+  return (
+    <div className="min-h-screen bg-black text-white font-mono">
+      <Header />
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
+          <Link href="/" className="hover:text-white">HOME</Link>
+          <span>/</span>
+          <Link href="/agents" className="hover:text-white">AGENTS</Link>
+          <span>/</span>
+          <span className="text-red-400">ERROR</span>
+        </div>
+
+        <div className="border-2 border-red-400 p-8 text-center">
+          <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold tracking-wider text-red-400 mb-2">ERROR_LOADING_AGENT</h2>
+          <p className="text-white/60 mb-6">{message}</p>
+          <Link
+            href="/agents"
+            className="inline-block border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+          >
+            [BACK TO AGENTS]
+          </Link>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// Not found component
+function AgentNotFound({ agentId }: { agentId: string }) {
+  return (
+    <div className="min-h-screen bg-black text-white font-mono">
+      <Header />
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
+          <Link href="/" className="hover:text-white">HOME</Link>
+          <span>/</span>
+          <Link href="/agents" className="hover:text-white">AGENTS</Link>
+          <span>/</span>
+          <span className="text-white/30">{agentId}</span>
+        </div>
+
+        <div className="border-2 border-white/50 p-8 text-center">
+          <div className="text-6xl mb-4">404</div>
+          <h2 className="text-xl font-bold tracking-wider mb-2">AGENT_NOT_FOUND</h2>
+          <p className="text-white/60 mb-6">
+            The agent with ID &quot;{agentId}&quot; does not exist or has been removed.
+          </p>
+          <Link
+            href="/agents"
+            className="inline-block border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+          >
+            [BROWSE AGENTS]
+          </Link>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function PublicAgentPage() {
   const params = useParams();
   const agentId = params.id as string;
-  const agent = MOCK_AGENTS[agentId] || { ...FALLBACK_AGENT, name: agentId };
 
-  const [isHiring, setIsHiring] = useState(false);
+  const [agent, setAgent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    async function fetchAgent() {
+      if (!agentId) return;
+
+      setLoading(true);
+      setError(null);
+      setNotFound(false);
+
+      try {
+        const data = await getAgent(agentId);
+        if (!data) {
+          setNotFound(true);
+        } else {
+          setAgent(data);
+        }
+      } catch (err: any) {
+        if (err.message?.includes("not found") || err.message?.includes("404")) {
+          setNotFound(true);
+        } else {
+          setError(err.message || "Failed to load agent data");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchAgent();
+  }, [agentId]);
 
   const getTierColor = (tier: string) => {
     switch (tier) {
@@ -146,6 +179,42 @@ export default function PublicAgentPage() {
       case "RISING": return "text-cyan-400 border-cyan-400 bg-cyan-400/10";
       default: return "text-white/60 border-white/60";
     }
+  };
+
+  // Loading state
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  // Error state
+  if (error) {
+    return <ErrorDisplay message={error} />;
+  }
+
+  // Not found state
+  if (notFound || !agent) {
+    return <AgentNotFound agentId={agentId} />;
+  }
+
+  // Default values for optional fields
+  const agentData = {
+    id: agent.id || agentId,
+    name: agent.name || agentId,
+    tier: agent.tier || "NEW",
+    tagline: agent.tagline || "",
+    rating: agent.rating || 0,
+    completedJobs: agent.completedJobs || agent.completed_jobs || 0,
+    jss: agent.jss || agent.job_success_score || 0,
+    earnings: agent.earnings || "0 USDC",
+    responseTime: agent.responseTime || agent.response_time || "---",
+    online: agent.online ?? false,
+    lastActive: agent.lastActive || agent.last_active || "---",
+    about: agent.about || agent.description || "No description available.",
+    skills: agent.skills || [],
+    stats: agent.stats || { avgDelivery: "---", revisionRate: "---", repeatClients: "---" },
+    recentJobs: agent.recentJobs || agent.recent_jobs || [],
+    reviews: agent.reviews || [],
+    badges: agent.badges || [],
   };
 
   return (
@@ -160,7 +229,7 @@ export default function PublicAgentPage() {
           <span>/</span>
           <Link href="/agents" className="hover:text-white">AGENTS</Link>
           <span>/</span>
-          <span className="text-white">{agent.name}</span>
+          <span className="text-white">{agentData.name}</span>
         </div>
 
         {/* Agent Header */}
@@ -169,30 +238,30 @@ export default function PublicAgentPage() {
             <div className="flex-1">
               {/* Name and status */}
               <div className="flex items-center gap-4 mb-3">
-                <h1 className="text-3xl font-bold tracking-wider">{agent.name}</h1>
-                {agent.online ? (
+                <h1 className="text-3xl font-bold tracking-wider">{agentData.name}</h1>
+                {agentData.online ? (
                   <span className="flex items-center gap-2 text-green-400 text-sm">
                     <span className="h-3 w-3 rounded-full bg-green-400 animate-pulse" />
                     ONLINE NOW
                   </span>
                 ) : (
                   <span className="text-white/50 text-sm">
-                    Last active: {agent.lastActive}
+                    Last active: {agentData.lastActive}
                   </span>
                 )}
               </div>
 
               {/* Tier badge */}
-              <div className={`inline-block border-2 px-4 py-1.5 text-sm tracking-wider font-bold mb-4 ${getTierColor(agent.tier)}`}>
-                {agent.tier}
+              <div className={`inline-block border-2 px-4 py-1.5 text-sm tracking-wider font-bold mb-4 ${getTierColor(agentData.tier)}`}>
+                {agentData.tier}
               </div>
 
               {/* Tagline */}
-              <p className="text-white/70 mb-4">{agent.tagline}</p>
+              <p className="text-white/70 mb-4">{agentData.tagline}</p>
 
               {/* Badges */}
               <div className="flex flex-wrap gap-2">
-                {agent.badges.map((badge: string) => (
+                {agentData.badges.map((badge: string) => (
                   <Badge key={badge} type={badge} />
                 ))}
               </div>
@@ -204,23 +273,23 @@ export default function PublicAgentPage() {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
-                    className={`h-5 w-5 ${star <= Math.round(agent.rating) ? "text-yellow-400 fill-yellow-400" : "text-white/20"}`}
+                    className={`h-5 w-5 ${star <= Math.round(agentData.rating) ? "text-yellow-400 fill-yellow-400" : "text-white/20"}`}
                   />
                 ))}
-                <span className="ml-2 text-xl font-bold">{agent.rating}</span>
+                <span className="ml-2 text-xl font-bold">{agentData.rating}</span>
               </div>
-              <p className="text-sm text-white/60">{agent.completedJobs} jobs completed</p>
-              <p className="text-sm text-white/60">{agent.jss}% Job Success Score</p>
+              <p className="text-sm text-white/60">{agentData.completedJobs} jobs completed</p>
+              <p className="text-sm text-white/60">{agentData.jss}% Job Success Score</p>
             </div>
           </div>
         </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-0 mb-6">
-          <AnimatedStat value={agent.earnings} label="TOTAL_EARNED" />
-          <AnimatedStat value={agent.stats.avgDelivery} label="AVG_DELIVERY" />
-          <AnimatedStat value={agent.stats.revisionRate} label="REVISION_RATE" />
-          <AnimatedStat value={agent.stats.repeatClients} label="REPEAT_CLIENTS" />
+          <AnimatedStat value={agentData.earnings} label="TOTAL_EARNED" />
+          <AnimatedStat value={agentData.stats.avgDelivery} label="AVG_DELIVERY" />
+          <AnimatedStat value={agentData.stats.revisionRate} label="REVISION_RATE" />
+          <AnimatedStat value={agentData.stats.repeatClients} label="REPEAT_CLIENTS" />
         </div>
 
         {/* Two Column Layout */}
@@ -230,36 +299,40 @@ export default function PublicAgentPage() {
             {/* About */}
             <div className="border-2 border-white p-6">
               <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> ABOUT`}</h2>
-              <p className="text-sm leading-relaxed text-white/80">{agent.about}</p>
+              <p className="text-sm leading-relaxed text-white/80">{agentData.about}</p>
             </div>
 
             {/* Skills */}
             <div className="border-2 border-white p-6">
               <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> SKILLS`}</h2>
               <div className="flex flex-wrap gap-2">
-                {agent.skills.map((skill: string) => (
-                  <span
-                    key={skill}
-                    className="border-2 border-white px-4 py-2 text-sm tracking-wider hover:bg-white hover:text-black transition-colors cursor-default"
-                  >
-                    {skill}
-                  </span>
-                ))}
+                {agentData.skills.length > 0 ? (
+                  agentData.skills.map((skill: string) => (
+                    <span
+                      key={skill}
+                      className="border-2 border-white px-4 py-2 text-sm tracking-wider hover:bg-white hover:text-black transition-colors cursor-default"
+                    >
+                      {skill}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-white/50">NO_SKILLS_LISTED</span>
+                )}
               </div>
             </div>
 
             {/* Recent Jobs */}
             <div className="border-2 border-white">
               <div className="border-b-2 border-white p-4">
-                <h2 className="text-lg font-bold tracking-wider">{`>>> RECENT_JOBS (${agent.recentJobs.length})`}</h2>
+                <h2 className="text-lg font-bold tracking-wider">{`>>> RECENT_JOBS (${agentData.recentJobs.length})`}</h2>
               </div>
-              {agent.recentJobs.length > 0 ? (
+              {agentData.recentJobs.length > 0 ? (
                 <div>
-                  {agent.recentJobs.map((job: any, i: number) => (
+                  {agentData.recentJobs.map((job: any, i: number) => (
                     <div
-                      key={job.id}
+                      key={job.id || i}
                       className={`p-4 flex items-center justify-between ${
-                        i !== agent.recentJobs.length - 1 ? "border-b border-white/20" : ""
+                        i !== agentData.recentJobs.length - 1 ? "border-b border-white/20" : ""
                       } hover:bg-white/5 transition-colors`}
                     >
                       <div>
@@ -290,15 +363,15 @@ export default function PublicAgentPage() {
             {/* Reviews */}
             <div className="border-2 border-white">
               <div className="border-b-2 border-white p-4">
-                <h2 className="text-lg font-bold tracking-wider">{`>>> REVIEWS (${agent.reviews.length})`}</h2>
+                <h2 className="text-lg font-bold tracking-wider">{`>>> REVIEWS (${agentData.reviews.length})`}</h2>
               </div>
-              {agent.reviews.length > 0 ? (
+              {agentData.reviews.length > 0 ? (
                 <div>
-                  {agent.reviews.map((review: any, i: number) => (
+                  {agentData.reviews.map((review: any, i: number) => (
                     <div
                       key={i}
                       className={`p-4 ${
-                        i !== agent.reviews.length - 1 ? "border-b border-white/20" : ""
+                        i !== agentData.reviews.length - 1 ? "border-b border-white/20" : ""
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -331,7 +404,7 @@ export default function PublicAgentPage() {
             <div className="border-2 border-white p-6">
               <h3 className="text-lg font-bold tracking-wider mb-4">HIRE THIS AGENT</h3>
               <p className="text-sm text-white/60 mb-4">
-                Post a job and invite {agent.name} to bid on your project.
+                Post a job and invite {agentData.name} to bid on your project.
               </p>
               <Link
                 href="/dashboard/jobs/new"
@@ -346,7 +419,7 @@ export default function PublicAgentPage() {
               <h3 className="text-xs text-white/50 tracking-wider mb-2">RESPONSE_TIME</h3>
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-green-400" />
-                <span className="text-xl font-bold">{agent.responseTime}</span>
+                <span className="text-xl font-bold">{agentData.responseTime}</span>
               </div>
             </div>
 
@@ -356,10 +429,10 @@ export default function PublicAgentPage() {
               <div className="h-4 bg-white/10 border border-white">
                 <div
                   className="h-full bg-green-400"
-                  style={{ width: `${agent.jss}%` }}
+                  style={{ width: `${agentData.jss}%` }}
                 />
               </div>
-              <p className="text-right text-sm font-bold mt-2">{agent.jss}%</p>
+              <p className="text-right text-sm font-bold mt-2">{agentData.jss}%</p>
             </div>
 
             {/* Contact */}

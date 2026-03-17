@@ -17,100 +17,37 @@ import {
   ChevronRight,
   Box,
   ScrollText,
+  Loader2,
 } from "lucide-react";
+import { listJobs, listAgents, getStats } from "@/lib/api";
 
-// Mock Data
-const MOCK_JOBS = [
-  {
-    id: "1",
-    title: "BUILD TELEGRAM TRADING BOT",
-    budget: "500-1500 USDC",
-    skills: ["RUST", "API", "TRADING"],
-    status: "BIDDING",
-    timeLeft: "02:34:15",
-    bids: 8,
-  },
-  {
-    id: "2",
-    title: "AI RESEARCH PAPER ANALYSIS",
-    budget: "200-400 USDC",
-    skills: ["NLP", "RESEARCH", "PYTHON"],
-    status: "OPEN",
-    timeLeft: "18:12:44",
-    bids: 4,
-  },
-  {
-    id: "3",
-    title: "SMART CONTRACT AUDIT",
-    budget: "1000-3000 USDC",
-    skills: ["SOLIDITY", "SECURITY", "DEFI"],
-    status: "BIDDING",
-    timeLeft: "04:55:02",
-    bids: 12,
-  },
-  {
-    id: "4",
-    title: "TECHNICAL API DOCUMENTATION",
-    budget: "150-300 USDC",
-    skills: ["DOCS", "REST", "OPENAPI"],
-    status: "OPEN",
-    timeLeft: "23:08:33",
-    bids: 6,
-  },
-  {
-    id: "5",
-    title: "DATA PIPELINE ETL SYSTEM",
-    budget: "400-800 USDC",
-    skills: ["ETL", "SQL", "PYTHON"],
-    status: "BIDDING",
-    timeLeft: "11:22:07",
-    bids: 3,
-  },
-  {
-    id: "6",
-    title: "NFT MARKETPLACE FRONTEND",
-    budget: "600-1200 USDC",
-    skills: ["REACT", "WEB3", "SOLANA"],
-    status: "OPEN",
-    timeLeft: "06:45:19",
-    bids: 9,
-  },
-];
+interface Job {
+  id: string;
+  title: string;
+  budget_min?: number;
+  budget_max?: number;
+  skills: string[];
+  status: string;
+  deadline?: string;
+  bids_count?: number;
+}
 
-const MOCK_AGENTS = [
-  {
-    id: "a1",
-    name: "CODEMASTER_AI",
-    tier: "TOP_RATED",
-    rating: "4.9",
-    jobs: 156,
-    specialties: ["RUST", "SOLANA", "DEFI"],
-  },
-  {
-    id: "a2",
-    name: "DATAWIZARD",
-    tier: "ESTABLISHED",
-    rating: "4.8",
-    jobs: 89,
-    specialties: ["PYTHON", "ML", "ETL"],
-  },
-  {
-    id: "a3",
-    name: "RESEARCHBOT_PRO",
-    tier: "ESTABLISHED",
-    rating: "4.7",
-    jobs: 67,
-    specialties: ["NLP", "ANALYSIS", "PAPERS"],
-  },
-  {
-    id: "a4",
-    name: "SECUREAUDIT_V2",
-    tier: "RISING",
-    rating: "4.9",
-    jobs: 34,
-    specialties: ["AUDIT", "SECURITY", "CONTRACTS"],
-  },
-];
+interface Agent {
+  id: string;
+  name: string;
+  tier: string;
+  rating?: number;
+  jobs_completed?: number;
+  specialties: string[];
+}
+
+interface Stats {
+  total_jobs: number;
+  total_agents: number;
+  online_agents: number;
+  total_escrow: number;
+  completion_rate: number;
+}
 
 const STEPS = [
   {
@@ -174,13 +111,32 @@ function LiveTimer({ initial }: { initial: string }) {
   );
 }
 
-function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
+function formatBudget(job: Job): string {
+  if (job.budget_min && job.budget_max) {
+    return `${job.budget_min}-${job.budget_max} USDC`;
+  }
+  return "TBD";
+}
+
+function getTimeLeft(deadline?: string): string {
+  if (!deadline) return "48:00:00";
+  const now = new Date();
+  const end = new Date(deadline);
+  const diff = end.getTime() - now.getTime();
+  if (diff <= 0) return "00:00:00";
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function JobCard({ job }: { job: Job }) {
   return (
     <div className="border-2 border-white bg-black p-5 hover:bg-white hover:text-black transition-colors duration-150 group">
       <div className="flex items-center justify-between mb-3">
         <span
           className={`text-xs font-mono px-2 py-0.5 border ${
-            job.status === "BIDDING"
+            job.status === "BIDDING" || job.status === "OPEN"
               ? "border-green-400 text-green-400 group-hover:border-green-700 group-hover:text-green-700"
               : "border-white text-white group-hover:border-black group-hover:text-black"
           }`}
@@ -189,7 +145,7 @@ function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
         </span>
         <span className="text-xs font-mono flex items-center gap-1 text-neutral-400 group-hover:text-neutral-600">
           <Users className="h-3 w-3" />
-          {job.bids} BIDS
+          {job.bids_count || 0} BIDS
         </span>
       </div>
 
@@ -198,11 +154,11 @@ function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
       </h3>
 
       <div className="text-sm font-mono font-bold text-green-400 group-hover:text-green-700 mb-3">
-        {job.budget}
+        {formatBudget(job)}
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
-        {job.skills.map((skill) => (
+        {(job.skills || []).map((skill) => (
           <span
             key={skill}
             className="text-[10px] font-mono px-2 py-0.5 border border-white text-white group-hover:border-black group-hover:text-black tracking-widest"
@@ -215,7 +171,7 @@ function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
       <div className="flex items-center justify-between pt-3 border-t border-white/20 group-hover:border-black/20">
         <div className="flex items-center gap-1.5 text-xs">
           <Clock className="h-3 w-3" />
-          <LiveTimer initial={job.timeLeft} />
+          <LiveTimer initial={getTimeLeft(job.deadline)} />
         </div>
         <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
@@ -223,7 +179,7 @@ function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
   );
 }
 
-function AgentCard({ agent }: { agent: (typeof MOCK_AGENTS)[0] }) {
+function AgentCard({ agent }: { agent: Agent }) {
   const tierColors: Record<string, string> = {
     TOP_RATED: "text-yellow-400 border-yellow-400",
     ESTABLISHED: "text-green-400 border-green-400",
@@ -242,11 +198,11 @@ function AgentCard({ agent }: { agent: (typeof MOCK_AGENTS)[0] }) {
           <span
             className={`text-[10px] font-mono px-2 py-0.5 border mt-1.5 inline-block tracking-widest ${tierClass}`}
           >
-            {agent.tier}
+            {agent.tier.replace("_", " ")}
           </span>
         </div>
         <div className="text-right font-mono">
-          <div className="text-lg font-bold">{agent.rating}</div>
+          <div className="text-lg font-bold">{agent.rating?.toFixed(1) || "N/A"}</div>
           <div className="text-[10px] text-neutral-400 group-hover:text-neutral-600">
             RATING
           </div>
@@ -254,11 +210,11 @@ function AgentCard({ agent }: { agent: (typeof MOCK_AGENTS)[0] }) {
       </div>
 
       <div className="text-sm font-mono text-neutral-400 group-hover:text-neutral-600 mb-3">
-        {agent.jobs} JOBS COMPLETED
+        {agent.jobs_completed || 0} JOBS COMPLETED
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        {agent.specialties.map((s) => (
+        {(agent.specialties || []).map((s) => (
           <span
             key={s}
             className="text-[10px] font-mono px-2 py-0.5 border border-white text-white group-hover:border-black group-hover:text-black tracking-widest"
@@ -274,6 +230,56 @@ function AgentCard({ agent }: { agent: (typeof MOCK_AGENTS)[0] }) {
 // Main Page
 export default function MarketplacePage() {
   const { connected } = useWallet();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    total_jobs: 0,
+    total_agents: 0,
+    online_agents: 0,
+    total_escrow: 0,
+    completion_rate: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const [jobsRes, agentsRes, statsRes] = await Promise.all([
+          listJobs({ limit: "6" }),
+          listAgents({ limit: "4", tier: "TOP_RATED" }),
+          getStats().catch(() => null),
+        ]);
+
+        setJobs(jobsRes.jobs || []);
+        setAgents(agentsRes.agents || []);
+
+        if (statsRes) {
+          setStats(statsRes);
+        } else {
+          // Fallback: calculate from fetched data
+          setStats({
+            total_jobs: jobsRes.total || jobsRes.jobs?.length || 0,
+            total_agents: agentsRes.total || agentsRes.agents?.length || 0,
+            online_agents: (agentsRes.agents || []).filter((a: Agent) => (a as any).online_status).length,
+            total_escrow: 0,
+            completion_rate: 99.2,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch homepage data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const formatEscrow = (amount: number): string => {
+    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+    return `$${amount}`;
+  };
 
   return (
     <div className="min-h-screen bg-black text-white font-mono selection:bg-white selection:text-black">
@@ -376,19 +382,19 @@ export default function MarketplacePage() {
           {/* Stats Row */}
           <div className="border-t border-white/20 pt-6 flex flex-wrap gap-x-8 gap-y-3 text-xs tracking-[0.15em] text-neutral-400">
             <span>
-              <strong className="text-white">1,247</strong> JOBS POSTED
+              <strong className="text-white">{stats.total_jobs.toLocaleString()}</strong> JOBS POSTED
             </span>
             <span className="text-white/20">|</span>
             <span>
-              <strong className="text-white">892</strong> AGENTS ONLINE
+              <strong className="text-white">{stats.online_agents || stats.total_agents}</strong> AGENTS {stats.online_agents > 0 ? "ONLINE" : "REGISTERED"}
             </span>
             <span className="text-white/20">|</span>
             <span>
-              <strong className="text-white">$2.4M</strong> IN ESCROW
+              <strong className="text-white">{formatEscrow(stats.total_escrow)}</strong> IN ESCROW
             </span>
             <span className="text-white/20">|</span>
             <span>
-              <strong className="text-white">99.2%</strong> COMPLETION
+              <strong className="text-white">{stats.completion_rate.toFixed(1)}%</strong> COMPLETION
             </span>
           </div>
         </div>
@@ -413,13 +419,30 @@ export default function MarketplacePage() {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            {MOCK_JOBS.map((job) => (
-              <Link key={job.id} href={`/jobs/${job.id}`} className="no-underline">
-                <JobCard job={job} />
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-white/50" />
+              <span className="ml-3 text-white/50 text-sm">LOADING...</span>
+            </div>
+          ) : jobs.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-4">
+              {jobs.map((job) => (
+                <Link key={job.id} href={`/jobs/${job.id}`} className="no-underline">
+                  <JobCard job={job} />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="border-2 border-white p-12 text-center">
+              <p className="text-white/60 mb-4">NO_JOBS_FOUND</p>
+              <Link
+                href="/dashboard/jobs/new"
+                className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block no-underline"
+              >
+                [POST FIRST JOB]
               </Link>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -441,13 +464,30 @@ export default function MarketplacePage() {
             </Link>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {MOCK_AGENTS.map((agent) => (
-              <Link key={agent.id} href={`/agents/${agent.id}`} className="no-underline">
-                <AgentCard agent={agent} />
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-white/50" />
+              <span className="ml-3 text-white/50 text-sm">LOADING...</span>
+            </div>
+          ) : agents.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {agents.map((agent) => (
+                <Link key={agent.id} href={`/agents/${agent.id}`} className="no-underline">
+                  <AgentCard agent={agent} />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="border-2 border-white p-12 text-center">
+              <p className="text-white/60 mb-4">NO_AGENTS_REGISTERED</p>
+              <Link
+                href="/docs/become-agent"
+                className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block no-underline"
+              >
+                [BECOME AN AGENT]
               </Link>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 

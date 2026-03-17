@@ -113,3 +113,14 @@ export async function getCurrentUser(token: string) {
 export async function updateUser(data: any, token: string) {
   return api<any>("/api/users/me", { method: "PATCH", body: data, token });
 }
+
+// Stats
+export async function getStats() {
+  return api<{
+    total_jobs: number;
+    total_agents: number;
+    online_agents: number;
+    total_escrow: number;
+    completion_rate: number;
+  }>("/api/stats");
+}

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Header } from "@/components/header";
+import { getJob } from "@/lib/api";
 import {
   Eye,
   Clock,
@@ -14,139 +15,9 @@ import {
   Shield,
   ArrowRight,
   ExternalLink,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
-
-// Mock data for jobs
-const MOCK_JOBS: Record<string, any> = {
-  "1": {
-    id: "1",
-    title: "BUILD TELEGRAM TRADING BOT",
-    status: "BIDDING",
-    description:
-      "Build a high-frequency Telegram trading bot for Solana tokens. Must include real-time price monitoring, automatic buy/sell execution, stop-loss functionality, and portfolio tracking. Integration with Jupiter aggregator required. Must handle 100+ tokens simultaneously with <100ms latency.",
-    skills: ["Rust", "Solana", "API", "Trading", "Telegram"],
-    budgetMin: 500,
-    budgetMax: 1500,
-    escrowStatus: "FUNDED",
-    escrowAmount: 1500,
-    deadline: "2026-03-25",
-    created: "2026-03-15",
-    views: 847,
-    client: "0x7a2f...d3e1",
-    clientJobs: 12,
-    clientRating: 4.8,
-    timeline: [
-      { state: "DRAFT", date: "2026-03-14", active: false },
-      { state: "OPEN", date: "2026-03-15", active: false },
-      { state: "BIDDING", date: "2026-03-15", active: true },
-      { state: "IN_PROGRESS", date: "---", active: false },
-      { state: "DELIVERED", date: "---", active: false },
-      { state: "COMPLETED", date: "---", active: false },
-    ],
-    bids: [
-      {
-        id: "b1",
-        agent: "TradingBot-X9",
-        amount: 1200,
-        rating: 4.9,
-        completedJobs: 67,
-        tier: "TOP_RATED",
-        proposal: "Expert in Solana trading infrastructure. Built 15+ trading bots with combined $50M+ volume. Will deliver production-ready bot in 5 days with full testing suite.",
-        bidTime: "2h ago",
-        online: true,
-      },
-      {
-        id: "b2",
-        agent: "SolanaForge-7",
-        amount: 980,
-        rating: 4.7,
-        completedJobs: 43,
-        tier: "ESTABLISHED",
-        proposal: "Specialized in Jupiter integration and high-frequency trading. Can achieve <50ms execution. 4-day delivery with 1 month support included.",
-        bidTime: "4h ago",
-        online: true,
-      },
-      {
-        id: "b3",
-        agent: "CodeMaster-AI",
-        amount: 1450,
-        rating: 4.8,
-        completedJobs: 89,
-        tier: "TOP_RATED",
-        proposal: "Premium service with comprehensive testing. Will include backtesting module, risk management, and real-time analytics dashboard. 7-day delivery.",
-        bidTime: "6h ago",
-        online: false,
-      },
-      {
-        id: "b4",
-        agent: "RustDev-12",
-        amount: 750,
-        rating: 4.3,
-        completedJobs: 18,
-        tier: "RISING",
-        proposal: "Competitive pricing for quality work. Strong Rust background with 3 trading bot projects completed. Can deliver core functionality in 3 days.",
-        bidTime: "8h ago",
-        online: true,
-      },
-    ],
-    activity: [
-      { type: "BID", agent: "RustDev-12", time: "8h ago", amount: 750 },
-      { type: "VIEW", count: 50, time: "10h ago" },
-      { type: "BID", agent: "CodeMaster-AI", time: "6h ago", amount: 1450 },
-      { type: "BID", agent: "SolanaForge-7", time: "4h ago", amount: 980 },
-      { type: "BID", agent: "TradingBot-X9", time: "2h ago", amount: 1200 },
-      { type: "VIEW", count: 200, time: "1h ago" },
-    ],
-  },
-  "2": {
-    id: "2",
-    title: "AI RESEARCH PAPER ANALYSIS",
-    status: "OPEN",
-    description: "Analyze and summarize 50 AI/ML research papers from 2024-2025. Create structured summaries with key findings, methodologies, and potential applications.",
-    skills: ["NLP", "Research", "Python", "ML"],
-    budgetMin: 200,
-    budgetMax: 400,
-    escrowStatus: "FUNDED",
-    escrowAmount: 400,
-    deadline: "2026-03-30",
-    created: "2026-03-16",
-    views: 234,
-    client: "0x3b1c...8f4a",
-    clientJobs: 5,
-    clientRating: 4.5,
-    timeline: [
-      { state: "DRAFT", date: "2026-03-15", active: false },
-      { state: "OPEN", date: "2026-03-16", active: true },
-      { state: "BIDDING", date: "---", active: false },
-      { state: "IN_PROGRESS", date: "---", active: false },
-      { state: "DELIVERED", date: "---", active: false },
-      { state: "COMPLETED", date: "---", active: false },
-    ],
-    bids: [],
-    activity: [],
-  },
-};
-
-const FALLBACK_JOB = {
-  id: "unknown",
-  title: "JOB NOT FOUND",
-  status: "UNKNOWN",
-  description: "This job does not exist or has been removed.",
-  skills: [],
-  budgetMin: 0,
-  budgetMax: 0,
-  escrowStatus: "UNKNOWN",
-  escrowAmount: 0,
-  deadline: "---",
-  created: "---",
-  views: 0,
-  client: "---",
-  clientJobs: 0,
-  clientRating: 0,
-  timeline: [],
-  bids: [],
-  activity: [],
-};
 
 // Live viewer counter component
 function LiveViewers({ initial }: { initial: number }) {
@@ -357,18 +228,167 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
   );
 }
 
+// Loading skeleton component
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-black text-white font-mono">
+      <Header />
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="flex items-center justify-center py-32">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
+            <p className="text-lg font-bold tracking-wider">LOADING JOB...</p>
+            <p className="text-sm text-white/60 mt-2">Fetching job details from the network</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// Error component
+function ErrorState({ error, jobId }: { error: string; jobId: string }) {
+  return (
+    <div className="min-h-screen bg-black text-white font-mono">
+      <Header />
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
+          <Link href="/" className="hover:text-white">HOME</Link>
+          <span>/</span>
+          <Link href="/jobs" className="hover:text-white">JOBS</Link>
+          <span>/</span>
+          <span className="text-white">{jobId}</span>
+        </div>
+        <div className="border-2 border-red-500 p-12 text-center">
+          <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-red-500" />
+          <h1 className="text-2xl font-bold tracking-wider mb-4">ERROR LOADING JOB</h1>
+          <p className="text-sm text-white/60 mb-6">{error}</p>
+          <div className="flex gap-4 justify-center">
+            <Link
+              href="/jobs"
+              className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+            >
+              BROWSE JOBS
+            </Link>
+            <button
+              onClick={() => window.location.reload()}
+              className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+            >
+              RETRY
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// Not found component
+function NotFoundState({ jobId }: { jobId: string }) {
+  return (
+    <div className="min-h-screen bg-black text-white font-mono">
+      <Header />
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
+          <Link href="/" className="hover:text-white">HOME</Link>
+          <span>/</span>
+          <Link href="/jobs" className="hover:text-white">JOBS</Link>
+          <span>/</span>
+          <span className="text-white">{jobId}</span>
+        </div>
+        <div className="border-2 border-white p-12 text-center">
+          <div className="text-6xl font-bold mb-4">404</div>
+          <h1 className="text-2xl font-bold tracking-wider mb-4">JOB NOT FOUND</h1>
+          <p className="text-sm text-white/60 mb-6">
+            This job does not exist or has been removed.
+          </p>
+          <Link
+            href="/jobs"
+            className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block"
+          >
+            BROWSE ALL JOBS
+          </Link>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function PublicJobPage() {
   const params = useParams();
   const jobId = params.id as string;
-  const job = MOCK_JOBS[jobId] || FALLBACK_JOB;
   const { connected } = useWallet();
 
-  const [viewCount, setViewCount] = useState(job.views || 100);
+  const [job, setJob] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewCount, setViewCount] = useState(100);
 
-  // Increment view count on mount
+  // Fetch job data
   useEffect(() => {
-    setViewCount((prev: number) => prev + 1);
-  }, []);
+    async function fetchJob() {
+      if (!jobId) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const data = await getJob(jobId);
+        setJob(data);
+        setViewCount(data.views || 100);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch job";
+        // Check if it's a 404 error
+        if (errorMessage.toLowerCase().includes("not found") || errorMessage.includes("404")) {
+          setJob(null);
+        } else {
+          setError(errorMessage);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchJob();
+  }, [jobId]);
+
+  // Increment view count on mount (after job is loaded)
+  useEffect(() => {
+    if (job) {
+      setViewCount((prev: number) => prev + 1);
+    }
+  }, [job]);
+
+  // Show loading state
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  // Show error state
+  if (error) {
+    return <ErrorState error={error} jobId={jobId} />;
+  }
+
+  // Show not found state
+  if (!job) {
+    return <NotFoundState jobId={jobId} />;
+  }
+
+  // Ensure job has default values for optional fields
+  const safeJob = {
+    ...job,
+    skills: job.skills || [],
+    bids: job.bids || [],
+    timeline: job.timeline || [],
+    activity: job.activity || [],
+    views: job.views || 0,
+    budgetMin: job.budgetMin || job.budget_min || 0,
+    budgetMax: job.budgetMax || job.budget_max || 0,
+    escrowStatus: job.escrowStatus || job.escrow_status || "PENDING",
+    escrowAmount: job.escrowAmount || job.escrow_amount || 0,
+    clientJobs: job.clientJobs || job.client_jobs || 0,
+    clientRating: job.clientRating || job.client_rating || 0,
+  };
 
   return (
     <div className="min-h-screen bg-black text-white font-mono">
@@ -382,7 +402,7 @@ export default function PublicJobPage() {
           <span>/</span>
           <Link href="/jobs" className="hover:text-white">JOBS</Link>
           <span>/</span>
-          <span className="text-white">{job.id}</span>
+          <span className="text-white">{safeJob.id}</span>
         </div>
 
         {/* Job Header */}
@@ -391,21 +411,21 @@ export default function PublicJobPage() {
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-3">
                 <span className={`border-2 px-3 py-1 text-xs tracking-wider font-bold ${
-                  job.status === "BIDDING"
+                  safeJob.status === "BIDDING"
                     ? "border-green-400 text-green-400 animate-pulse"
                     : "border-white"
                 }`}>
-                  {job.status}
+                  {safeJob.status}
                 </span>
-                <span className="text-xs text-white/50">ID: {job.id}</span>
-                <span className="text-xs text-white/50">Posted: {job.created}</span>
+                <span className="text-xs text-white/50">ID: {safeJob.id}</span>
+                <span className="text-xs text-white/50">Posted: {safeJob.created}</span>
                 <LiveViewers initial={viewCount} />
               </div>
-              <h1 className="text-3xl font-bold tracking-wider mb-4">{job.title}</h1>
+              <h1 className="text-3xl font-bold tracking-wider mb-4">{safeJob.title}</h1>
               <div className="flex items-center gap-6 text-sm">
                 <span className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  {job.bids.length} BIDS
+                  {safeJob.bids.length} BIDS
                 </span>
                 <span className="flex items-center gap-2">
                   <Eye className="h-4 w-4" />
@@ -413,13 +433,13 @@ export default function PublicJobPage() {
                 </span>
                 <span className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-green-400" />
-                  ESCROW {job.escrowStatus}
+                  ESCROW {safeJob.escrowStatus}
                 </span>
               </div>
             </div>
             <div className="text-right">
               <p className="text-xs text-white/50 mb-1">BUDGET</p>
-              <p className="text-4xl font-bold">{job.budgetMin}-{job.budgetMax}</p>
+              <p className="text-4xl font-bold">{safeJob.budgetMin}-{safeJob.budgetMax}</p>
               <p className="text-sm text-white/60">USDC</p>
             </div>
           </div>
@@ -432,14 +452,14 @@ export default function PublicJobPage() {
             {/* Description */}
             <div className="border-2 border-white p-6">
               <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> DESCRIPTION`}</h2>
-              <p className="text-sm leading-relaxed text-white/80">{job.description}</p>
+              <p className="text-sm leading-relaxed text-white/80">{safeJob.description}</p>
             </div>
 
             {/* Skills */}
             <div className="border-2 border-white p-6">
               <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> REQUIRED_SKILLS`}</h2>
               <div className="flex flex-wrap gap-2">
-                {job.skills.map((skill: string) => (
+                {safeJob.skills.map((skill: string) => (
                   <span
                     key={skill}
                     className="border-2 border-white px-4 py-2 text-sm tracking-wider hover:bg-white hover:text-black transition-colors cursor-default"
@@ -451,47 +471,49 @@ export default function PublicJobPage() {
             </div>
 
             {/* State Machine */}
-            <div className="border-2 border-white p-6">
-              <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> STATE_MACHINE`}</h2>
-              <div className="flex items-center gap-0 text-xs overflow-x-auto pb-2">
-                {job.timeline.map((t: any, i: number) => (
-                  <div key={t.state} className="flex items-center">
-                    <div
-                      className={`px-4 py-3 border-2 border-white whitespace-nowrap ${
-                        t.active
-                          ? "bg-white text-black font-bold"
-                          : t.date !== "---"
-                          ? "bg-white/10"
-                          : "text-white/30"
-                      }`}
-                    >
-                      {t.state}
-                      <div className="text-[10px] mt-1 opacity-60">{t.date}</div>
+            {safeJob.timeline.length > 0 && (
+              <div className="border-2 border-white p-6">
+                <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> STATE_MACHINE`}</h2>
+                <div className="flex items-center gap-0 text-xs overflow-x-auto pb-2">
+                  {safeJob.timeline.map((t: any, i: number) => (
+                    <div key={t.state} className="flex items-center">
+                      <div
+                        className={`px-4 py-3 border-2 border-white whitespace-nowrap ${
+                          t.active
+                            ? "bg-white text-black font-bold"
+                            : t.date !== "---"
+                            ? "bg-white/10"
+                            : "text-white/30"
+                        }`}
+                      >
+                        {t.state}
+                        <div className="text-[10px] mt-1 opacity-60">{t.date}</div>
+                      </div>
+                      {i < safeJob.timeline.length - 1 && (
+                        <div className={`w-6 h-[2px] ${t.date !== "---" ? "bg-white" : "bg-white/20"}`} />
+                      )}
                     </div>
-                    {i < job.timeline.length - 1 && (
-                      <div className={`w-6 h-[2px] ${t.date !== "---" ? "bg-white" : "bg-white/20"}`} />
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Bids Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold tracking-wider">
-                  {`>>> AGENT_BIDS (${job.bids.length})`}
+                  {`>>> AGENT_BIDS (${safeJob.bids.length})`}
                 </h2>
-                {job.bids.length > 0 && (
+                {safeJob.bids.length > 0 && (
                   <span className="text-xs text-green-400 animate-pulse">
                     * COMPETITIVE BIDDING ACTIVE *
                   </span>
                 )}
               </div>
 
-              {job.bids.length > 0 ? (
+              {safeJob.bids.length > 0 ? (
                 <div className="space-y-4">
-                  {job.bids.map((bid: any, i: number) => (
+                  {safeJob.bids.map((bid: any, i: number) => (
                     <BidCard key={bid.id} bid={bid} rank={i + 1} />
                   ))}
                 </div>
@@ -516,12 +538,12 @@ export default function PublicJobPage() {
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
             {/* Countdown */}
-            <CountdownTimer deadline={job.deadline} />
+            {safeJob.deadline && <CountdownTimer deadline={safeJob.deadline} />}
 
             {/* Escrow Info */}
             <div className="border-2 border-white p-4">
               <h3 className="text-xs text-white/50 tracking-wider mb-3">ESCROW_LOCKED</h3>
-              <p className="text-3xl font-bold text-green-400">{job.escrowAmount} USDC</p>
+              <p className="text-3xl font-bold text-green-400">{safeJob.escrowAmount} USDC</p>
               <p className="text-xs text-white/50 mt-2">
                 <Shield className="h-3 w-3 inline mr-1" />
                 Protected by Solana smart contract
@@ -531,15 +553,15 @@ export default function PublicJobPage() {
             {/* Client Info */}
             <div className="border-2 border-white p-4">
               <h3 className="text-xs text-white/50 tracking-wider mb-3">CLIENT</h3>
-              <p className="font-bold mb-2">{job.client}</p>
+              <p className="font-bold mb-2">{safeJob.client}</p>
               <div className="flex items-center gap-4 text-xs text-white/60">
-                <span>{job.clientJobs} jobs posted</span>
-                <span>{"*".repeat(Math.round(job.clientRating))} ({job.clientRating})</span>
+                <span>{safeJob.clientJobs} jobs posted</span>
+                <span>{"*".repeat(Math.round(safeJob.clientRating))} ({safeJob.clientRating})</span>
               </div>
             </div>
 
             {/* Activity Feed */}
-            <ActivityFeed bids={job.bids} />
+            <ActivityFeed bids={safeJob.bids} />
 
             {/* CTA */}
             <div className="border-2 border-white bg-white text-black p-6 text-center">

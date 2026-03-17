@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -8,116 +8,84 @@ import {
   Clock,
   DollarSign,
   ExternalLink,
+  Loader2,
+  Wallet,
 } from "lucide-react";
+import { listJobs } from "@/lib/api";
+import { useAuthStore } from "@/lib/store";
+
+interface Job {
+  id: string;
+  title: string;
+  status: string;
+  budget_min?: number;
+  budget_max?: number;
+  budget_amount?: number;
+  escrow_amount?: number;
+  escrow_status?: string;
+  bids_count?: number;
+  created_at?: string;
+  deadline?: string;
+  selected_agent?: { name: string };
+  progress?: number;
+}
 
 const STATUSES = ["ALL", "DRAFT", "OPEN", "BIDDING", "IN_PROGRESS", "DELIVERED", "COMPLETED"];
 
-const MY_JOBS = [
-  {
-    id: "0x4f2a",
-    title: "Smart Contract Audit - DeFi Protocol",
-    status: "BIDDING",
-    budget: "500 USDC",
-    escrowAmount: 500,
-    escrowStatus: "FUNDED",
-    bids: 4,
-    created: "2026-03-15",
-    deadline: "2026-03-25",
-    urgentAction: "Review bids",
-  },
-  {
-    id: "0x3b1c",
-    title: "Data Pipeline Optimization",
-    status: "IN_PROGRESS",
-    budget: "300 USDC",
-    escrowAmount: 300,
-    escrowStatus: "LOCKED",
-    bids: 6,
-    created: "2026-03-14",
-    deadline: "2026-03-22",
-    agent: "DataCrunch-X",
-    progress: 65,
-  },
-  {
-    id: "0x1d8e",
-    title: "API Integration Testing Suite",
-    status: "DELIVERED",
-    budget: "250 USDC",
-    escrowAmount: 250,
-    escrowStatus: "PENDING_RELEASE",
-    bids: 3,
-    created: "2026-03-12",
-    deadline: "2026-03-20",
-    agent: "CodeForge-12",
-    urgentAction: "Approve delivery",
-  },
-  {
-    id: "0x9a7f",
-    title: "Documentation for SDK v2.0",
-    status: "COMPLETED",
-    budget: "150 USDC",
-    escrowAmount: 0,
-    escrowStatus: "RELEASED",
-    bids: 1,
-    created: "2026-03-11",
-    deadline: "2026-03-15",
-    agent: "DocWriter-5",
-  },
-  {
-    id: "0x5c3d",
-    title: "Machine Learning Model Training",
-    status: "DRAFT",
-    budget: "800 USDC",
-    escrowAmount: 0,
-    escrowStatus: "UNFUNDED",
-    bids: 0,
-    created: "2026-03-10",
-    deadline: "2026-03-30",
-  },
-  {
-    id: "0x2e6b",
-    title: "Frontend Component Library",
-    status: "BIDDING",
-    budget: "400 USDC",
-    escrowAmount: 400,
-    escrowStatus: "FUNDED",
-    bids: 7,
-    created: "2026-03-09",
-    deadline: "2026-03-28",
-    urgentAction: "Review bids",
-  },
-  {
-    id: "0x8f4a",
-    title: "Security Penetration Testing",
-    status: "IN_PROGRESS",
-    budget: "600 USDC",
-    escrowAmount: 600,
-    escrowStatus: "LOCKED",
-    bids: 2,
-    created: "2026-03-08",
-    deadline: "2026-03-24",
-    agent: "SecureAI-3",
-    progress: 30,
-  },
-  {
-    id: "0x7d2c",
-    title: "Database Schema Migration",
-    status: "COMPLETED",
-    budget: "200 USDC",
-    escrowAmount: 0,
-    escrowStatus: "RELEASED",
-    bids: 5,
-    created: "2026-03-07",
-    deadline: "2026-03-18",
-    agent: "DataCrunch-X",
-  },
-];
-
 export default function MyJobsPage() {
+  const { token, _hasHydrated } = useAuthStore();
   const [activeFilter, setActiveFilter] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredJobs = MY_JOBS.filter((job) => {
+  useEffect(() => {
+    async function fetchJobs() {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await listJobs({ my_jobs: "true" });
+        setJobs(response.jobs || []);
+      } catch (err: any) {
+        console.error("Failed to fetch jobs:", err);
+        setError(err.message || "Failed to load jobs");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (_hasHydrated) {
+      fetchJobs();
+    }
+  }, [token, _hasHydrated]);
+
+  // Wait for hydration
+  if (!_hasHydrated) {
+    return (
+      <div className="flex items-center justify-center py-20 font-mono">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      </div>
+    );
+  }
+
+  // Not authenticated
+  if (!token) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 font-mono">
+        <Wallet className="h-12 w-12 text-white/30 mb-4" />
+        <h2 className="text-xl font-bold tracking-wider mb-2">WALLET_NOT_CONNECTED</h2>
+        <p className="text-white/50 text-sm">Connect your wallet to view your jobs</p>
+      </div>
+    );
+  }
+
+  const filteredJobs = jobs.filter((job) => {
     const matchesStatus = activeFilter === "ALL" || job.status === activeFilter;
     const matchesSearch = !search || job.title.toLowerCase().includes(search.toLowerCase());
     return matchesStatus && matchesSearch;
@@ -135,7 +103,7 @@ export default function MyJobsPage() {
     }
   };
 
-  const getEscrowColor = (status: string) => {
+  const getEscrowColor = (status?: string) => {
     switch (status) {
       case "FUNDED": return "text-green-400";
       case "LOCKED": return "text-green-400";
@@ -145,7 +113,45 @@ export default function MyJobsPage() {
     }
   };
 
-  const pendingActions = filteredJobs.filter(j => j.urgentAction).length;
+  const getUrgentAction = (job: Job): string | null => {
+    if (job.status === "BIDDING" && (job.bids_count || 0) > 0) return "Review bids";
+    if (job.status === "DELIVERED") return "Approve delivery";
+    return null;
+  };
+
+  const formatBudget = (job: Job): string => {
+    if (job.budget_amount) return `${job.budget_amount} USDC`;
+    if (job.budget_min && job.budget_max) return `${job.budget_min}-${job.budget_max} USDC`;
+    return "TBD";
+  };
+
+  const pendingActions = filteredJobs.filter(j => getUrgentAction(j)).length;
+  const totalEscrow = jobs.reduce((sum, j) => sum + (j.escrow_amount || 0), 0);
+  const activeJobs = jobs.filter(j => !["COMPLETED", "DRAFT"].includes(j.status)).length;
+  const completedJobs = jobs.filter(j => j.status === "COMPLETED").length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 font-mono">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+        <span className="ml-3 text-white/50">LOADING_JOBS...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="border-2 border-red-500 p-12 text-center font-mono">
+        <p className="text-red-500 mb-4">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+        >
+          [RETRY]
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 font-mono">
@@ -181,8 +187,8 @@ export default function MyJobsPage() {
       <div className="flex flex-wrap gap-4 text-sm">
         {STATUSES.map((status) => {
           const count = status === "ALL"
-            ? MY_JOBS.length
-            : MY_JOBS.filter(j => j.status === status).length;
+            ? jobs.length
+            : jobs.filter(j => j.status === status).length;
           return (
             <button
               key={status}
@@ -203,59 +209,62 @@ export default function MyJobsPage() {
       {/* Jobs List */}
       {filteredJobs.length > 0 ? (
         <div className="border-2 border-white">
-          {filteredJobs.map((job, i) => (
-            <Link
-              key={job.id}
-              href={`/dashboard/jobs/${job.id}/manage`}
-              className={`block p-4 hover:bg-white/5 transition-colors ${
-                i !== filteredJobs.length - 1 ? "border-b border-white/30" : ""
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                {/* Left side */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xs text-white/40">{job.id}</span>
-                    <span className={`border px-2 py-0.5 text-xs tracking-wider ${getStatusColor(job.status)}`}>
-                      {job.status}
-                    </span>
-                    {job.urgentAction && (
-                      <span className="text-xs text-yellow-400 flex items-center gap-1 animate-pulse">
-                        <AlertTriangle className="h-3 w-3" />
-                        {job.urgentAction}
+          {filteredJobs.map((job, i) => {
+            const urgentAction = getUrgentAction(job);
+            return (
+              <Link
+                key={job.id}
+                href={`/dashboard/jobs/${job.id}/manage`}
+                className={`block p-4 hover:bg-white/5 transition-colors ${
+                  i !== filteredJobs.length - 1 ? "border-b border-white/30" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left side */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-xs text-white/40">{job.id.slice(0, 8)}</span>
+                      <span className={`border px-2 py-0.5 text-xs tracking-wider ${getStatusColor(job.status)}`}>
+                        {job.status}
                       </span>
-                    )}
+                      {urgentAction && (
+                        <span className="text-xs text-yellow-400 flex items-center gap-1 animate-pulse">
+                          <AlertTriangle className="h-3 w-3" />
+                          {urgentAction}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold mb-2">{job.title}</h3>
+                    <div className="flex items-center gap-4 text-xs text-white/60">
+                      {job.selected_agent && (
+                        <span>AGENT: {job.selected_agent.name}</span>
+                      )}
+                      {job.progress !== undefined && (
+                        <span className="flex items-center gap-2">
+                          <Clock className="h-3 w-3" />
+                          {job.progress}% complete
+                        </span>
+                      )}
+                      <span>{job.bids_count || 0} bids</span>
+                      {job.deadline && <span>Due: {new Date(job.deadline).toLocaleDateString()}</span>}
+                    </div>
                   </div>
-                  <h3 className="font-bold mb-2">{job.title}</h3>
-                  <div className="flex items-center gap-4 text-xs text-white/60">
-                    {job.agent && (
-                      <span>AGENT: {job.agent}</span>
-                    )}
-                    {job.progress !== undefined && (
-                      <span className="flex items-center gap-2">
-                        <Clock className="h-3 w-3" />
-                        {job.progress}% complete
-                      </span>
-                    )}
-                    <span>{job.bids} bids</span>
-                    <span>Due: {job.deadline}</span>
-                  </div>
-                </div>
 
-                {/* Right side - Escrow */}
-                <div className="text-right">
-                  <div className="flex items-center gap-2 justify-end mb-1">
-                    <DollarSign className="h-4 w-4 text-white/60" />
-                    <span className="font-bold">{job.budget}</span>
+                  {/* Right side - Escrow */}
+                  <div className="text-right">
+                    <div className="flex items-center gap-2 justify-end mb-1">
+                      <DollarSign className="h-4 w-4 text-white/60" />
+                      <span className="font-bold">{formatBudget(job)}</span>
+                    </div>
+                    <p className={`text-xs ${getEscrowColor(job.escrow_status)}`}>
+                      {job.escrow_status === "LOCKED" && "🔒 "}
+                      {job.escrow_status || "UNFUNDED"}
+                    </p>
                   </div>
-                  <p className={`text-xs ${getEscrowColor(job.escrowStatus)}`}>
-                    {job.escrowStatus === "LOCKED" && "🔒 "}
-                    {job.escrowStatus}
-                  </p>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       ) : (
         <div className="border-2 border-white p-12 text-center">
@@ -273,25 +282,19 @@ export default function MyJobsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="border border-white/30 p-4">
           <p className="text-xs text-white/50 mb-1">TOTAL_JOBS</p>
-          <p className="text-2xl font-bold">{MY_JOBS.length}</p>
+          <p className="text-2xl font-bold">{jobs.length}</p>
         </div>
         <div className="border border-white/30 p-4">
           <p className="text-xs text-white/50 mb-1">ACTIVE</p>
-          <p className="text-2xl font-bold text-green-400">
-            {MY_JOBS.filter(j => !["COMPLETED", "DRAFT"].includes(j.status)).length}
-          </p>
+          <p className="text-2xl font-bold text-green-400">{activeJobs}</p>
         </div>
         <div className="border border-white/30 p-4">
           <p className="text-xs text-white/50 mb-1">IN_ESCROW</p>
-          <p className="text-2xl font-bold">
-            {MY_JOBS.reduce((sum, j) => sum + j.escrowAmount, 0)} USDC
-          </p>
+          <p className="text-2xl font-bold">{totalEscrow} USDC</p>
         </div>
         <div className="border border-white/30 p-4">
           <p className="text-xs text-white/50 mb-1">COMPLETED</p>
-          <p className="text-2xl font-bold text-white/50">
-            {MY_JOBS.filter(j => j.status === "COMPLETED").length}
-          </p>
+          <p className="text-2xl font-bold text-white/50">{completedJobs}</p>
         </div>
       </div>
 
