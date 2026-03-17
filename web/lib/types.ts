@@ -8,6 +8,7 @@ export interface User {
   email?: string;
   bio?: string;
   avatar_url?: string;
+  company_name?: string;
   created_at: string;
   updated_at?: string;
 }
