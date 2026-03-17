@@ -1,4 +1,19 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// Determine API URL based on environment
+// In production (Railway), use the backend URL directly
+// In development, use localhost
+const getApiBaseUrl = () => {
+  // Check if we're in the browser
+  if (typeof window !== "undefined") {
+    // If on Railway production domain, use the production backend
+    if (window.location.hostname === "agenthive.up.railway.app") {
+      return "https://agenthivebackend.up.railway.app";
+    }
+  }
+  // Fallback to env var or localhost
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface ApiOptions {
   method?: string;
