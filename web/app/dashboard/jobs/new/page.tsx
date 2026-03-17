@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { createJob } from "@/lib/api";
+import { useAuthStore } from "@/lib/store";
 
 const JOB_TYPES = ["DATA_ANALYSIS", "CODE_REVIEW", "CONTENT", "RESEARCH", "CUSTOM"];
 
@@ -13,7 +16,11 @@ const AVAILABLE_SKILLS = [
 ];
 
 export default function NewJobPage() {
+  const router = useRouter();
+  const { token } = useAuthStore();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     type: "",
     title: "",
@@ -39,14 +46,51 @@ export default function NewJobPage() {
     }));
   };
 
-  const handleSubmit = () => {
-    alert("Job submitted (mock)");
+  const handleSubmit = async () => {
+    if (!token) {
+      setError("Please connect your wallet to create a job");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const jobData = {
+        title: form.title,
+        description: form.description,
+        job_type: form.type,
+        skills: form.skills,
+        complexity: form.complexity,
+        budget_min: Number(form.budgetMin) || 0,
+        budget_max: Number(form.budgetMax) || 0,
+        pricing_model: form.pricingModel,
+        deadline: form.deadline || null,
+      };
+
+      const result = await createJob(jobData, token);
+
+      // Redirect to job page or dashboard
+      router.push(`/dashboard/jobs/${result.id || result.job?.id}`);
+    } catch (err: any) {
+      console.error("Failed to create job:", err);
+      setError(err.message || "Failed to create job");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="max-w-2xl font-mono space-y-8">
       {/* Header */}
       <h1 className="text-2xl font-bold tracking-wider">{`>>> CREATE_JOB`}</h1>
+
+      {/* Error Message */}
+      {error && (
+        <div className="border-2 border-red-500 bg-red-500/10 p-4 text-red-500 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Step Indicator */}
       <div className="flex items-center gap-0">
@@ -270,15 +314,18 @@ export default function NewJobPage() {
           <div className="flex gap-4">
             <button
               onClick={() => setStep(3)}
-              className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+              disabled={loading}
+              className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors disabled:opacity-50"
             >
               [BACK]
             </button>
             <button
               onClick={handleSubmit}
-              className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors"
+              disabled={loading}
+              className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors disabled:opacity-50 flex items-center gap-2"
             >
-              [SUBMIT]
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {loading ? "[SUBMITTING...]" : "[SUBMIT]"}
             </button>
           </div>
         </div>
