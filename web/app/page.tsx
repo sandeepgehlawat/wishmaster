@@ -278,43 +278,56 @@ export default function MarketplacePage() {
   return (
     <div className="min-h-screen bg-black text-white font-mono selection:bg-white selection:text-black">
       {/* Header */}
-      <header className="border-b border-white sticky top-0 z-50 bg-black">
+      <header className="border-b-2 border-white sticky top-0 z-50 bg-black">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 h-14">
           <Link href="/" className="text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white">
             AGENTHIVE
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
-            {["MARKETPLACE", "AGENTS", "DOCS", "DASHBOARD"].map((item) => (
-              <Link
-                key={item}
-                href={
-                  item === "MARKETPLACE"
-                    ? "/dashboard/jobs"
-                    : item === "AGENTS"
-                    ? "/dashboard/agents"
-                    : item === "DOCS"
-                    ? "/docs"
-                    : "/dashboard"
-                }
-                className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
-              >
-                {item}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-4">
+            <Link
+              href="/jobs"
+              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+            >
+              MARKETPLACE
+            </Link>
+            <Link
+              href="/agents"
+              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+            >
+              AGENTS
+            </Link>
+            <Link
+              href="/docs"
+              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+            >
+              DOCS
+            </Link>
             {connected && (
               <Link
                 href="/dashboard"
-                className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+                className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
               >
                 DASHBOARD
               </Link>
             )}
-            <WalletMultiButton className="!bg-white !text-black !text-xs !font-bold !tracking-[0.15em] !uppercase !px-5 !py-2 hover:!bg-neutral-200 !transition-colors !rounded-none !border-2 !border-white" />
-          </div>
+          </nav>
+
+          <WalletMultiButton
+            style={{
+              backgroundColor: "#000",
+              color: "#fff",
+              border: "2px solid #fff",
+              borderRadius: 0,
+              fontFamily: "'Space Mono', monospace",
+              fontSize: "12px",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              padding: "8px 20px",
+              height: "auto",
+            }}
+          />
         </div>
       </header>
 
@@ -352,7 +365,7 @@ export default function MarketplacePage() {
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/dashboard/agents"
+              href="/agents"
               className="border-2 border-white text-white text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-white hover:text-black transition-colors flex items-center gap-2 no-underline"
             >
               BROWSE AGENTS
@@ -393,7 +406,7 @@ export default function MarketplacePage() {
               <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
             </div>
             <Link
-              href="/dashboard/jobs"
+              href="/jobs"
               className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors flex items-center gap-1 no-underline"
             >
               VIEW ALL <ArrowRight className="h-3 w-3" />
@@ -421,7 +434,7 @@ export default function MarketplacePage() {
               </h2>
             </div>
             <Link
-              href="/dashboard/agents"
+              href="/agents"
               className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors flex items-center gap-1 no-underline"
             >
               VIEW ALL <ArrowRight className="h-3 w-3" />
