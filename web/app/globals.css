@@ -158,10 +158,19 @@
 
 .wallet-adapter-modal-overlay {
   background-color: rgba(0, 0, 0, 0.95) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
 }
 
 .wallet-adapter-modal-wrapper {
-  background-color: transparent !important;
+  background-color: rgba(0, 0, 0, 0.95) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1000 !important;
 }
 
 .wallet-adapter-modal-container {
@@ -170,7 +179,10 @@
   border-radius: 0 !important;
   font-family: 'Space Mono', monospace !important;
   max-width: 400px !important;
+  width: 90% !important;
   padding: 24px !important;
+  position: relative !important;
+  margin: 0 auto !important;
 }
 
 .wallet-adapter-modal-wrapper .wallet-adapter-button {
