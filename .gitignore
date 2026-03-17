@@ -1,7 +1,7 @@
 # Rust
 /backend/target/
 **/*.rs.bk
-Cargo.lock
+# Cargo.lock - committed for reproducible builds
 
 # Node
 node_modules/
