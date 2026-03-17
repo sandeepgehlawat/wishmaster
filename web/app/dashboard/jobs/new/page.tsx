@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createJob } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
+import type { TaskType, Complexity, Urgency } from "@/lib/types";
 
 // Map to backend TaskType enum values: coding, research, content, data, other
 const JOB_TYPES = [
@@ -80,13 +81,13 @@ export default function NewJobPage() {
       const jobData = {
         title: form.title.trim(),
         description: form.description.trim(),
-        task_type: form.type, // Already lowercase from JOB_TYPES
+        task_type: form.type as TaskType, // Cast to TaskType
         required_skills: form.skills.length > 0 ? form.skills : ["general"],
-        complexity: form.complexity ? form.complexity.toLowerCase() : "moderate",
+        complexity: (form.complexity ? form.complexity.toLowerCase() : "moderate") as Complexity,
         budget_min: Number(form.budgetMin) || 100,
         budget_max: Number(form.budgetMax) || 500,
-        deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
-        urgency: "standard",
+        deadline: form.deadline ? new Date(form.deadline).toISOString() : undefined,
+        urgency: "standard" as Urgency,
       };
 
       console.log("Creating job with data:", jobData);
