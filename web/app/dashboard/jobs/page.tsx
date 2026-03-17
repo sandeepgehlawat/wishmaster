@@ -11,7 +11,7 @@ import {
   Loader2,
   Wallet,
 } from "lucide-react";
-import { listJobs } from "@/lib/api";
+import { listMyJobs } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 
 interface Job {
@@ -50,8 +50,13 @@ export default function MyJobsPage() {
       try {
         setLoading(true);
         setError(null);
-        const response = await listJobs({ my_jobs: "true" });
-        setJobs(response.jobs || []);
+        const response = await listMyJobs(token);
+        // Normalize status to uppercase for frontend consistency
+        const normalizedJobs = (response.jobs || []).map((job: any) => ({
+          ...job,
+          status: (job.status || "draft").toUpperCase(),
+        }));
+        setJobs(normalizedJobs);
       } catch (err: any) {
         console.error("Failed to fetch jobs:", err);
         setError(err.message || "Failed to load jobs");
@@ -214,7 +219,7 @@ export default function MyJobsPage() {
             return (
               <Link
                 key={job.id}
-                href={`/dashboard/jobs/${job.id}/manage`}
+                href={`/dashboard/jobs/${job.id}`}
                 className={`block p-4 hover:bg-white/5 transition-colors ${
                   i !== filteredJobs.length - 1 ? "border-b border-white/30" : ""
                 }`}

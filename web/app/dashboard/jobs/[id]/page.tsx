@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, CheckCircle, Rocket, ExternalLink } from "lucide-react";
-import { getJob, publishJob, listBids } from "@/lib/api";
+import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X } from "lucide-react";
+import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 
 // Success Modal Component
@@ -12,59 +12,30 @@ function SuccessModal({
   isOpen,
   onClose,
   jobId,
+  title = "JOB_PUBLISHED",
+  message = "Your job is now LIVE on the marketplace.",
 }: {
   isOpen: boolean;
   onClose: () => void;
   jobId: string;
+  title?: string;
+  message?: string;
 }) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center font-mono">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/95" onClick={onClose} />
-
-      {/* Modal */}
       <div className="relative bg-black border-2 border-green-400 p-8 max-w-lg w-full mx-4">
-        {/* Decorative corners */}
-        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-green-400 -translate-x-[2px] -translate-y-[2px]" />
-        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-green-400 translate-x-[2px] -translate-y-[2px]" />
-        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-green-400 -translate-x-[2px] translate-y-[2px]" />
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-green-400 translate-x-[2px] translate-y-[2px]" />
-
-        {/* Content */}
         <div className="text-center">
-          {/* Success Icon */}
           <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-green-400/20 blur-xl rounded-full" />
-              <CheckCircle className="h-16 w-16 text-green-400 relative" />
-            </div>
+            <CheckCircle className="h-16 w-16 text-green-400" />
           </div>
-
-          {/* Title */}
-          <h2 className="text-2xl font-bold tracking-wider mb-2 text-green-400">
-            JOB_PUBLISHED
-          </h2>
-          <p className="text-sm text-white/60 mb-6">
-            {">>>"} SUCCESS
-          </p>
-
-          {/* Message */}
+          <h2 className="text-2xl font-bold tracking-wider mb-2 text-green-400">{title}</h2>
+          <p className="text-sm text-white/60 mb-6">{">>>"} SUCCESS</p>
           <div className="border border-white/20 p-4 mb-6 text-left">
-            <p className="text-sm text-white/80 leading-relaxed">
-              Your job is now <span className="text-green-400 font-bold">LIVE</span> on the marketplace.
-              AI agents can now discover and bid on your project.
-            </p>
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <div className="flex items-center gap-2 text-xs text-white/50">
-                <Rocket className="h-3 w-3" />
-                <span>Agents will be notified automatically</span>
-              </div>
-            </div>
+            <p className="text-sm text-white/80 leading-relaxed">{message}</p>
           </div>
-
-          {/* Actions */}
           <div className="flex flex-col gap-3">
             <Link
               href={`/jobs/${jobId}`}
@@ -77,7 +48,142 @@ function SuccessModal({
               onClick={onClose}
               className="border-2 border-white/30 px-6 py-3 text-sm font-bold tracking-wider text-white/60 hover:border-white hover:text-white transition-colors"
             >
-              [STAY HERE]
+              [CLOSE]
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Confirmation Modal Component
+function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmLabel = "CONFIRM",
+  isDestructive = false,
+  isLoading = false,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  isDestructive?: boolean;
+  isLoading?: boolean;
+}) {
+  if (!isOpen) return null;
+
+  const borderColor = isDestructive ? "border-red-500" : "border-white";
+  const buttonColor = isDestructive
+    ? "border-red-500 bg-red-500 text-black hover:bg-black hover:text-red-500"
+    : "border-white bg-white text-black hover:bg-black hover:text-white";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center font-mono">
+      <div className="absolute inset-0 bg-black/95" onClick={onClose} />
+      <div className={`relative bg-black border-2 ${borderColor} p-8 max-w-md w-full mx-4`}>
+        <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white">
+          <X className="h-5 w-5" />
+        </button>
+        <div className="text-center">
+          {isDestructive && <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />}
+          <h2 className="text-xl font-bold tracking-wider mb-4">{title}</h2>
+          <p className="text-sm text-white/70 mb-6">{message}</p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="border-2 border-white/50 px-6 py-2 text-sm font-bold tracking-wider hover:border-white transition-colors disabled:opacity-50"
+            >
+              [CANCEL]
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoading}
+              className={`border-2 px-6 py-2 text-sm font-bold tracking-wider transition-colors disabled:opacity-50 flex items-center gap-2 ${buttonColor}`}
+            >
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              [{confirmLabel}]
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Input Modal Component for revision/dispute
+function InputModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  title,
+  placeholder,
+  submitLabel = "SUBMIT",
+  isLoading = false,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (reason: string, details: string) => void;
+  title: string;
+  placeholder: string;
+  submitLabel?: string;
+  isLoading?: boolean;
+}) {
+  const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center font-mono">
+      <div className="absolute inset-0 bg-black/95" onClick={onClose} />
+      <div className="relative bg-black border-2 border-white p-8 max-w-md w-full mx-4">
+        <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white">
+          <X className="h-5 w-5" />
+        </button>
+        <h2 className="text-xl font-bold tracking-wider mb-4">{title}</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs text-white/60 mb-2">REASON</label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={placeholder}
+              className="w-full bg-black border-2 border-white px-4 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-white/60 mb-2">DETAILS (OPTIONAL)</label>
+            <textarea
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              rows={3}
+              className="w-full bg-black border-2 border-white px-4 py-2 text-sm resize-none"
+            />
+          </div>
+          <div className="flex gap-4 justify-end">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="border-2 border-white/50 px-6 py-2 text-sm font-bold tracking-wider hover:border-white transition-colors"
+            >
+              [CANCEL]
+            </button>
+            <button
+              onClick={() => onSubmit(reason, details)}
+              disabled={isLoading || !reason.trim()}
+              className="border-2 border-white bg-white text-black px-6 py-2 text-sm font-bold tracking-wider hover:bg-black hover:text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              [{submitLabel}]
             </button>
           </div>
         </div>
@@ -99,6 +205,16 @@ export default function JobDetailPage() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalData, setSuccessModalData] = useState({ title: "", message: "" });
+
+  // Action states
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
+  const [showSelectBidModal, setShowSelectBidModal] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -146,19 +262,132 @@ export default function JobDetailPage() {
       const result = await publishJob(jobId, token);
       console.log("Publish result:", result);
 
-      // Update the status locally
-      setJob((prev: any) => ({
-        ...prev,
-        status: "open",
-      }));
+      // Refresh job data from server to get updated status
+      try {
+        const updatedJob = await getJob(jobId, token);
+        setJob(updatedJob);
+      } catch (refreshErr) {
+        // If refresh fails, update status locally
+        setJob((prev: any) => ({
+          ...prev,
+          status: "open",
+        }));
+      }
 
       // Show success modal
+      setSuccessModalData({ title: "JOB_PUBLISHED", message: "Your job is now LIVE on the marketplace. AI agents can now discover and bid on your project." });
       setShowSuccessModal(true);
     } catch (err: any) {
       console.error("Failed to publish job:", err);
       setPublishError(err.message || "Failed to publish job");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  // Handle delete/cancel job
+  const handleDelete = async () => {
+    if (!token) return;
+    try {
+      setActionLoading(true);
+      await cancelJob(jobId, token);
+      setShowDeleteModal(false);
+      router.push("/dashboard/jobs");
+    } catch (err: any) {
+      console.error("Failed to cancel job:", err);
+      alert(err.message || "Failed to cancel job");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle approve delivery
+  const handleApprove = async () => {
+    if (!token) return;
+    try {
+      setActionLoading(true);
+      const result = await approveJob(jobId, token);
+      setShowApproveModal(false);
+      // Refresh job data
+      const updatedJob = await getJob(jobId, token);
+      setJob(updatedJob);
+      setSuccessModalData({
+        title: "JOB_COMPLETED",
+        message: `Delivery approved! Payment of ${result.agent_payout} USDC released to agent.`,
+      });
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error("Failed to approve job:", err);
+      alert(err.message || "Failed to approve job");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle request revision
+  const handleRevision = async (reason: string, details: string) => {
+    if (!token) return;
+    try {
+      setActionLoading(true);
+      await requestRevision(jobId, reason, details, token);
+      setShowRevisionModal(false);
+      const updatedJob = await getJob(jobId, token);
+      setJob(updatedJob);
+      setSuccessModalData({
+        title: "REVISION_REQUESTED",
+        message: "Your revision request has been sent to the agent.",
+      });
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error("Failed to request revision:", err);
+      alert(err.message || "Failed to request revision");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle dispute
+  const handleDispute = async (reason: string, details: string) => {
+    if (!token) return;
+    try {
+      setActionLoading(true);
+      await disputeJob(jobId, reason, details, token);
+      setShowDisputeModal(false);
+      const updatedJob = await getJob(jobId, token);
+      setJob(updatedJob);
+      setSuccessModalData({
+        title: "DISPUTE_FILED",
+        message: "Your dispute has been filed. An arbitrator will review your case.",
+      });
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error("Failed to file dispute:", err);
+      alert(err.message || "Failed to file dispute");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle select bid
+  const handleSelectBid = async () => {
+    if (!token || !selectedBidId) return;
+    try {
+      setActionLoading(true);
+      await selectBid(jobId, selectedBidId, token);
+      setShowSelectBidModal(false);
+      setSelectedBidId(null);
+      const updatedJob = await getJob(jobId, token);
+      setJob(updatedJob);
+      setSuccessModalData({
+        title: "BID_SELECTED",
+        message: "Agent has been assigned to your job. Work will begin shortly.",
+      });
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error("Failed to select bid:", err);
+      alert(err.message || "Failed to select bid");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -211,7 +440,7 @@ export default function JobDetailPage() {
   const renderActions = () => {
     const status = jobData.status.toLowerCase();
 
-    if (status === "draft") {
+    if (status === "draft" || status === "publishing") {
       return (
         <div className="flex flex-col gap-2">
           {publishError && (
@@ -219,19 +448,16 @@ export default function JobDetailPage() {
           )}
           <button
             onClick={handlePublish}
-            disabled={publishing}
+            disabled={publishing || status === "publishing"}
             className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {publishing && <Loader2 className="h-4 w-4 animate-spin" />}
             {publishing ? "[PUBLISHING...]" : "[PUBLISH]"}
           </button>
-          <Link
-            href={`/dashboard/jobs/${jobId}/edit`}
-            className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors text-center"
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="border-2 border-red-500 text-red-500 px-4 py-2 text-sm font-bold tracking-wider hover:bg-red-500 hover:text-black transition-colors"
           >
-            [EDIT]
-          </Link>
-          <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white/10 transition-colors">
             [DELETE]
           </button>
         </div>
@@ -240,27 +466,65 @@ export default function JobDetailPage() {
 
     if (status === "bidding" || status === "open") {
       return (
-        <Link
-          href={`/dashboard/jobs/${jobId}/manage`}
-          className="w-full border-2 border-white px-4 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors block text-center"
-        >
-          [MANAGE BIDS]
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link
+            href={`/jobs/${jobId}`}
+            className="w-full border-2 border-white px-4 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors block text-center"
+          >
+            [VIEW IN MARKETPLACE]
+          </Link>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="border-2 border-red-500 text-red-500 px-4 py-2 text-sm font-bold tracking-wider hover:bg-red-500 hover:text-black transition-colors"
+          >
+            [CANCEL JOB]
+          </button>
+          <p className="text-xs text-white/50 text-center">Waiting for agent bids...</p>
+        </div>
       );
     }
 
     if (status === "delivered") {
       return (
         <div className="flex flex-col gap-2">
-          <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors">
-            [APPROVE]
+          <button
+            onClick={() => setShowApproveModal(true)}
+            className="border-2 border-green-400 bg-green-400 text-black px-4 py-2 text-sm font-bold tracking-wider hover:bg-black hover:text-green-400 transition-colors"
+          >
+            [APPROVE & RELEASE PAYMENT]
           </button>
-          <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors">
+          <button
+            onClick={() => setShowRevisionModal(true)}
+            className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+          >
             [REQUEST REVISION]
           </button>
-          <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white/10 transition-colors">
+          <button
+            onClick={() => setShowDisputeModal(true)}
+            className="border-2 border-red-500 text-red-500 px-4 py-2 text-sm font-bold tracking-wider hover:bg-red-500 hover:text-black transition-colors"
+          >
             [DISPUTE]
           </button>
+        </div>
+      );
+    }
+
+    if (status === "in_progress" || status === "assigned") {
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="border-2 border-yellow-400 p-4 text-center">
+            <p className="text-yellow-400 text-sm font-bold">WORK IN PROGRESS</p>
+            <p className="text-xs text-white/50 mt-2">Agent is working on your job</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (status === "completed") {
+      return (
+        <div className="border-2 border-green-400 p-4 text-center">
+          <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
+          <p className="text-green-400 text-sm font-bold">JOB COMPLETED</p>
         </div>
       );
     }
@@ -275,6 +539,64 @@ export default function JobDetailPage() {
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
         jobId={jobId}
+        title={successModalData.title}
+        message={successModalData.message}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        title="DELETE_JOB"
+        message="Are you sure you want to delete this job? This action cannot be undone. If escrow is funded, it will be refunded."
+        confirmLabel="DELETE"
+        isDestructive={true}
+        isLoading={actionLoading}
+      />
+
+      {/* Approve Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showApproveModal}
+        onClose={() => setShowApproveModal(false)}
+        onConfirm={handleApprove}
+        title="APPROVE_DELIVERY"
+        message="Are you sure you want to approve this delivery? Payment will be released to the agent immediately."
+        confirmLabel="APPROVE"
+        isLoading={actionLoading}
+      />
+
+      {/* Select Bid Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showSelectBidModal}
+        onClose={() => { setShowSelectBidModal(false); setSelectedBidId(null); }}
+        onConfirm={handleSelectBid}
+        title="SELECT_BID"
+        message="Are you sure you want to select this bid? The agent will be assigned to your job and escrow will be locked."
+        confirmLabel="SELECT"
+        isLoading={actionLoading}
+      />
+
+      {/* Revision Request Modal */}
+      <InputModal
+        isOpen={showRevisionModal}
+        onClose={() => setShowRevisionModal(false)}
+        onSubmit={handleRevision}
+        title="REQUEST_REVISION"
+        placeholder="What needs to be changed?"
+        submitLabel="REQUEST"
+        isLoading={actionLoading}
+      />
+
+      {/* Dispute Modal */}
+      <InputModal
+        isOpen={showDisputeModal}
+        onClose={() => setShowDisputeModal(false)}
+        onSubmit={handleDispute}
+        title="FILE_DISPUTE"
+        placeholder="Reason for dispute"
+        submitLabel="FILE DISPUTE"
+        isLoading={actionLoading}
       />
 
       <div className="space-y-8 font-mono">
@@ -375,9 +697,17 @@ export default function JobDetailPage() {
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-xl font-bold">{parseFloat(bid.bid_amount) || 0} USDC</p>
-                        <button className="mt-2 border border-white px-3 py-1 text-xs tracking-wider hover:bg-white hover:text-black transition-colors">
-                          [SELECT]
-                        </button>
+                        {(jobData.status === "BIDDING" || jobData.status === "OPEN") && (
+                          <button
+                            onClick={() => {
+                              setSelectedBidId(bid.id);
+                              setShowSelectBidModal(true);
+                            }}
+                            className="mt-2 border border-white px-3 py-1 text-xs tracking-wider hover:bg-white hover:text-black transition-colors"
+                          >
+                            [SELECT]
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

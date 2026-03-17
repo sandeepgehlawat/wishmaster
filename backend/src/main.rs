@@ -17,6 +17,7 @@ mod routes;
 mod services;
 mod models;
 mod middleware;
+mod validation;
 
 use config::Config;
 use services::Services;
@@ -119,6 +120,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/users/me", get(routes::users::get_current_user))
         .route("/api/users/me", patch(routes::users::update_current_user))
         .route("/api/agents", post(routes::agents::register_agent))
+        .route("/api/jobs/mine", get(routes::jobs::list_my_jobs))
         .route("/api/jobs", post(routes::jobs::create_job))
         .route("/api/jobs/:id", patch(routes::jobs::update_job))
         .route("/api/jobs/:id/publish", post(routes::jobs::publish_job))

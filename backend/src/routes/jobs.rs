@@ -12,12 +12,26 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
-/// List jobs
+/// List jobs (PUBLIC endpoint - excludes drafts and ignores client_id filter)
 pub async fn list_jobs(
     Extension(services): Extension<Arc<Services>>,
     Query(query): Query<JobListQuery>,
 ) -> Result<Json<JobListResponse>> {
-    let response = services.jobs.list(query).await?;
+    // SECURITY: Use list_public to prevent data leakage of draft jobs
+    let response = services.jobs.list_public(query).await?;
+    Ok(Json(response))
+}
+
+/// List my jobs (for authenticated user)
+pub async fn list_my_jobs(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Query(query): Query<JobListQuery>,
+) -> Result<Json<JobListResponse>> {
+    // Override client_id with authenticated user's ID
+    let mut my_query = query;
+    my_query.client_id = Some(auth.id);
+    let response = services.jobs.list(my_query).await?;
     Ok(Json(response))
 }
 
@@ -54,35 +68,72 @@ pub async fn update_job(
 }
 
 /// Publish job and create escrow
+/// Uses atomic status transition to prevent race conditions
 pub async fn publish_job(
     Extension(services): Extension<Arc<Services>>,
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
-    let job = services.jobs.get(id).await?;
-
-    // Verify ownership
-    if job.client_id != auth.id {
-        return Err(AppError::Forbidden("Not your job".to_string()));
-    }
-
-    if job.status != "draft" {
-        return Err(AppError::BadRequest("Job already published".to_string()));
-    }
+    // ATOMIC: Claim the job for publishing by transitioning from 'draft' to 'publishing'
+    // This prevents race conditions where two requests could both see 'draft' status
+    let job = sqlx::query_as::<_, crate::models::Job>(
+        r#"
+        UPDATE jobs SET status = 'publishing', updated_at = NOW()
+        WHERE id = $1 AND client_id = $2 AND status = 'draft'
+        RETURNING *
+        "#
+    )
+    .bind(id)
+    .bind(auth.id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::Conflict("Job not found, not yours, or already published".to_string()))?;
 
     // Create escrow
     let amount: f64 = job.budget_max.to_string().parse().unwrap_or(0.0);
-    let escrow = services.escrow.create_escrow(
+    let escrow = match services.escrow.create_escrow(
         id,
         &auth.wallet_address,
         amount,
-    ).await?;
+    ).await {
+        Ok(e) => e,
+        Err(err) => {
+            // Rollback: set status back to draft if escrow creation fails
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft' WHERE id = $1 AND status = 'publishing'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
 
     // Generate fund transaction
-    let tx_response = services.escrow.generate_fund_transaction(
+    let tx_response = match services.escrow.generate_fund_transaction(
         id,
         &auth.wallet_address,
-    ).await?;
+    ).await {
+        Ok(t) => t,
+        Err(err) => {
+            // Rollback: set status back to draft if transaction generation fails
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft' WHERE id = $1 AND status = 'publishing'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
+
+    // ATOMIC: Complete publishing by transitioning to 'open'
+    let updated = sqlx::query(
+        "UPDATE jobs SET status = 'open', published_at = NOW(), updated_at = NOW() WHERE id = $1 AND status = 'publishing'"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    if updated.rows_affected() == 0 {
+        return Err(AppError::Conflict("Job publish was interrupted".to_string()));
+    }
 
     Ok(Json(serde_json::json!({
         "job_id": id,
@@ -172,39 +223,75 @@ pub async fn select_bid(
 }
 
 /// Approve job delivery
+/// Uses atomic status transition to prevent race conditions and ensure consistency
 pub async fn approve_job(
     Extension(services): Extension<Arc<Services>>,
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
-    let job = services.jobs.get(id).await?;
+    // ATOMIC: Claim the job for approval by transitioning from 'delivered' to 'approving'
+    // This prevents race conditions and ensures only one approval process runs
+    let job = sqlx::query_as::<_, crate::models::Job>(
+        r#"
+        UPDATE jobs SET status = 'approving', updated_at = NOW()
+        WHERE id = $1 AND client_id = $2 AND status = 'delivered'
+        RETURNING *
+        "#
+    )
+    .bind(id)
+    .bind(auth.id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::Conflict("Job not found, not yours, or not in delivered status".to_string()))?;
 
-    if job.client_id != auth.id {
-        return Err(AppError::Forbidden("Not your job".to_string()));
-    }
-
-    if job.status != "delivered" {
-        return Err(AppError::BadRequest("Job not in delivered status".to_string()));
-    }
-
-    // Transition to completed
-    services.jobs.transition_status(id, "delivered", JobStatus::Completed).await?;
+    let agent_id = job.agent_id
+        .ok_or_else(|| AppError::Internal("Job has no assigned agent".to_string()))?;
 
     // Get agent trust tier for fee calculation
-    let trust_tier: String = sqlx::query_scalar(
+    let trust_tier: String = match sqlx::query_scalar(
         "SELECT trust_tier FROM agents WHERE id = $1"
     )
-    .bind(job.agent_id.unwrap())
+    .bind(agent_id)
     .fetch_one(&services.db)
-    .await?;
+    .await {
+        Ok(tier) => tier,
+        Err(err) => {
+            // Rollback: set status back to delivered
+            let _ = sqlx::query("UPDATE jobs SET status = 'delivered' WHERE id = $1 AND status = 'approving'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err.into());
+        }
+    };
 
     // Release escrow
-    let release_result = services.escrow.release(id, &trust_tier).await?;
+    let release_result = match services.escrow.release(id, &trust_tier).await {
+        Ok(r) => r,
+        Err(err) => {
+            // Rollback: set status back to delivered
+            let _ = sqlx::query("UPDATE jobs SET status = 'delivered' WHERE id = $1 AND status = 'approving'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
 
-    // Update agent reputation
-    if let Some(agent_id) = job.agent_id {
-        services.reputation.calculate_agent_reputation(agent_id).await?;
+    // ATOMIC: Complete approval by transitioning to 'completed'
+    let updated = sqlx::query(
+        "UPDATE jobs SET status = 'completed', completed_at = NOW(), updated_at = NOW() WHERE id = $1 AND status = 'approving'"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    if updated.rows_affected() == 0 {
+        return Err(AppError::Conflict("Job approval was interrupted".to_string()));
     }
+
+    // Update agent reputation (non-critical, don't fail if this errors)
+    let _ = services.reputation.calculate_agent_reputation(agent_id).await;
 
     Ok(Json(serde_json::json!({
         "completed": true,

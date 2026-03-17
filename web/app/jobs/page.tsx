@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { listJobs } from "@/lib/api";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface Job {
   id: string;
@@ -75,6 +76,8 @@ function LiveTimer({ initial }: { initial: string }) {
   );
 }
 
+const JOBS_PER_PAGE = 10;
+
 export default function MarketplacePage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "OPEN" | "BIDDING" | "IN_PROGRESS">("ALL");
@@ -82,31 +85,40 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+
+  // Debounce search to avoid excessive API calls
+  const debouncedSearch = useDebounce(search, 300);
+
+  const totalPages = Math.ceil(total / JOBS_PER_PAGE);
 
   useEffect(() => {
     async function fetchJobs() {
       try {
         setLoading(true);
         setError(null);
-        const params: Record<string, string> = {};
+        const params: Record<string, string> = {
+          page: String(page),
+          limit: String(JOBS_PER_PAGE),
+        };
         if (statusFilter !== "ALL") {
           // Backend expects lowercase status
           params.status = statusFilter.toLowerCase();
         }
-        if (search) {
-          params.search = search;
+        if (debouncedSearch) {
+          params.search = debouncedSearch;
         }
         const response = await listJobs(params);
         // Map API response to frontend interface
         const mappedJobs = (response.jobs || []).map((j: any) => ({
-          id: j.id,
-          title: j.title,
-          description: j.description,
-          budget_min: parseFloat(j.budget_min) || 0,
-          budget_max: parseFloat(j.budget_max) || 0,
-          skills: j.required_skills || [],
-          status: (j.status || "open").toUpperCase(),
-          deadline: j.bid_deadline || j.deadline,
+          id: j.job?.id || j.id,
+          title: j.job?.title || j.title,
+          description: j.job?.description || j.description,
+          budget_min: parseFloat(j.job?.budget_min || j.budget_min) || 0,
+          budget_max: parseFloat(j.job?.budget_max || j.budget_max) || 0,
+          skills: j.job?.required_skills || j.required_skills || [],
+          status: (j.job?.status || j.status || "open").toUpperCase(),
+          deadline: j.job?.bid_deadline || j.job?.deadline || j.bid_deadline || j.deadline,
           bids_count: j.bid_count || 0,
           views: 0,
         }));
@@ -120,7 +132,12 @@ export default function MarketplacePage() {
       }
     }
     fetchJobs();
-  }, [statusFilter, search]);
+  }, [statusFilter, debouncedSearch, page]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, debouncedSearch]);
 
   const totalBids = jobs.reduce((sum, j) => sum + (j.bids_count || 0), 0);
   const liveJobs = jobs.length;
@@ -200,60 +217,121 @@ export default function MarketplacePage() {
             </button>
           </div>
         ) : jobs.length > 0 ? (
-          <div className="grid md:grid-cols-2 gap-4">
-            {jobs.map((job) => (
-              <Link
-                key={job.id}
-                href={`/jobs/${job.id}`}
-                className="block border-2 border-white p-5 hover:bg-white hover:text-black transition-colors group"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span
-                    className={`text-xs px-2 py-0.5 border ${
-                      job.status === "BIDDING" || job.status === "OPEN"
-                        ? "border-green-400 text-green-400 group-hover:border-green-700 group-hover:text-green-700"
-                        : "border-white text-white group-hover:border-black group-hover:text-black"
-                    }`}
-                  >
-                    {job.status}
-                  </span>
-                  <div className="flex items-center gap-4 text-xs text-white/50 group-hover:text-black/50">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {job.bids_count || 0} BIDS
-                    </span>
-                    <span>{job.views || 0} VIEWS</span>
-                  </div>
-                </div>
-
-                <h2 className="text-lg font-bold tracking-wider mb-2">{job.title}</h2>
-                <p className="text-sm text-white/60 group-hover:text-black/60 mb-4 line-clamp-2">
-                  {job.description}
-                </p>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {(job.skills || []).map((skill) => (
+          <>
+            <div className="grid md:grid-cols-2 gap-4">
+              {jobs.map((job) => (
+                <Link
+                  key={job.id}
+                  href={`/jobs/${job.id}`}
+                  className="block border-2 border-white p-5 hover:bg-white hover:text-black transition-colors group"
+                >
+                  <div className="flex items-center justify-between mb-3">
                     <span
-                      key={skill}
-                      className="text-[10px] px-2 py-0.5 border border-white/50 group-hover:border-black/50"
+                      className={`text-xs px-2 py-0.5 border ${
+                        job.status === "BIDDING" || job.status === "OPEN"
+                          ? "border-green-400 text-green-400 group-hover:border-green-700 group-hover:text-green-700"
+                          : "border-white text-white group-hover:border-black group-hover:text-black"
+                      }`}
                     >
-                      {skill}
+                      {job.status}
                     </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-white/20 group-hover:border-black/20">
-                  <span className="text-lg font-bold text-green-400 group-hover:text-green-700">
-                    {formatBudget(job)}
-                  </span>
-                  <div className="flex items-center gap-2 text-xs">
-                    <Clock className="h-3 w-3" />
-                    <LiveTimer initial={getTimeLeft(job.deadline)} />
+                    <div className="flex items-center gap-4 text-xs text-white/50 group-hover:text-black/50">
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {job.bids_count || 0} BIDS
+                      </span>
+                      <span>{job.views || 0} VIEWS</span>
+                    </div>
                   </div>
+
+                  <h2 className="text-lg font-bold tracking-wider mb-2">{job.title}</h2>
+                  <p className="text-sm text-white/60 group-hover:text-black/60 mb-4 line-clamp-2">
+                    {job.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {(job.skills || []).map((skill) => (
+                      <span
+                        key={skill}
+                        className="text-[10px] px-2 py-0.5 border border-white/50 group-hover:border-black/50"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-white/20 group-hover:border-black/20">
+                    <span className="text-lg font-bold text-green-400 group-hover:text-green-700">
+                      {formatBudget(job)}
+                    </span>
+                    <div className="flex items-center gap-2 text-xs">
+                      <Clock className="h-3 w-3" />
+                      <LiveTimer initial={getTimeLeft(job.deadline)} />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className={`px-4 py-2 text-xs font-bold tracking-wider border-2 ${
+                    page === 1
+                      ? "border-white/30 text-white/30 cursor-not-allowed"
+                      : "border-white text-white hover:bg-white hover:text-black"
+                  }`}
+                >
+                  [PREV]
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    // Show pages around current page
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`w-10 h-10 text-xs font-bold tracking-wider border-2 ${
+                          page === pageNum
+                            ? "border-white bg-white text-black"
+                            : "border-white/50 text-white/50 hover:border-white hover:text-white"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
                 </div>
-              </Link>
-            ))}
-          </div>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className={`px-4 py-2 text-xs font-bold tracking-wider border-2 ${
+                    page === totalPages
+                      ? "border-white/30 text-white/30 cursor-not-allowed"
+                      : "border-white text-white hover:bg-white hover:text-black"
+                  }`}
+                >
+                  [NEXT]
+                </button>
+              </div>
+            )}
+            <p className="text-center text-xs text-white/40 mt-4">
+              Showing {(page - 1) * JOBS_PER_PAGE + 1}-{Math.min(page * JOBS_PER_PAGE, total)} of {total} jobs
+            </p>
+          </>
         ) : (
           <div className="border-2 border-white p-12 text-center">
             <p className="text-white/60 mb-4">NO_JOBS_FOUND</p>

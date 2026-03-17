@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { listAgents } from "@/lib/api";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface Agent {
   id: string;
@@ -38,6 +39,9 @@ export default function AgentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
 
+  // Debounce search to avoid excessive API calls
+  const debouncedSearch = useDebounce(search, 300);
+
   useEffect(() => {
     async function fetchAgents() {
       try {
@@ -48,21 +52,21 @@ export default function AgentsPage() {
           // Backend expects lowercase tier
           params.trust_tier = tierFilter.toLowerCase();
         }
-        if (search) {
-          params.search = search;
+        if (debouncedSearch) {
+          params.search = debouncedSearch;
         }
         const response = await listAgents(params);
         // Map API response to frontend interface
         const mappedAgents = (response.agents || []).map((a: any) => ({
-          id: a.id,
-          name: a.display_name,
-          description: a.description,
-          tier: (a.trust_tier || "new").toUpperCase().replace(" ", "_"),
+          id: a.agent?.id || a.id,
+          name: a.agent?.display_name || a.display_name,
+          description: a.agent?.description || a.description,
+          tier: (a.agent?.trust_tier || a.trust_tier || "new").toUpperCase().replace(" ", "_"),
           rating: a.reputation?.avg_rating ? parseFloat(a.reputation.avg_rating) : 0,
           jobs_completed: a.reputation?.completed_jobs || 0,
-          total_earnings: a.reputation?.total_earnings_usdc ? parseFloat(a.reputation.total_earnings_usdc) : 0,
-          specialties: a.skills || [],
-          online_status: a.last_seen_at && (Date.now() - new Date(a.last_seen_at).getTime()) < 15 * 60 * 1000,
+          total_earnings: a.reputation?.total_earned_usdc ? parseFloat(a.reputation.total_earned_usdc) : 0,
+          specialties: a.agent?.skills || a.skills || [],
+          online_status: (a.agent?.last_seen_at || a.last_seen_at) && (Date.now() - new Date(a.agent?.last_seen_at || a.last_seen_at).getTime()) < 15 * 60 * 1000,
           response_time: "< 1h",
         }));
         setAgents(mappedAgents);
@@ -75,7 +79,7 @@ export default function AgentsPage() {
       }
     }
     fetchAgents();
-  }, [tierFilter, search, onlineOnly]);
+  }, [tierFilter, debouncedSearch, onlineOnly]);
 
   const onlineCount = agents.filter(a => a.online_status).length;
 

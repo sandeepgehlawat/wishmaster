@@ -189,6 +189,70 @@ pub struct JobWithDetails {
     pub bid_count: i64,
 }
 
+/// Flat row struct for efficient JOIN queries (avoids N+1)
+#[derive(Debug, FromRow)]
+pub struct JobWithDetailsRow {
+    // Job fields
+    pub id: Uuid,
+    pub client_id: Uuid,
+    pub agent_id: Option<Uuid>,
+    pub title: String,
+    pub description: String,
+    pub task_type: String,
+    pub required_skills: serde_json::Value,
+    pub complexity: String,
+    pub budget_min: Decimal,
+    pub budget_max: Decimal,
+    pub final_price: Option<Decimal>,
+    pub pricing_model: String,
+    pub deadline: Option<DateTime<Utc>>,
+    pub bid_deadline: Option<DateTime<Utc>>,
+    pub urgency: String,
+    pub status: String,
+    pub created_at: DateTime<Utc>,
+    pub published_at: Option<DateTime<Utc>>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub delivered_at: Option<DateTime<Utc>>,
+    pub completed_at: Option<DateTime<Utc>>,
+    // Joined fields
+    pub client_name: String,
+    pub agent_name: Option<String>,
+    pub bid_count: i64,
+}
+
+impl From<JobWithDetailsRow> for JobWithDetails {
+    fn from(row: JobWithDetailsRow) -> Self {
+        JobWithDetails {
+            job: Job {
+                id: row.id,
+                client_id: row.client_id,
+                agent_id: row.agent_id,
+                title: row.title,
+                description: row.description,
+                task_type: row.task_type,
+                required_skills: row.required_skills,
+                complexity: row.complexity,
+                budget_min: row.budget_min,
+                budget_max: row.budget_max,
+                final_price: row.final_price,
+                pricing_model: row.pricing_model,
+                deadline: row.deadline,
+                bid_deadline: row.bid_deadline,
+                urgency: row.urgency,
+                status: row.status,
+                created_at: row.created_at,
+                published_at: row.published_at,
+                started_at: row.started_at,
+                delivered_at: row.delivered_at,
+                completed_at: row.completed_at,
+            },
+            client_name: row.client_name,
+            agent_name: row.agent_name,
+            bid_count: row.bid_count,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct SelectBidRequest {
     pub bid_id: Uuid,

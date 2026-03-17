@@ -16,24 +16,20 @@ import {
   Wallet,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
-import { listJobs, getCurrentUser } from "@/lib/api";
+import { listMyJobs, getCurrentUser } from "@/lib/api";
+import type { JobWithDetails } from "@/lib/types";
 
-interface Job {
+// Dashboard job view derived from JobWithDetails
+interface DashboardJob {
   id: string;
   title: string;
   status: string;
-  budget_amount: number;
-  budget_token: string;
-  deadline: string;
-  escrow_status?: string;
-  escrow_amount?: number;
-  bids_count?: number;
-  selected_agent?: {
-    id: string;
-    name: string;
-  };
-  progress?: number;
-  rating?: number;
+  budget_min: number;
+  budget_max: number;
+  final_price?: number;
+  deadline?: string;
+  bid_count: number;
+  agent_name?: string;
 }
 
 interface User {
@@ -53,7 +49,7 @@ export default function DashboardPage() {
   const { publicKey } = useWallet();
   const { token, _hasHydrated } = useAuthStore();
 
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<DashboardJob[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,10 +72,22 @@ export default function DashboardPage() {
       setError(null);
       try {
         const [jobsResponse, userResponse] = await Promise.all([
-          listJobs({ my_jobs: "true" }),
+          listMyJobs(token),
           getCurrentUser(token),
         ]);
-        setJobs(jobsResponse.jobs || []);
+        // Transform JobWithDetails to DashboardJob
+        const transformedJobs: DashboardJob[] = (jobsResponse.jobs || []).map((jwd: JobWithDetails) => ({
+          id: jwd.job.id,
+          title: jwd.job.title,
+          status: jwd.job.status.toUpperCase(),
+          budget_min: jwd.job.budget_min,
+          budget_max: jwd.job.budget_max,
+          final_price: jwd.job.final_price,
+          deadline: jwd.job.deadline,
+          bid_count: jwd.bid_count,
+          agent_name: jwd.agent_name,
+        }));
+        setJobs(transformedJobs);
         setUser(userResponse);
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
@@ -95,14 +103,15 @@ export default function DashboardPage() {
   // Calculate escrow summary from jobs
   const escrowSummary: EscrowSummary = jobs.reduce(
     (acc, job) => {
-      const amount = job.escrow_amount || job.budget_amount || 0;
-      if (job.escrow_status === "FUNDED" || job.status === "BIDDING") {
+      const amount = job.final_price || job.budget_max || 0;
+      const status = job.status.toUpperCase();
+      if (status === "OPEN" || status === "BIDDING") {
         acc.funded += amount;
         acc.total += amount;
-      } else if (job.escrow_status === "LOCKED" || job.status === "IN_PROGRESS") {
+      } else if (status === "ASSIGNED" || status === "IN_PROGRESS") {
         acc.locked += amount;
         acc.total += amount;
-      } else if (job.escrow_status === "PENDING_RELEASE" || job.status === "DELIVERED") {
+      } else if (status === "DELIVERED") {
         acc.pendingRelease += amount;
         acc.total += amount;
       }
@@ -114,33 +123,26 @@ export default function DashboardPage() {
   // Generate pending actions from jobs
   const pendingActions = jobs
     .filter((job) => {
-      if (job.status === "BIDDING" && (job.bids_count || 0) > 0) return true;
-      if (job.status === "DELIVERED") return true;
-      if (job.status === "COMPLETED" && !job.rating) return true;
+      const status = job.status.toUpperCase();
+      if (status === "BIDDING" && job.bid_count > 0) return true;
+      if (status === "DELIVERED") return true;
       return false;
     })
     .map((job) => {
-      if (job.status === "BIDDING") {
+      const status = job.status.toUpperCase();
+      if (status === "BIDDING") {
         return {
           type: "REVIEW_BIDS",
           jobId: job.id,
-          title: `${job.bids_count} new bid${(job.bids_count || 0) > 1 ? "s" : ""} on ${job.title}`,
-          priority: "HIGH" as const,
-        };
-      }
-      if (job.status === "DELIVERED") {
-        return {
-          type: "APPROVE_DELIVERY",
-          jobId: job.id,
-          title: `Review delivery for ${job.title}`,
+          title: `${job.bid_count} new bid${job.bid_count > 1 ? "s" : ""} on ${job.title}`,
           priority: "HIGH" as const,
         };
       }
       return {
-        type: "RATE_AGENT",
+        type: "APPROVE_DELIVERY",
         jobId: job.id,
-        title: `Rate agent for ${job.title}`,
-        priority: "MEDIUM" as const,
+        title: `Review delivery for ${job.title}`,
+        priority: "HIGH" as const,
       };
     });
 
@@ -154,11 +156,12 @@ export default function DashboardPage() {
     }
   };
 
-  const getUrgentAction = (job: Job): string | null => {
-    if (job.status === "BIDDING" && (job.bids_count || 0) > 0) {
-      return `Review ${job.bids_count} new bid${(job.bids_count || 0) > 1 ? "s" : ""}`;
+  const getUrgentAction = (job: DashboardJob): string | null => {
+    const status = job.status.toUpperCase();
+    if (status === "BIDDING" && job.bid_count > 0) {
+      return `Review ${job.bid_count} new bid${job.bid_count > 1 ? "s" : ""}`;
     }
-    if (job.status === "DELIVERED") {
+    if (status === "DELIVERED") {
       return "Review & approve delivery";
     }
     return null;
@@ -339,36 +342,19 @@ export default function DashboardPage() {
                     </div>
                     <h3 className="font-bold mb-2">{job.title}</h3>
                     <div className="flex items-center gap-4 text-xs text-white/60">
-                      {job.selected_agent && <span>AGENT: {job.selected_agent.name}</span>}
-                      {job.progress !== undefined && (
-                        <span className="flex items-center gap-2">
-                          PROGRESS:
-                          <span className="w-20 h-1.5 bg-white/20">
-                            <span
-                              className="block h-full bg-green-400"
-                              style={{ width: `${job.progress}%` }}
-                            />
-                          </span>
-                          {job.progress}%
-                        </span>
-                      )}
-                      {job.rating && (
-                        <span className="flex items-center gap-1">
-                          <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                          {job.rating}/5
-                        </span>
-                      )}
+                      {job.agent_name && <span>AGENT: {job.agent_name}</span>}
+                      {job.bid_count > 0 && <span>BIDS: {job.bid_count}</span>}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">{job.budget_amount} {job.budget_token || "USDC"}</p>
+                    <p className="font-bold">{job.final_price || job.budget_max} USDC</p>
                     <p className={`text-xs mt-1 ${
-                      job.escrow_status === "PENDING_RELEASE" || job.status === "DELIVERED" ? "text-yellow-400" :
-                      job.escrow_status === "LOCKED" || job.status === "IN_PROGRESS" ? "text-green-400" :
-                      job.escrow_status === "RELEASED" || job.status === "COMPLETED" ? "text-white/50" :
+                      job.status.toUpperCase() === "DELIVERED" ? "text-yellow-400" :
+                      job.status.toUpperCase() === "IN_PROGRESS" || job.status.toUpperCase() === "ASSIGNED" ? "text-green-400" :
+                      job.status.toUpperCase() === "COMPLETED" ? "text-white/50" :
                       "text-white"
                     }`}>
-                      {job.escrow_status || job.status}
+                      {job.status}
                     </p>
                   </div>
                 </div>
@@ -409,14 +395,14 @@ export default function DashboardPage() {
             {jobs.length === 0 ? (
               <p className="text-white/60 text-sm">No recent activity</p>
             ) : (
-              jobs.slice(0, 5).map((job, i) => (
+              jobs.slice(0, 5).map((job) => (
                 <div key={job.id} className="flex items-center justify-between py-2 border-b border-white/20 last:border-0">
                   <div>
                     <p className="text-sm font-bold truncate max-w-[200px]">{job.title}</p>
                     <p className="text-xs text-white/50">{job.status}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold">{job.budget_amount} {job.budget_token || "USDC"}</p>
+                    <p className="text-sm font-bold">{job.final_price || job.budget_max} USDC</p>
                   </div>
                 </div>
               ))

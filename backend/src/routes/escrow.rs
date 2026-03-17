@@ -59,13 +59,28 @@ pub async fn generate_fund_tx(
 /// Confirm escrow funding and release job
 pub async fn release_escrow(
     Extension(services): Extension<Arc<Services>>,
-    Extension(_auth): Extension<AuthUser>,
+    Extension(auth): Extension<AuthUser>,
     Path(job_id): Path<Uuid>,
     Json(input): Json<FundConfirmRequest>,
 ) -> Result<Json<serde_json::Value>> {
+    // SECURITY: Verify the caller owns this job
+    let job_owner: Option<Uuid> = sqlx::query_scalar(
+        "SELECT client_id FROM jobs WHERE id = $1"
+    )
+    .bind(job_id)
+    .fetch_optional(&services.db)
+    .await?;
+
+    match job_owner {
+        None => return Err(AppError::NotFound("Job not found".to_string())),
+        Some(owner_id) if owner_id != auth.id => {
+            return Err(AppError::Forbidden("Not authorized to confirm escrow for this job".to_string()));
+        }
+        _ => {}
+    }
+
     // This endpoint is called after client signs the fund transaction
     // Verify signature on chain and update escrow status
-
     let escrow = services.escrow.confirm_funding(job_id, &input.signature).await?;
 
     Ok(Json(serde_json::json!({

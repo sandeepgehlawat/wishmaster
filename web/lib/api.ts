@@ -1,3 +1,19 @@
+import type {
+  User,
+  Agent,
+  AgentWithReputation,
+  JobWithDetails,
+  BidWithAgent,
+  StatsResponse,
+  ChallengeResponse,
+  AuthResponse,
+  CreateJobInput,
+  JobListResponse,
+  BidListResponse,
+  AgentListResponse,
+  EscrowDetails,
+} from "./types";
+
 // Determine API URL based on environment
 // In production (Railway), use the backend URL directly
 // In development, use localhost
@@ -17,7 +33,7 @@ const API_BASE_URL = getApiBaseUrl();
 
 interface ApiOptions {
   method?: string;
-  body?: any;
+  body?: unknown;
   token?: string;
 }
 
@@ -47,8 +63,8 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
 }
 
 // Auth
-export async function getChallenge(walletAddress: string) {
-  return api<{ message: string; message_hash: string }>("/api/auth/challenge", {
+export async function getChallenge(walletAddress: string): Promise<ChallengeResponse> {
+  return api<ChallengeResponse>("/api/auth/challenge", {
     method: "POST",
     body: { wallet_address: walletAddress },
   });
@@ -59,83 +75,173 @@ export async function verifySignature(
   message: string,
   signature: string,
   displayName?: string
-) {
-  return api<{ token: string; user: any; is_new: boolean }>("/api/auth/verify", {
+): Promise<AuthResponse> {
+  return api<AuthResponse>("/api/auth/verify", {
     method: "POST",
     body: { wallet_address: walletAddress, message, signature, display_name: displayName },
   });
 }
 
 // Jobs
-export async function listJobs(params?: Record<string, any>) {
-  const query = params ? `?${new URLSearchParams(params).toString()}` : "";
-  return api<{ jobs: any[]; total: number }>(`/api/jobs${query}`);
+export interface JobListParams {
+  status?: string;
+  task_type?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
 }
 
-export async function getJob(id: string, token?: string) {
-  return api<any>(`/api/jobs/${id}`, { token });
+export async function listJobs(params?: JobListParams): Promise<JobListResponse> {
+  const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : "";
+  return api<JobListResponse>(`/api/jobs${query}`);
 }
 
-export async function createJob(data: any, token: string) {
-  return api<any>("/api/jobs", { method: "POST", body: data, token });
+export async function listMyJobs(token: string, params?: JobListParams): Promise<JobListResponse> {
+  const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : "";
+  return api<JobListResponse>(`/api/jobs/mine${query}`, { token });
 }
 
-export async function publishJob(id: string, token: string) {
-  return api<any>(`/api/jobs/${id}/publish`, { method: "POST", token });
+export async function getJob(id: string, token?: string): Promise<JobWithDetails> {
+  return api<JobWithDetails>(`/api/jobs/${id}`, { token });
 }
 
-export async function selectBid(jobId: string, bidId: string, token: string) {
-  return api<any>(`/api/jobs/${jobId}/select-bid`, {
+export async function createJob(data: CreateJobInput, token: string): Promise<JobWithDetails> {
+  return api<JobWithDetails>("/api/jobs", { method: "POST", body: data, token });
+}
+
+export interface PublishJobResponse {
+  job_id: string;
+  escrow_pda: string;
+  transaction: string;
+  amount_usdc: number;
+}
+
+export async function publishJob(id: string, token: string): Promise<PublishJobResponse> {
+  return api<PublishJobResponse>(`/api/jobs/${id}/publish`, { method: "POST", token });
+}
+
+export async function selectBid(jobId: string, bidId: string, token: string): Promise<JobWithDetails> {
+  return api<JobWithDetails>(`/api/jobs/${jobId}/select-bid`, {
     method: "POST",
     body: { bid_id: bidId },
     token,
   });
 }
 
-export async function approveJob(id: string, token: string) {
-  return api<any>(`/api/jobs/${id}/approve`, { method: "POST", token });
+export interface ApproveJobResponse {
+  completed: boolean;
+  signature: string;
+  agent_payout: number;
+  platform_fee: number;
+}
+
+export async function approveJob(id: string, token: string): Promise<ApproveJobResponse> {
+  return api<ApproveJobResponse>(`/api/jobs/${id}/approve`, { method: "POST", token });
+}
+
+export interface CancelJobResponse {
+  cancelled: boolean;
+  refund_signature?: string;
+}
+
+export async function cancelJob(id: string, token: string): Promise<CancelJobResponse> {
+  return api<CancelJobResponse>(`/api/jobs/${id}/cancel`, { method: "POST", token });
+}
+
+export async function requestRevision(
+  id: string,
+  reason: string,
+  details?: string,
+  token?: string
+): Promise<JobWithDetails> {
+  return api<JobWithDetails>(`/api/jobs/${id}/revision`, {
+    method: "POST",
+    body: { reason, details },
+    token,
+  });
+}
+
+export interface DisputeJobResponse {
+  disputed: boolean;
+  message: string;
+}
+
+export async function disputeJob(
+  id: string,
+  reason: string,
+  details: string,
+  token: string
+): Promise<DisputeJobResponse> {
+  return api<DisputeJobResponse>(`/api/jobs/${id}/dispute`, {
+    method: "POST",
+    body: { reason, details },
+    token,
+  });
 }
 
 // Bids
-export async function listBids(jobId: string, token?: string) {
-  return api<{ bids: any[]; total: number }>(`/api/jobs/${jobId}/bids`, { token });
+export async function listBids(jobId: string, token?: string): Promise<BidListResponse> {
+  return api<BidListResponse>(`/api/jobs/${jobId}/bids`, { token });
 }
 
 // Agents
-export async function listAgents(params?: Record<string, any>) {
-  const query = params ? `?${new URLSearchParams(params).toString()}` : "";
-  return api<{ agents: any[]; total: number }>(`/api/agents${query}`);
+export interface AgentListParams {
+  skills?: string;
+  trust_tier?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
 }
 
-export async function getAgent(id: string) {
-  return api<any>(`/api/agents/${id}`);
+export async function listAgents(params?: AgentListParams): Promise<AgentListResponse> {
+  const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : "";
+  return api<AgentListResponse>(`/api/agents${query}`);
+}
+
+export async function getAgent(id: string): Promise<AgentWithReputation> {
+  return api<AgentWithReputation>(`/api/agents/${id}`);
 }
 
 // Escrow
-export async function fundEscrow(jobId: string, signature: string, token: string) {
-  return api<any>(`/api/escrow/${jobId}/release`, {
+export interface FundEscrowResponse {
+  funded: boolean;
+  escrow_pda: string;
+  status: string;
+}
+
+export async function fundEscrow(
+  jobId: string,
+  signature: string,
+  token: string
+): Promise<FundEscrowResponse> {
+  return api<FundEscrowResponse>(`/api/escrow/${jobId}/release`, {
     method: "POST",
     body: { signature },
     token,
   });
 }
 
-// User
-export async function getCurrentUser(token: string) {
-  return api<any>("/api/users/me", { token });
+export async function getEscrow(jobId: string, token: string): Promise<EscrowDetails> {
+  return api<EscrowDetails>(`/api/escrow/${jobId}`, { token });
 }
 
-export async function updateUser(data: any, token: string) {
-  return api<any>("/api/users/me", { method: "PATCH", body: data, token });
+// User
+export async function getCurrentUser(token: string): Promise<User> {
+  return api<User>("/api/users/me", { token });
+}
+
+export interface UpdateUserInput {
+  display_name?: string;
+  email?: string;
+  bio?: string;
+  avatar_url?: string;
+}
+
+export async function updateUser(data: UpdateUserInput, token: string): Promise<User> {
+  return api<User>("/api/users/me", { method: "PATCH", body: data, token });
 }
 
 // Stats
-export async function getStats() {
-  return api<{
-    total_jobs: number;
-    total_agents: number;
-    online_agents: number;
-    total_escrow: number;
-    completion_rate: number;
-  }>("/api/stats");
+export async function getStats(): Promise<StatsResponse> {
+  return api<StatsResponse>("/api/stats");
 }

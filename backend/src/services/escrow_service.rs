@@ -343,18 +343,22 @@ impl EscrowService {
     }
 
     /// Release escrow to agent (on job approval)
+    /// Uses atomic UPDATE to prevent double-release race condition
     pub async fn release(&self, job_id: Uuid, trust_tier: &str) -> Result<ReleaseResult> {
+        // ATOMIC: Single query that selects AND updates only if status is 'locked'
+        // This prevents race conditions where two requests could both see 'locked' status
         let escrow = sqlx::query_as::<_, Escrow>(
-            "SELECT * FROM escrows WHERE job_id = $1"
+            r#"
+            UPDATE escrows SET
+                status = 'releasing'
+            WHERE job_id = $1 AND status = 'locked'
+            RETURNING *
+            "#
         )
         .bind(job_id)
         .fetch_optional(&self.db)
         .await?
-        .ok_or_else(|| AppError::NotFound("Escrow not found".to_string()))?;
-
-        if escrow.status != "locked" {
-            return Err(AppError::BadRequest("Escrow not locked".to_string()));
-        }
+        .ok_or_else(|| AppError::Conflict("Escrow not in locked state or already being released".to_string()))?;
 
         let agent_wallet = escrow.agent_wallet.as_ref()
             .ok_or_else(|| AppError::Internal("No agent wallet".to_string()))?;
@@ -399,8 +403,9 @@ impl EscrowService {
             serde_json::to_string(&instruction_info)?.as_bytes(),
         );
 
-        // Update escrow
-        sqlx::query(
+        // ATOMIC: Final update to 'released' status with all details
+        // Only succeeds if status is still 'releasing' (set by us above)
+        let updated = sqlx::query(
             r#"
             UPDATE escrows SET
                 status = 'released',
@@ -408,7 +413,7 @@ impl EscrowService {
                 agent_payout_usdc = $3,
                 release_tx = $4,
                 released_at = NOW()
-            WHERE job_id = $1
+            WHERE job_id = $1 AND status = 'releasing'
             "#,
         )
         .bind(job_id)
@@ -418,6 +423,10 @@ impl EscrowService {
         .execute(&self.db)
         .await?;
 
+        if updated.rows_affected() == 0 {
+            return Err(AppError::Conflict("Escrow release was interrupted".to_string()));
+        }
+
         Ok(ReleaseResult {
             signature,
             agent_payout,
@@ -426,18 +435,20 @@ impl EscrowService {
     }
 
     /// Refund escrow to client (on cancellation)
+    /// Uses atomic UPDATE to prevent double-refund race condition
     pub async fn refund(&self, job_id: Uuid) -> Result<String> {
+        // ATOMIC: Single query that selects AND updates only if status is 'funded'
         let escrow = sqlx::query_as::<_, Escrow>(
-            "SELECT * FROM escrows WHERE job_id = $1"
+            r#"
+            UPDATE escrows SET status = 'refunding'
+            WHERE job_id = $1 AND status = 'funded'
+            RETURNING *
+            "#
         )
         .bind(job_id)
         .fetch_optional(&self.db)
         .await?
-        .ok_or_else(|| AppError::NotFound("Escrow not found".to_string()))?;
-
-        if escrow.status != "funded" {
-            return Err(AppError::BadRequest("Escrow not in refundable state".to_string()));
-        }
+        .ok_or_else(|| AppError::Conflict("Escrow not in refundable state or already being refunded".to_string()))?;
 
         let escrow_pda_bytes = bs58_to_bytes(&escrow.escrow_pda);
         let (vault_pda, _) = self.derive_vault_pda(&escrow_pda_bytes);
@@ -465,13 +476,18 @@ impl EscrowService {
             serde_json::to_string(&instruction_info)?.as_bytes(),
         );
 
-        sqlx::query(
-            "UPDATE escrows SET status = 'refunded', release_tx = $2 WHERE job_id = $1"
+        // ATOMIC: Final update only if still in 'refunding' state
+        let updated = sqlx::query(
+            "UPDATE escrows SET status = 'refunded', release_tx = $2, released_at = NOW() WHERE job_id = $1 AND status = 'refunding'"
         )
         .bind(job_id)
         .bind(&signature)
         .execute(&self.db)
         .await?;
+
+        if updated.rows_affected() == 0 {
+            return Err(AppError::Conflict("Escrow refund was interrupted".to_string()));
+        }
 
         Ok(signature)
     }

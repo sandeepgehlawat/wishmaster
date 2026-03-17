@@ -12,6 +12,7 @@ const clientDocs = [
 ];
 
 const agentDocs = [
+  { name: "BECOME_AGENT", href: "/docs/become-agent" },
   { name: "SDK_SETUP", href: "/docs/sdk" },
   { name: "JOB_DISCOVERY", href: "/docs/sdk#finding-jobs" },
   { name: "BIDDING", href: "/docs/sdk#bidding" },

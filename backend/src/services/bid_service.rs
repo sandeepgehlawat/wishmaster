@@ -140,94 +140,122 @@ impl BidService {
     }
 
     pub async fn update(&self, id: Uuid, agent_id: Uuid, input: UpdateBid) -> Result<Bid> {
-        let bid = self.get(id).await?;
-
-        // Verify ownership
-        if bid.agent_id != agent_id {
-            return Err(AppError::Forbidden("Not authorized to update this bid".to_string()));
-        }
-
-        // Check revision limit
-        if bid.revision_count >= 1 {
-            return Err(AppError::BadRequest(
-                "Maximum bid revisions (1) reached".to_string(),
-            ));
-        }
-
-        // Only pending bids can be updated
-        if bid.status != "pending" {
-            return Err(AppError::BadRequest(
-                "Can only update pending bids".to_string(),
-            ));
-        }
-
+        // ATOMIC: Single query that checks ownership, status, and revision_count
+        // This prevents race conditions where multiple updates could exceed revision limit
         let updated = sqlx::query_as::<_, Bid>(
             r#"
             UPDATE bids SET
-                bid_amount = COALESCE($2, bid_amount),
-                estimated_hours = COALESCE($3, estimated_hours),
-                estimated_completion = COALESCE($4, estimated_completion),
-                proposal = COALESCE($5, proposal),
-                approach = COALESCE($6, approach),
+                bid_amount = COALESCE($3, bid_amount),
+                estimated_hours = COALESCE($4, estimated_hours),
+                estimated_completion = COALESCE($5, estimated_completion),
+                proposal = COALESCE($6, proposal),
+                approach = COALESCE($7, approach),
                 revision_count = revision_count + 1,
                 updated_at = NOW()
             WHERE id = $1
+              AND agent_id = $2
+              AND status = 'pending'
+              AND revision_count < 1
             RETURNING *
             "#,
         )
         .bind(id)
+        .bind(agent_id)
         .bind(input.bid_amount)
         .bind(input.estimated_hours)
         .bind(input.estimated_completion)
         .bind(&input.proposal)
         .bind(&input.approach)
-        .fetch_one(&self.db)
+        .fetch_optional(&self.db)
         .await?;
 
-        Ok(updated)
+        match updated {
+            Some(bid) => Ok(bid),
+            None => {
+                // Determine the specific error by fetching the bid
+                let bid: Option<Bid> = sqlx::query_as(
+                    "SELECT * FROM bids WHERE id = $1"
+                )
+                .bind(id)
+                .fetch_optional(&self.db)
+                .await?;
+
+                match bid {
+                    None => Err(AppError::NotFound(format!("Bid {} not found", id))),
+                    Some(b) if b.agent_id != agent_id => {
+                        Err(AppError::Forbidden("Not authorized to update this bid".to_string()))
+                    }
+                    Some(b) if b.status != "pending" => {
+                        Err(AppError::BadRequest("Can only update pending bids".to_string()))
+                    }
+                    Some(_) => {
+                        Err(AppError::BadRequest("Maximum bid revisions (1) reached".to_string()))
+                    }
+                }
+            }
+        }
     }
 
     pub async fn withdraw(&self, id: Uuid, agent_id: Uuid) -> Result<Bid> {
-        let bid = self.get(id).await?;
-
-        if bid.agent_id != agent_id {
-            return Err(AppError::Forbidden("Not authorized to withdraw this bid".to_string()));
-        }
-
-        if bid.status == "accepted" {
-            return Err(AppError::BadRequest(
-                "Cannot withdraw an accepted bid".to_string(),
-            ));
-        }
-
+        // ATOMIC: Single query that checks ownership and status
         let updated = sqlx::query_as::<_, Bid>(
-            "UPDATE bids SET status = 'withdrawn', updated_at = NOW() WHERE id = $1 RETURNING *",
+            r#"
+            UPDATE bids SET status = 'withdrawn', updated_at = NOW()
+            WHERE id = $1 AND agent_id = $2 AND status != 'accepted'
+            RETURNING *
+            "#,
         )
         .bind(id)
-        .fetch_one(&self.db)
+        .bind(agent_id)
+        .fetch_optional(&self.db)
         .await?;
 
-        Ok(updated)
+        match updated {
+            Some(bid) => Ok(bid),
+            None => {
+                // Determine specific error
+                let bid: Option<Bid> = sqlx::query_as(
+                    "SELECT * FROM bids WHERE id = $1"
+                )
+                .bind(id)
+                .fetch_optional(&self.db)
+                .await?;
+
+                match bid {
+                    None => Err(AppError::NotFound(format!("Bid {} not found", id))),
+                    Some(b) if b.agent_id != agent_id => {
+                        Err(AppError::Forbidden("Not authorized to withdraw this bid".to_string()))
+                    }
+                    Some(_) => {
+                        Err(AppError::BadRequest("Cannot withdraw an accepted bid".to_string()))
+                    }
+                }
+            }
+        }
     }
 
     pub async fn accept(&self, id: Uuid) -> Result<Bid> {
-        // Accept this bid and reject all others for the job
-        let bid = self.get(id).await?;
-
-        // Accept the selected bid
+        // ATOMIC: Accept this bid only if it's still pending (prevents double-accept race condition)
         let accepted = sqlx::query_as::<_, Bid>(
-            "UPDATE bids SET status = 'accepted', updated_at = NOW() WHERE id = $1 RETURNING *",
+            r#"
+            UPDATE bids SET status = 'accepted', updated_at = NOW()
+            WHERE id = $1 AND status = 'pending'
+            RETURNING *
+            "#,
         )
         .bind(id)
-        .fetch_one(&self.db)
-        .await?;
+        .fetch_optional(&self.db)
+        .await?
+        .ok_or_else(|| AppError::Conflict("Bid is no longer pending or not found".to_string()))?;
 
-        // Reject all other bids
-        sqlx::query("UPDATE bids SET status = 'rejected', updated_at = NOW() WHERE job_id = $1 AND id != $2 AND status = 'pending'")
-            .bind(bid.job_id)
-            .bind(id)
-            .execute(&self.db)
-            .await?;
+        // Reject all other pending bids for this job
+        sqlx::query(
+            "UPDATE bids SET status = 'rejected', updated_at = NOW() WHERE job_id = $1 AND id != $2 AND status = 'pending'"
+        )
+        .bind(accepted.job_id)
+        .bind(id)
+        .execute(&self.db)
+        .await?;
 
         Ok(accepted)
     }

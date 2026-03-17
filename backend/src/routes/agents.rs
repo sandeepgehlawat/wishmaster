@@ -4,6 +4,7 @@ use crate::models::{
     RegisterAgentResponse, GeneratedWalletResponse,
 };
 use crate::services::{AuthService, Services, WalletService};
+use crate::validation::validate_wallet_address;
 use axum::{
     extract::{Path, Query},
     Extension, Json,
@@ -78,14 +79,8 @@ pub async fn register_agent(
         };
         (address, Some(response))
     } else if let Some(addr) = &input.wallet_address {
-        // Validate provided wallet address (should be 32-44 chars base58)
-        if addr.len() < 32 || addr.len() > 44 {
-            return Err(AppError::Validation("Invalid wallet address format".to_string()));
-        }
-        // Verify it's valid base58
-        if bs58::decode(addr).into_vec().is_err() {
-            return Err(AppError::Validation("Invalid wallet address: not valid base58".to_string()));
-        }
+        // Validate provided wallet address using centralized validation
+        validate_wallet_address(addr)?;
         (addr.clone(), None)
     } else {
         return Err(AppError::Validation("Either wallet_address must be provided or generate_wallet must be true".to_string()));

@@ -1,6 +1,7 @@
 use crate::error::{AppError, Result};
 use crate::models::User;
 use crate::services::Services;
+use crate::validation::validate_wallet_address;
 use axum::{Extension, Json};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -41,6 +42,9 @@ pub async fn get_challenge(
     Extension(services): Extension<Arc<Services>>,
     Json(req): Json<ChallengeRequest>,
 ) -> Result<Json<ChallengeResponse>> {
+    // Validate wallet address format
+    validate_wallet_address(&req.wallet_address)?;
+
     let (message, message_hash) = services.auth.generate_challenge(&req.wallet_address);
 
     Ok(Json(ChallengeResponse {
@@ -54,6 +58,9 @@ pub async fn verify_signature(
     Extension(services): Extension<Arc<Services>>,
     Json(req): Json<VerifyRequest>,
 ) -> Result<Json<AuthResponse>> {
+    // Validate wallet address format
+    validate_wallet_address(&req.wallet_address)?;
+
     // Verify the signature
     let is_valid = services.auth.verify_signature(
         &req.wallet_address,

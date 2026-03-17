@@ -203,20 +203,17 @@ impl RatingService {
         })
     }
 
-    /// Detect potential rating gaming
+    /// Detect potential rating gaming with comprehensive checks
     async fn detect_gaming(
         &self,
         rater_id: Uuid,
-        _ratee_id: Uuid,
-        _rater_type: &str,
+        ratee_id: Uuid,
+        rater_type: &str,
     ) -> Result<GamingDetection> {
         let mut reasons = Vec::new();
         let mut confidence = 0.0;
 
-        // Check 1: Sybil detection - same wallet funding
-        // Would check on-chain in production
-
-        // Check 2: Too many ratings in short period
+        // Check 1: Too many ratings in short period (velocity check)
         let recent_ratings: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*) FROM ratings
@@ -232,7 +229,7 @@ impl RatingService {
             confidence += 0.3;
         }
 
-        // Check 3: All 5-star ratings (statistically unlikely)
+        // Check 2: All 5-star ratings (statistically unlikely)
         let rating_dist: Vec<(i32, i64)> = sqlx::query_as(
             r#"
             SELECT overall, COUNT(*) as cnt
@@ -255,7 +252,7 @@ impl RatingService {
             confidence += 0.3;
         }
 
-        // Check 4: Few unique ratees
+        // Check 3: Few unique ratees
         let unique_ratees: i64 = sqlx::query_scalar(
             "SELECT COUNT(DISTINCT ratee_id) FROM ratings WHERE rater_id = $1"
         )
@@ -268,8 +265,95 @@ impl RatingService {
             confidence += 0.4;
         }
 
+        // Check 4: Reciprocal rating pattern (you rate me high, I rate you high)
+        let reciprocal_high: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM ratings r1
+            JOIN ratings r2 ON r1.rater_id = r2.ratee_id AND r1.ratee_id = r2.rater_id
+            WHERE r1.rater_id = $1 AND r1.overall >= 4 AND r2.overall >= 4
+            "#,
+        )
+        .bind(rater_id)
+        .fetch_one(&self.db)
+        .await?;
+
+        if reciprocal_high > 3 {
+            reasons.push("Reciprocal high rating pattern".to_string());
+            confidence += 0.4;
+        }
+
+        // Check 5: Low-value job boosting (creating cheap jobs just to farm ratings)
+        let low_value_jobs: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM ratings r
+            JOIN jobs j ON r.job_id = j.id
+            WHERE r.rater_id = $1 AND j.final_price < 10
+            "#,
+        )
+        .bind(rater_id)
+        .fetch_one(&self.db)
+        .await?;
+
+        if low_value_jobs > 5 && (low_value_jobs as f64 / (total_given.max(1) as f64)) > 0.5 {
+            reasons.push("Suspicious low-value job activity".to_string());
+            confidence += 0.3;
+        }
+
+        // Check 6: Same wallet owner check (sybil detection)
+        // Check if rater and ratee share the same wallet prefix (first 8 chars)
+        let wallet_check: Option<bool> = if rater_type == "client" {
+            sqlx::query_scalar(
+                r#"
+                SELECT LEFT(u.wallet_address, 8) = LEFT(a.wallet_address, 8)
+                FROM users u, agents a
+                WHERE u.id = $1 AND a.id = $2
+                "#,
+            )
+            .bind(rater_id)
+            .bind(ratee_id)
+            .fetch_optional(&self.db)
+            .await?
+        } else {
+            sqlx::query_scalar(
+                r#"
+                SELECT LEFT(a.wallet_address, 8) = LEFT(u.wallet_address, 8)
+                FROM agents a, users u
+                WHERE a.id = $1 AND u.id = $2
+                "#,
+            )
+            .bind(rater_id)
+            .bind(ratee_id)
+            .fetch_optional(&self.db)
+            .await?
+        };
+
+        if wallet_check == Some(true) {
+            reasons.push("Potential sybil: similar wallet addresses".to_string());
+            confidence += 0.5;
+        }
+
+        // Check 7: Rapid job completion pattern (suspiciously fast turnaround)
+        let rapid_completions: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM jobs j
+            JOIN ratings r ON j.id = r.job_id
+            WHERE r.rater_id = $1
+                AND j.completed_at IS NOT NULL
+                AND j.started_at IS NOT NULL
+                AND (j.completed_at - j.started_at) < INTERVAL '1 hour'
+            "#,
+        )
+        .bind(rater_id)
+        .fetch_one(&self.db)
+        .await?;
+
+        if rapid_completions > 3 {
+            reasons.push("Suspicious rapid job completions".to_string());
+            confidence += 0.3;
+        }
+
         Ok(GamingDetection {
-            is_suspicious: confidence > 0.5,
+            is_suspicious: confidence >= 0.5,
             reasons,
             confidence,
         })
