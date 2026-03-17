@@ -114,7 +114,7 @@ export default function DashboardPage() {
           {ACTIVE_JOBS.map((job, i) => (
             <Link
               key={job.id}
-              href={`/dashboard/jobs/${job.id}`}
+              href={`/jobs/${job.id}`}
               className={`flex items-center justify-between px-4 py-4 hover:bg-white/5 transition-colors no-underline ${
                 i !== ACTIVE_JOBS.length - 1 ? "border-b border-white/30" : ""
               }`}

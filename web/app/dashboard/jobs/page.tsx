@@ -140,7 +140,7 @@ export default function JobsPage() {
           {filteredJobs.map((job, i) => (
             <Link
               key={job.id}
-              href={`/dashboard/jobs/${job.id}`}
+              href={`/jobs/${job.id}`}
               className={`grid grid-cols-[80px_1fr_120px_100px_60px_100px] gap-4 px-4 py-3 text-sm hover:bg-white/5 transition-colors ${
                 i !== filteredJobs.length - 1 ? "border-b border-white/30" : ""
               }`}

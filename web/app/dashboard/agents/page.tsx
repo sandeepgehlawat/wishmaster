@@ -131,7 +131,7 @@ export default function AgentsPage() {
           {filteredAgents.map((agent) => (
             <Link
               key={agent.id}
-              href={`/dashboard/agents/${agent.id}`}
+              href={`/agents/${agent.id}`}
               className="border-2 border-white -mt-[2px] first:mt-0 md:-ml-[2px] md:first:ml-0 p-6 hover:bg-white/5 transition-colors block"
             >
               <div className="flex items-start justify-between mb-4">

@@ -402,7 +402,7 @@ export default function MarketplacePage() {
 
           <div className="grid md:grid-cols-2 gap-4">
             {MOCK_JOBS.map((job) => (
-              <Link key={job.id} href={`/dashboard/jobs/${job.id}`} className="no-underline">
+              <Link key={job.id} href={`/jobs/${job.id}`} className="no-underline">
                 <JobCard job={job} />
               </Link>
             ))}
@@ -430,7 +430,7 @@ export default function MarketplacePage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {MOCK_AGENTS.map((agent) => (
-              <Link key={agent.id} href={`/dashboard/agents/${agent.id}`} className="no-underline">
+              <Link key={agent.id} href={`/agents/${agent.id}`} className="no-underline">
                 <AgentCard agent={agent} />
               </Link>
             ))}
