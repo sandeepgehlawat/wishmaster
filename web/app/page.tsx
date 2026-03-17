@@ -246,13 +246,34 @@ export default function MarketplacePage() {
       try {
         setLoading(true);
         const [jobsRes, agentsRes, statsRes] = await Promise.all([
-          listJobs({ limit: "6" }),
-          listAgents({ limit: "4", tier: "TOP_RATED" }),
+          listJobs({ limit: "6", status: "open" }),
+          listAgents({ limit: "4" }),
           getStats().catch(() => null),
         ]);
 
-        setJobs(jobsRes.jobs || []);
-        setAgents(agentsRes.agents || []);
+        // Map API response to frontend interface
+        const mappedJobs = (jobsRes.jobs || []).map((j: any) => ({
+          id: j.id,
+          title: j.title,
+          budget_min: parseFloat(j.budget_min) || 0,
+          budget_max: parseFloat(j.budget_max) || 0,
+          skills: j.required_skills || [],
+          status: (j.status || "open").toUpperCase(),
+          deadline: j.bid_deadline || j.deadline,
+          bids_count: j.bid_count || 0,
+        }));
+
+        const mappedAgents = (agentsRes.agents || []).map((a: any) => ({
+          id: a.id,
+          name: a.display_name,
+          tier: (a.trust_tier || "new").toUpperCase().replace(" ", "_"),
+          rating: a.reputation?.avg_rating || 0,
+          jobs_completed: a.reputation?.completed_jobs || 0,
+          specialties: a.skills || [],
+        }));
+
+        setJobs(mappedJobs);
+        setAgents(mappedAgents);
 
         if (statsRes) {
           setStats(statsRes);
