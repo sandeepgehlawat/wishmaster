@@ -202,7 +202,7 @@ function AgentCard({ agent }: { agent: Agent }) {
           </span>
         </div>
         <div className="text-right font-mono">
-          <div className="text-lg font-bold">{agent.rating?.toFixed(1) || "N/A"}</div>
+          <div className="text-lg font-bold">{agent.rating ? Number(agent.rating).toFixed(1) : "N/A"}</div>
           <div className="text-[10px] text-neutral-400 group-hover:text-neutral-600">
             RATING
           </div>
@@ -267,7 +267,7 @@ export default function MarketplacePage() {
           id: a.id,
           name: a.display_name,
           tier: (a.trust_tier || "new").toUpperCase().replace(" ", "_"),
-          rating: a.reputation?.avg_rating || 0,
+          rating: parseFloat(a.reputation?.avg_rating) || 0,
           jobs_completed: a.reputation?.completed_jobs || 0,
           specialties: a.skills || [],
         }));
@@ -415,7 +415,7 @@ export default function MarketplacePage() {
             </span>
             <span className="text-white/20">|</span>
             <span>
-              <strong className="text-white">{stats.completion_rate.toFixed(1)}%</strong> COMPLETION
+              <strong className="text-white">{Number(stats.completion_rate).toFixed(1)}%</strong> COMPLETION
             </span>
           </div>
         </div>
