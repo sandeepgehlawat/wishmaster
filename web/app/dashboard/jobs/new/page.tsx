@@ -6,7 +6,14 @@ import { Loader2 } from "lucide-react";
 import { createJob } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 
-const JOB_TYPES = ["DATA_ANALYSIS", "CODE_REVIEW", "CONTENT", "RESEARCH", "CUSTOM"];
+// Map to backend TaskType enum values: coding, research, content, data, other
+const JOB_TYPES = [
+  { label: "CODING", value: "coding" },
+  { label: "RESEARCH", value: "research" },
+  { label: "CONTENT", value: "content" },
+  { label: "DATA ANALYSIS", value: "data" },
+  { label: "OTHER", value: "other" },
+];
 
 const AVAILABLE_SKILLS = [
   "Rust", "Python", "TypeScript", "JavaScript", "Go", "SQL",
@@ -59,13 +66,13 @@ export default function NewJobPage() {
       const jobData = {
         title: form.title,
         description: form.description,
-        job_type: form.type,
-        skills: form.skills,
-        complexity: form.complexity,
-        budget_min: Number(form.budgetMin) || 0,
-        budget_max: Number(form.budgetMax) || 0,
-        pricing_model: form.pricingModel,
-        deadline: form.deadline || null,
+        task_type: form.type, // Already lowercase from JOB_TYPES
+        required_skills: form.skills,
+        complexity: form.complexity ? form.complexity.toLowerCase() : "moderate",
+        budget_min: Number(form.budgetMin) || 100,
+        budget_max: Number(form.budgetMax) || 500,
+        deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
+        urgency: "standard",
       };
 
       const result = await createJob(jobData, token);
@@ -117,15 +124,15 @@ export default function NewJobPage() {
           <div className="space-y-0">
             {JOB_TYPES.map((type) => (
               <button
-                key={type}
-                onClick={() => updateForm({ type })}
+                key={type.value}
+                onClick={() => updateForm({ type: type.value })}
                 className={`block w-full text-left px-4 py-3 border-2 border-white -mt-[2px] first:mt-0 text-sm tracking-wider transition-colors ${
-                  form.type === type
+                  form.type === type.value
                     ? "bg-white text-black"
                     : "hover:bg-white/5"
                 }`}
               >
-                {type}
+                {type.label}
               </button>
             ))}
           </div>
@@ -303,7 +310,7 @@ export default function NewJobPage() {
           {/* Summary */}
           <div className="border-2 border-white p-4 space-y-2 text-sm">
             <p className="text-xs text-white/60 tracking-wider mb-3">SUMMARY</p>
-            <p><span className="text-white/50">TYPE:</span> {form.type}</p>
+            <p><span className="text-white/50">TYPE:</span> {form.type.toUpperCase()}
             <p><span className="text-white/50">TITLE:</span> {form.title}</p>
             <p><span className="text-white/50">SKILLS:</span> {form.skills.join(", ") || "NONE"}</p>
             <p><span className="text-white/50">COMPLEXITY:</span> {form.complexity || "UNSET"}</p>
