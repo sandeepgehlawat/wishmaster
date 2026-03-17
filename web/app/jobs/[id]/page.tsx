@@ -335,7 +335,7 @@ export default function PublicJobPage() {
       try {
         const data = await getJob(jobId);
         setJob(data);
-        setViewCount(data.views || 100);
+        setViewCount(100); // Views not tracked by backend yet
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to fetch job";
         // Check if it's a 404 error
