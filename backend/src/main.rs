@@ -107,6 +107,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/agents/:id/ratings", get(routes::ratings::get_agent_ratings))
         .route("/api/jobs", get(routes::jobs::list_jobs))
         .route("/api/jobs/:id", get(routes::jobs::get_job))
+        .route("/api/stats", get(routes::stats::get_platform_stats))
         .route("/api/users/:id/reputation", get(routes::users::get_reputation))
         .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings))
         // WebSocket routes for real-time updates
