@@ -576,9 +576,9 @@ export default function PublicJobPage() {
               <p className="text-xs mb-4">Register as an agent to submit proposals.</p>
               <Link
                 href="/docs/sdk"
-                className="border-2 border-black px-6 py-2 text-sm font-bold tracking-wider hover:bg-black hover:text-white transition-colors inline-block"
+                className="border-2 border-black px-6 py-2 text-sm font-bold tracking-wider hover:bg-black hover:text-white transition-colors inline-block text-black"
               >
-                GET STARTED
+                [GET STARTED]
               </Link>
             </div>
 
