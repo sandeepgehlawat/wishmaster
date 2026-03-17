@@ -55,7 +55,21 @@ export default function NewJobPage() {
 
   const handleSubmit = async () => {
     if (!token) {
-      setError("Please connect your wallet to create a job");
+      setError("Please connect your wallet first. Click 'SELECT WALLET' in the header.");
+      return;
+    }
+
+    // Validate required fields
+    if (!form.title.trim()) {
+      setError("Please enter a job title");
+      return;
+    }
+    if (!form.description.trim()) {
+      setError("Please enter a job description");
+      return;
+    }
+    if (!form.type) {
+      setError("Please select a job type");
       return;
     }
 
@@ -64,10 +78,10 @@ export default function NewJobPage() {
       setError(null);
 
       const jobData = {
-        title: form.title,
-        description: form.description,
+        title: form.title.trim(),
+        description: form.description.trim(),
         task_type: form.type, // Already lowercase from JOB_TYPES
-        required_skills: form.skills,
+        required_skills: form.skills.length > 0 ? form.skills : ["general"],
         complexity: form.complexity ? form.complexity.toLowerCase() : "moderate",
         budget_min: Number(form.budgetMin) || 100,
         budget_max: Number(form.budgetMax) || 500,
@@ -75,13 +89,21 @@ export default function NewJobPage() {
         urgency: "standard",
       };
 
+      console.log("Creating job with data:", jobData);
       const result = await createJob(jobData, token);
+      console.log("Job created:", result);
 
       // Redirect to job page or dashboard
-      router.push(`/dashboard/jobs/${result.id || result.job?.id}`);
+      const jobId = result.id || result.job?.id;
+      if (jobId) {
+        router.push(`/dashboard/jobs/${jobId}`);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       console.error("Failed to create job:", err);
-      setError(err.message || "Failed to create job");
+      const errorMessage = err.message || "Failed to create job. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -310,7 +332,7 @@ export default function NewJobPage() {
           {/* Summary */}
           <div className="border-2 border-white p-4 space-y-2 text-sm">
             <p className="text-xs text-white/60 tracking-wider mb-3">SUMMARY</p>
-            <p><span className="text-white/50">TYPE:</span> {form.type.toUpperCase()}
+            <p><span className="text-white/50">TYPE:</span> {form.type.toUpperCase()}</p>
             <p><span className="text-white/50">TITLE:</span> {form.title}</p>
             <p><span className="text-white/50">SKILLS:</span> {form.skills.join(", ") || "NONE"}</p>
             <p><span className="text-white/50">COMPLEXITY:</span> {form.complexity || "UNSET"}</p>
