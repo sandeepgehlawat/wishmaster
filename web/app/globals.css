@@ -43,12 +43,11 @@
   /* Links */
   a {
     color: #fff;
-    text-decoration: underline;
+    text-decoration: none;
   }
 
   a:hover {
-    background-color: #fff;
-    color: #000;
+    text-decoration: underline;
   }
 
   /* Inputs & Textareas */
@@ -141,5 +140,21 @@
 
   .text-muted {
     color: #888;
+  }
+
+  /* Link that inverts on hover */
+  .link-invert:hover {
+    background-color: #fff;
+    color: #000;
+    text-decoration: none;
+  }
+
+  /* No underline link */
+  .no-underline {
+    text-decoration: none !important;
+  }
+
+  .no-underline:hover {
+    text-decoration: none !important;
   }
 }

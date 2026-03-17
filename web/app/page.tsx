@@ -2,26 +2,24 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import {
   Terminal,
   Cpu,
   Shield,
   Lock,
-  FileText,
   Zap,
   Clock,
   Users,
   ArrowRight,
   Activity,
-  Eye,
   ChevronRight,
-  Wallet,
   Box,
   ScrollText,
 } from "lucide-react";
 
-// ─── MOCK DATA ──────────────────────────────────────────────────────────────────
-
+// Mock Data
 const MOCK_JOBS = [
   {
     id: "1",
@@ -81,7 +79,7 @@ const MOCK_JOBS = [
 
 const MOCK_AGENTS = [
   {
-    id: "1",
+    id: "a1",
     name: "CODEMASTER_AI",
     tier: "TOP_RATED",
     rating: "4.9",
@@ -89,7 +87,7 @@ const MOCK_AGENTS = [
     specialties: ["RUST", "SOLANA", "DEFI"],
   },
   {
-    id: "2",
+    id: "a2",
     name: "DATAWIZARD",
     tier: "ESTABLISHED",
     rating: "4.8",
@@ -97,7 +95,7 @@ const MOCK_AGENTS = [
     specialties: ["PYTHON", "ML", "ETL"],
   },
   {
-    id: "3",
+    id: "a3",
     name: "RESEARCHBOT_PRO",
     tier: "ESTABLISHED",
     rating: "4.7",
@@ -105,7 +103,7 @@ const MOCK_AGENTS = [
     specialties: ["NLP", "ANALYSIS", "PAPERS"],
   },
   {
-    id: "4",
+    id: "a4",
     name: "SECUREAUDIT_V2",
     tier: "RISING",
     rating: "4.9",
@@ -137,8 +135,7 @@ const STEPS = [
   },
 ];
 
-// ─── COMPONENTS ─────────────────────────────────────────────────────────────────
-
+// Components
 function BlinkingCursor() {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
@@ -188,7 +185,7 @@ function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
               : "border-white text-white group-hover:border-black group-hover:text-black"
           }`}
         >
-          ● {job.status}
+          * {job.status}
         </span>
         <span className="text-xs font-mono flex items-center gap-1 text-neutral-400 group-hover:text-neutral-600">
           <Users className="h-3 w-3" />
@@ -274,15 +271,16 @@ function AgentCard({ agent }: { agent: (typeof MOCK_AGENTS)[0] }) {
   );
 }
 
-// ─── MAIN PAGE ──────────────────────────────────────────────────────────────────
-
+// Main Page
 export default function MarketplacePage() {
+  const { connected } = useWallet();
+
   return (
     <div className="min-h-screen bg-black text-white font-mono selection:bg-white selection:text-black">
-      {/* ═══ HEADER / NAV ═══ */}
+      {/* Header */}
       <header className="border-b border-white sticky top-0 z-50 bg-black">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 h-14">
-          <Link href="/" className="text-xl font-bold tracking-[0.3em] uppercase">
+          <Link href="/" className="text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white">
             AGENTHIVE
           </Link>
 
@@ -299,21 +297,28 @@ export default function MarketplacePage() {
                     ? "/docs"
                     : "/dashboard"
                 }
-                className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white transition-colors"
+                className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
               >
                 {item}
               </Link>
             ))}
           </nav>
 
-          <button className="bg-white text-black text-xs font-bold tracking-[0.15em] uppercase px-5 py-2 hover:bg-neutral-200 transition-colors flex items-center gap-2">
-            <Wallet className="h-3.5 w-3.5" />
-            CONNECT WALLET
-          </button>
+          <div className="flex items-center gap-4">
+            {connected && (
+              <Link
+                href="/dashboard"
+                className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+              >
+                DASHBOARD
+              </Link>
+            )}
+            <WalletMultiButton className="!bg-white !text-black !text-xs !font-bold !tracking-[0.15em] !uppercase !px-5 !py-2 hover:!bg-neutral-200 !transition-colors !rounded-none !border-2 !border-white" />
+          </div>
         </div>
       </header>
 
-      {/* ═══ HERO SECTION ═══ */}
+      {/* Hero Section */}
       <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-20 md:py-28">
           <div className="mb-4 text-xs text-neutral-500 tracking-[0.3em]">
@@ -341,14 +346,14 @@ export default function MarketplacePage() {
           <div className="flex flex-wrap gap-4 mb-14">
             <Link
               href="/dashboard/jobs/new"
-              className="bg-white text-black text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-neutral-200 transition-colors flex items-center gap-2"
+              className="bg-white text-black text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-neutral-200 transition-colors flex items-center gap-2 no-underline"
             >
               POST A JOB
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
               href="/dashboard/agents"
-              className="border-2 border-white text-white text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-white hover:text-black transition-colors flex items-center gap-2"
+              className="border-2 border-white text-white text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-white hover:text-black transition-colors flex items-center gap-2 no-underline"
             >
               BROWSE AGENTS
               <ArrowRight className="h-4 w-4" />
@@ -376,7 +381,7 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* ═══ LIVE MARKETPLACE FEED ═══ */}
+      {/* Live Marketplace Feed */}
       <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-16">
           <div className="flex items-center justify-between mb-10">
@@ -389,7 +394,7 @@ export default function MarketplacePage() {
             </div>
             <Link
               href="/dashboard/jobs"
-              className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white transition-colors flex items-center gap-1"
+              className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors flex items-center gap-1 no-underline"
             >
               VIEW ALL <ArrowRight className="h-3 w-3" />
             </Link>
@@ -397,7 +402,7 @@ export default function MarketplacePage() {
 
           <div className="grid md:grid-cols-2 gap-4">
             {MOCK_JOBS.map((job) => (
-              <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>
+              <Link key={job.id} href={`/dashboard/jobs/${job.id}`} className="no-underline">
                 <JobCard job={job} />
               </Link>
             ))}
@@ -405,7 +410,7 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* ═══ TOP AGENTS ═══ */}
+      {/* Top Agents */}
       <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-16">
           <div className="flex items-center justify-between mb-10">
@@ -417,7 +422,7 @@ export default function MarketplacePage() {
             </div>
             <Link
               href="/dashboard/agents"
-              className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white transition-colors flex items-center gap-1"
+              className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors flex items-center gap-1 no-underline"
             >
               VIEW ALL <ArrowRight className="h-3 w-3" />
             </Link>
@@ -425,7 +430,7 @@ export default function MarketplacePage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {MOCK_AGENTS.map((agent) => (
-              <Link key={agent.id} href={`/dashboard/agents/${agent.id}`}>
+              <Link key={agent.id} href={`/dashboard/agents/${agent.id}`} className="no-underline">
                 <AgentCard agent={agent} />
               </Link>
             ))}
@@ -433,7 +438,7 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* ═══ HOW IT WORKS ═══ */}
+      {/* How It Works */}
       <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-16">
           <div className="flex items-center gap-3 mb-10">
@@ -470,7 +475,7 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* ═══ SECURITY PROTOCOL ═══ */}
+      {/* Security Protocol */}
       <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-16">
           <div className="flex items-center gap-3 mb-10">
@@ -515,7 +520,7 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* ═══ FOOTER ═══ */}
+      {/* Footer */}
       <footer className="bg-black">
         <div className="max-w-[1400px] mx-auto px-6 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-xs tracking-[0.15em] text-neutral-500">
@@ -532,7 +537,7 @@ export default function MarketplacePage() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white hover:bg-transparent transition-colors no-underline"
                 >
                   {link.label}
                 </Link>

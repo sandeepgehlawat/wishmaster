@@ -6,23 +6,83 @@ import Link from "next/link";
 const STATUSES = ["ALL", "DRAFT", "OPEN", "BIDDING", "IN_PROGRESS", "COMPLETED"];
 
 const MOCK_JOBS = [
-  { id: "0x4f2a", title: "Smart Contract Audit - DeFi Protocol", status: "BIDDING", budget: "500 USDC", bids: 4, created: "2026-03-15" },
-  { id: "0x3b1c", title: "Data Pipeline Optimization", status: "IN_PROGRESS", budget: "300 USDC", bids: 6, created: "2026-03-14" },
-  { id: "0x1d8e", title: "API Integration Testing Suite", status: "COMPLETED", budget: "250 USDC", bids: 3, created: "2026-03-12" },
-  { id: "0x9a7f", title: "Documentation for SDK v2.0", status: "OPEN", budget: "150 USDC", bids: 1, created: "2026-03-11" },
-  { id: "0x5c3d", title: "Machine Learning Model Training", status: "DRAFT", budget: "800 USDC", bids: 0, created: "2026-03-10" },
-  { id: "0x2e6b", title: "Frontend Component Library", status: "BIDDING", budget: "400 USDC", bids: 7, created: "2026-03-09" },
-  { id: "0x8f4a", title: "Security Penetration Testing", status: "IN_PROGRESS", budget: "600 USDC", bids: 2, created: "2026-03-08" },
-  { id: "0x7d2c", title: "Database Schema Migration", status: "COMPLETED", budget: "200 USDC", bids: 5, created: "2026-03-07" },
+  {
+    id: "0x4f2a",
+    title: "Smart Contract Audit - DeFi Protocol",
+    status: "BIDDING",
+    budget: "500 USDC",
+    bids: 4,
+    created: "2026-03-15",
+  },
+  {
+    id: "0x3b1c",
+    title: "Data Pipeline Optimization",
+    status: "IN_PROGRESS",
+    budget: "300 USDC",
+    bids: 6,
+    created: "2026-03-14",
+  },
+  {
+    id: "0x1d8e",
+    title: "API Integration Testing Suite",
+    status: "COMPLETED",
+    budget: "250 USDC",
+    bids: 3,
+    created: "2026-03-12",
+  },
+  {
+    id: "0x9a7f",
+    title: "Documentation for SDK v2.0",
+    status: "OPEN",
+    budget: "150 USDC",
+    bids: 1,
+    created: "2026-03-11",
+  },
+  {
+    id: "0x5c3d",
+    title: "Machine Learning Model Training",
+    status: "DRAFT",
+    budget: "800 USDC",
+    bids: 0,
+    created: "2026-03-10",
+  },
+  {
+    id: "0x2e6b",
+    title: "Frontend Component Library",
+    status: "BIDDING",
+    budget: "400 USDC",
+    bids: 7,
+    created: "2026-03-09",
+  },
+  {
+    id: "0x8f4a",
+    title: "Security Penetration Testing",
+    status: "IN_PROGRESS",
+    budget: "600 USDC",
+    bids: 2,
+    created: "2026-03-08",
+  },
+  {
+    id: "0x7d2c",
+    title: "Database Schema Migration",
+    status: "COMPLETED",
+    budget: "200 USDC",
+    bids: 5,
+    created: "2026-03-07",
+  },
 ];
 
 export default function JobsPage() {
   const [activeFilter, setActiveFilter] = useState("ALL");
+  const [search, setSearch] = useState("");
 
-  const filteredJobs =
-    activeFilter === "ALL"
-      ? MOCK_JOBS
-      : MOCK_JOBS.filter((j) => j.status === activeFilter);
+  const filteredJobs = MOCK_JOBS.filter((job) => {
+    const matchesStatus =
+      activeFilter === "ALL" || job.status === activeFilter;
+    const matchesSearch =
+      !search || job.title.toLowerCase().includes(search.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <div className="space-y-6 font-mono">
@@ -31,11 +91,20 @@ export default function JobsPage() {
         <h1 className="text-2xl font-bold tracking-wider">JOBS</h1>
         <Link
           href="/dashboard/jobs/new"
-          className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+          className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors"
         >
           [+ NEW JOB]
         </Link>
       </div>
+
+      {/* Search */}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="SEARCH JOBS..."
+        className="w-full max-w-md bg-black border-2 border-white px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/5"
+      />
 
       {/* Filter Bar */}
       <div className="flex flex-wrap gap-6 text-sm">
@@ -43,7 +112,7 @@ export default function JobsPage() {
           <button
             key={status}
             onClick={() => setActiveFilter(status)}
-            className={`tracking-wider pb-1 transition-colors ${
+            className={`tracking-wider pb-1 transition-colors bg-transparent border-none ${
               activeFilter === status
                 ? "text-white border-b-2 border-white"
                 : "text-white/50 hover:text-white"
@@ -79,7 +148,17 @@ export default function JobsPage() {
               <span className="text-white/60">{job.id}</span>
               <span className="truncate">{job.title}</span>
               <span>
-                <span className="border border-white px-2 py-0.5 text-xs tracking-wider">
+                <span
+                  className={`border px-2 py-0.5 text-xs tracking-wider ${
+                    job.status === "BIDDING"
+                      ? "border-green-400 text-green-400"
+                      : job.status === "IN_PROGRESS"
+                      ? "border-yellow-400 text-yellow-400"
+                      : job.status === "COMPLETED"
+                      ? "border-white/50 text-white/50"
+                      : "border-white text-white"
+                  }`}
+                >
                   {job.status}
                 </span>
               </span>
@@ -94,7 +173,7 @@ export default function JobsPage() {
           <p className="text-white/60 mb-4">NO_JOBS_FOUND.</p>
           <Link
             href="/dashboard/jobs/new"
-            className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+            className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block"
           >
             [CREATE ONE]
           </Link>
