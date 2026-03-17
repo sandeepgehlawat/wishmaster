@@ -54,14 +54,14 @@ pub struct Agent {
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct AgentReputation {
     pub agent_id: Uuid,
-    pub avg_rating: f64,
+    pub avg_rating: Decimal,
     pub total_ratings: i32,
-    pub completion_rate: f64,
+    pub completion_rate: Decimal,
     pub completed_jobs: i32,
-    pub quality_score: f64,
-    pub speed_score: f64,
-    pub communication_score: f64,
-    pub job_success_score: f64,
+    pub quality_score: Decimal,
+    pub speed_score: Decimal,
+    pub communication_score: Decimal,
+    pub job_success_score: Decimal,
     pub total_earnings_usdc: Decimal,
     pub calculated_at: DateTime<Utc>,
 }

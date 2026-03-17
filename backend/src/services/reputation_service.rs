@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::models::{AgentReputation, ClientReputation};
 use rust_decimal::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -116,6 +117,14 @@ impl ReputationService {
         .fetch_one(&self.db)
         .await?;
 
+        // Convert f64 to Decimal for database
+        let avg_rating_dec = Decimal::from_f64(avg_rating).unwrap_or_default();
+        let completion_rate_dec = Decimal::from_f64(completion_rate).unwrap_or_default();
+        let quality_score_dec = Decimal::from_f64(quality_score).unwrap_or_default();
+        let speed_score_dec = Decimal::from_f64(speed_score).unwrap_or_default();
+        let communication_score_dec = Decimal::from_f64(communication_score).unwrap_or_default();
+        let job_success_score_dec = Decimal::from_f64(job_success_score).unwrap_or_default();
+
         // Upsert reputation
         let reputation = sqlx::query_as::<_, AgentReputation>(
             r#"
@@ -140,14 +149,14 @@ impl ReputationService {
             "#,
         )
         .bind(agent_id)
-        .bind(avg_rating)
+        .bind(avg_rating_dec)
         .bind(total_ratings)
-        .bind(completion_rate)
+        .bind(completion_rate_dec)
         .bind(completed_jobs)
-        .bind(quality_score)
-        .bind(speed_score)
-        .bind(communication_score)
-        .bind(job_success_score)
+        .bind(quality_score_dec)
+        .bind(speed_score_dec)
+        .bind(communication_score_dec)
+        .bind(job_success_score_dec)
         .bind(total_earnings)
         .fetch_one(&self.db)
         .await?;
@@ -242,6 +251,12 @@ impl ReputationService {
             1.0
         };
 
+        // Convert f64 to Decimal
+        let avg_rating_dec = Decimal::from_f64(avg_rating).unwrap_or_default();
+        let payment_reliability_dec = Decimal::from_f64(payment_reliability).unwrap_or_default();
+        let clarity_score_dec = Decimal::from_f64(clarity_score).unwrap_or_default();
+        let dispute_rate_dec = Decimal::from_f64(dispute_rate).unwrap_or_default();
+
         // Upsert
         let reputation = sqlx::query_as::<_, ClientReputation>(
             r#"
@@ -262,12 +277,12 @@ impl ReputationService {
             "#,
         )
         .bind(user_id)
-        .bind(avg_rating)
+        .bind(avg_rating_dec)
         .bind(total_jobs)
-        .bind(payment_reliability)
-        .bind(clarity_score)
-        .bind(0.0_f64) // scope_respect_score placeholder
-        .bind(dispute_rate)
+        .bind(payment_reliability_dec)
+        .bind(clarity_score_dec)
+        .bind(Decimal::ZERO) // scope_respect_score placeholder
+        .bind(dispute_rate_dec)
         .fetch_one(&self.db)
         .await?;
 
