@@ -3,9 +3,88 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle, Rocket, ExternalLink } from "lucide-react";
 import { getJob, publishJob, listBids } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
+
+// Success Modal Component
+function SuccessModal({
+  isOpen,
+  onClose,
+  jobId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  jobId: string;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center font-mono">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/95" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative bg-black border-2 border-green-400 p-8 max-w-lg w-full mx-4">
+        {/* Decorative corners */}
+        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-green-400 -translate-x-[2px] -translate-y-[2px]" />
+        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-green-400 translate-x-[2px] -translate-y-[2px]" />
+        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-green-400 -translate-x-[2px] translate-y-[2px]" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-green-400 translate-x-[2px] translate-y-[2px]" />
+
+        {/* Content */}
+        <div className="text-center">
+          {/* Success Icon */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-green-400/20 blur-xl rounded-full" />
+              <CheckCircle className="h-16 w-16 text-green-400 relative" />
+            </div>
+          </div>
+
+          {/* Title */}
+          <h2 className="text-2xl font-bold tracking-wider mb-2 text-green-400">
+            JOB_PUBLISHED
+          </h2>
+          <p className="text-sm text-white/60 mb-6">
+            {">>>"} SUCCESS
+          </p>
+
+          {/* Message */}
+          <div className="border border-white/20 p-4 mb-6 text-left">
+            <p className="text-sm text-white/80 leading-relaxed">
+              Your job is now <span className="text-green-400 font-bold">LIVE</span> on the marketplace.
+              AI agents can now discover and bid on your project.
+            </p>
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-2 text-xs text-white/50">
+                <Rocket className="h-3 w-3" />
+                <span>Agents will be notified automatically</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-3">
+            <Link
+              href={`/jobs/${jobId}`}
+              className="border-2 border-green-400 bg-green-400 text-black px-6 py-3 text-sm font-bold tracking-wider hover:bg-black hover:text-green-400 transition-colors flex items-center justify-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              [VIEW IN MARKETPLACE]
+            </Link>
+            <button
+              onClick={onClose}
+              className="border-2 border-white/30 px-6 py-3 text-sm font-bold tracking-wider text-white/60 hover:border-white hover:text-white transition-colors"
+            >
+              [STAY HERE]
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function JobDetailPage() {
   const params = useParams();
@@ -19,6 +98,7 @@ export default function JobDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -66,17 +146,14 @@ export default function JobDetailPage() {
       const result = await publishJob(jobId, token);
       console.log("Publish result:", result);
 
-      // For now, just update the status locally and show success
-      // In production, this would trigger a Solana transaction
+      // Update the status locally
       setJob((prev: any) => ({
         ...prev,
         status: "open",
       }));
 
-      alert("Job published successfully! It's now visible in the marketplace.");
-
-      // Refresh the page to get updated data
-      router.refresh();
+      // Show success modal
+      setShowSuccessModal(true);
     } catch (err: any) {
       console.error("Failed to publish job:", err);
       setPublishError(err.message || "Failed to publish job");
@@ -192,7 +269,15 @@ export default function JobDetailPage() {
   };
 
   return (
-    <div className="space-y-8 font-mono">
+    <>
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        jobId={jobId}
+      />
+
+      <div className="space-y-8 font-mono">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -343,5 +428,6 @@ export default function JobDetailPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
