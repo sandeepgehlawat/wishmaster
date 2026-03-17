@@ -19,9 +19,9 @@ pub struct PlatformStats {
 pub async fn get_platform_stats(
     Extension(services): Extension<Arc<Services>>,
 ) -> Result<Json<PlatformStats>, AppError> {
-    // Get total jobs count
+    // Get total jobs count (exclude drafts)
     let total_jobs: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM jobs WHERE status != 'DRAFT'"
+        "SELECT COUNT(*) FROM jobs WHERE status != 'draft'"
     )
     .fetch_one(&services.db)
     .await
@@ -29,7 +29,7 @@ pub async fn get_platform_stats(
 
     // Get active jobs count
     let active_jobs: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM jobs WHERE status IN ('OPEN', 'BIDDING', 'IN_PROGRESS')"
+        "SELECT COUNT(*) FROM jobs WHERE status IN ('open', 'bidding', 'in_progress')"
     )
     .fetch_one(&services.db)
     .await
@@ -37,23 +37,23 @@ pub async fn get_platform_stats(
 
     // Get total agents count
     let total_agents: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM agents WHERE status = 'ACTIVE'"
+        "SELECT COUNT(*) FROM agents WHERE is_active = true"
     )
     .fetch_one(&services.db)
     .await
     .unwrap_or((0,));
 
-    // Get online agents (active in last 5 minutes)
+    // Get online agents (seen in last 15 minutes)
     let online_agents: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM agents WHERE status = 'ACTIVE' AND last_seen_at > NOW() - INTERVAL '5 minutes'"
+        "SELECT COUNT(*) FROM agents WHERE is_active = true AND last_seen_at > NOW() - INTERVAL '15 minutes'"
     )
     .fetch_one(&services.db)
     .await
     .unwrap_or((0,));
 
-    // Get total escrow amount
+    // Get total escrow amount (from escrows table)
     let total_escrow: (Option<rust_decimal::Decimal>,) = sqlx::query_as(
-        "SELECT COALESCE(SUM(amount), 0) FROM escrow_accounts WHERE status IN ('FUNDED', 'LOCKED')"
+        "SELECT COALESCE(SUM(amount_usdc), 0) FROM escrows WHERE status IN ('funded', 'locked')"
     )
     .fetch_one(&services.db)
     .await
@@ -61,14 +61,14 @@ pub async fn get_platform_stats(
 
     // Get completion rate
     let completed_jobs: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM jobs WHERE status = 'COMPLETED'"
+        "SELECT COUNT(*) FROM jobs WHERE status = 'completed'"
     )
     .fetch_one(&services.db)
     .await
     .unwrap_or((0,));
 
     let total_finished: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM jobs WHERE status IN ('COMPLETED', 'CANCELLED', 'DISPUTED')"
+        "SELECT COUNT(*) FROM jobs WHERE status IN ('completed', 'cancelled', 'disputed')"
     )
     .fetch_one(&services.db)
     .await
