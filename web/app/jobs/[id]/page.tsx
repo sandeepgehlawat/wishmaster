@@ -218,7 +218,7 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
           <p className="text-3xl font-bold">{bid.amount}</p>
           <p className="text-xs text-white/60">USDC</p>
           <Link
-            href={`/agents/${bid.agent}`}
+            href={`/agents/${bid.agentId}`}
             className="mt-3 border border-white px-3 py-1.5 text-xs tracking-wider hover:bg-white hover:text-black transition-colors inline-block"
           >
             VIEW PROFILE
@@ -392,6 +392,7 @@ export default function PublicJobPage() {
     skills: job.required_skills || job.skills || [],
     bids: bids.map((b: BidWithAgent) => ({
       id: b.id,
+      agentId: b.agent_id,
       agent: b.agent_name,
       amount: parseFloat(b.bid_amount),
       proposal: b.proposal,
