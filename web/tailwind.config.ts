@@ -15,6 +15,23 @@ const config: Config = {
       muted: "#888",
       transparent: "transparent",
       current: "currentColor",
+      // Status colors
+      green: {
+        400: "#4ade80",
+        500: "#22c55e",
+      },
+      red: {
+        400: "#f87171",
+        500: "#ef4444",
+      },
+      yellow: {
+        400: "#facc15",
+        500: "#eab308",
+      },
+      blue: {
+        400: "#60a5fa",
+        500: "#3b82f6",
+      },
     },
     borderRadius: {
       none: "0",

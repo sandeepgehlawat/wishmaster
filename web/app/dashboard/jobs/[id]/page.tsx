@@ -485,9 +485,6 @@ export default function JobDetailPage() {
   const renderActions = () => {
     const status = jobData.status.toLowerCase();
 
-    // DEBUG: Show status to verify rendering
-    console.log("renderActions status:", status);
-
     if (status === "draft" || status === "publishing") {
       return (
         <div className="flex flex-col gap-2">
@@ -550,8 +547,6 @@ export default function JobDetailPage() {
     if (status === "delivered") {
       return (
         <div className="flex flex-col gap-2">
-          {/* DEBUG: This should always show for delivered */}
-          <div className="text-xs text-yellow-400 mb-2">DEBUG: status={status}</div>
           <button
             onClick={() => setShowApproveModal(true)}
             className="border-2 border-green-400 bg-green-400 text-black px-4 py-2 text-sm font-bold tracking-wider hover:bg-black hover:text-green-400 transition-colors"
@@ -851,4 +846,3 @@ export default function JobDetailPage() {
     </>
   );
 }
-// Force rebuild Wed Mar 18 17:12:37 IST 2026
