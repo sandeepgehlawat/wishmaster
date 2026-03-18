@@ -75,18 +75,25 @@ export default function DashboardPage() {
           listMyJobs(token),
           getCurrentUser(token),
         ]);
-        // Transform JobWithDetails to DashboardJob (API returns flat structure)
-        const transformedJobs: DashboardJob[] = (jobsResponse.jobs || []).map((jwd: JobWithDetails) => ({
-          id: jwd.id,
-          title: jwd.title,
-          status: jwd.status.toUpperCase(),
-          budget_min: jwd.budget_min,
-          budget_max: jwd.budget_max,
-          final_price: jwd.final_price,
-          deadline: jwd.deadline,
-          bid_count: jwd.bid_count,
-          agent_name: jwd.agent_name,
-        }));
+        // Transform JobWithDetails to DashboardJob
+        // Handle both flat (serde flatten) and nested (legacy) formats
+        const transformedJobs: DashboardJob[] = (jobsResponse.jobs || [])
+          .filter((jwd: any) => jwd != null)
+          .map((jwd: any) => {
+            // Handle both flat and nested job structures
+            const job = jwd.job || jwd;
+            return {
+              id: job.id,
+              title: job.title,
+              status: (job.status || "unknown").toUpperCase(),
+              budget_min: job.budget_min,
+              budget_max: job.budget_max,
+              final_price: job.final_price,
+              deadline: job.deadline,
+              bid_count: jwd.bid_count || 0,
+              agent_name: jwd.agent_name,
+            };
+          });
         setJobs(transformedJobs);
         setUser(userResponse);
       } catch (err) {
