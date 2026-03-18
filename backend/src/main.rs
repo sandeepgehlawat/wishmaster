@@ -92,7 +92,7 @@ fn build_router(services: Arc<Services>) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(allowed_origins)
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE, Method::OPTIONS])
-        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT, header::HeaderName::from_static("x-api-key")])
         .allow_credentials(true);
 
     // Rate limiting configuration with SmartIpKeyExtractor for proxy support
@@ -155,21 +155,12 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/revision", post(routes::jobs::request_revision))
         .route("/api/jobs/:id/dispute", post(routes::jobs::dispute_job))
         .route("/api/jobs/:id/bids", get(routes::bids::list_bids))
-        .route("/api/jobs/:id/bids", post(routes::bids::submit_bid))
-        .route("/api/bids/:id", patch(routes::bids::update_bid))
-        .route("/api/bids/:id", delete(routes::bids::withdraw_bid))
-        .route("/api/sandbox/claim", post(routes::sandbox::claim_job))
-        .route("/api/sandbox/data/:file", get(routes::sandbox::stream_data))
-        .route("/api/sandbox/progress", post(routes::sandbox::report_progress))
-        .route("/api/sandbox/submit", post(routes::sandbox::submit_results))
-        .route("/api/sandbox/heartbeat", post(routes::sandbox::heartbeat))
         .route("/api/escrow/:job_id", get(routes::escrow::get_escrow))
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))
         .route("/api/escrow/:job_id/release", post(routes::escrow::release_escrow))
         .route("/api/escrow/:job_id/dev-fund", post(routes::escrow::dev_fund_escrow))
         .route("/api/jobs/:id/rating", post(routes::ratings::submit_rating))
-        .route("/api/jobs/:id/messages", get(routes::messages::list_messages))
-        .route("/api/jobs/:id/messages", post(routes::messages::send_message))
+        // messages routes moved to agent_routes for API key support (agent_auth_middleware supports JWT too)
         .route("/api/jobs/:id/messages/read", post(routes::messages::mark_messages_read))
         .route("/api/jobs/:id/messages/unread", get(routes::messages::get_unread_count))
         // Requirements
@@ -177,12 +168,12 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/requirements", post(routes::requirements::add_requirement))
         .route("/api/requirements/:id", patch(routes::requirements::update_requirement))
         .route("/api/requirements/:id", delete(routes::requirements::delete_requirement))
-        .route("/api/requirements/:id/deliver", post(routes::requirements::deliver_requirement))
+        // deliver route moved to agent_routes for API key support
         .route("/api/requirements/:id/accept", post(routes::requirements::accept_requirement))
         .route("/api/requirements/:id/reject", post(routes::requirements::reject_requirement))
         // Deliverables
         .route("/api/jobs/:id/deliverables", get(routes::deliverables::list_deliverables))
-        .route("/api/jobs/:id/deliverables", post(routes::deliverables::submit_deliverable))
+        // submit_deliverable moved to agent_routes for API key support
         .route("/api/deliverables/:id/approve", post(routes::deliverables::approve_deliverable))
         .route("/api/deliverables/:id/request-changes", post(routes::deliverables::request_changes))
         // Activity
@@ -203,7 +194,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/services/:id/accept", post(routes::services::accept_service))
         // Service Updates
         .route("/api/services/:id/updates", get(routes::services::list_updates))
-        .route("/api/services/:id/updates", post(routes::services::create_update))
+        // create_update moved to agent_routes for API key support
         .route("/api/service-updates/:id/approve", post(routes::services::approve_update))
         .route("/api/service-updates/:id/reject", post(routes::services::reject_update))
         .route("/api/service-updates/:id/deploy", post(routes::services::deploy_update))
@@ -216,8 +207,37 @@ fn build_router(services: Arc<Services>) -> Router {
             }
         ));
 
+    // Agent SDK routes (supports both JWT and X-API-Key auth)
+    let agent_routes = Router::new()
+        // Bidding
+        .route("/api/jobs/:id/bids", post(routes::bids::submit_bid))
+        .route("/api/bids/:id", patch(routes::bids::update_bid))
+        .route("/api/bids/:id", delete(routes::bids::withdraw_bid))
+        // Sandbox
+        .route("/api/sandbox/claim", post(routes::sandbox::claim_job))
+        .route("/api/sandbox/data/:file", get(routes::sandbox::stream_data))
+        .route("/api/sandbox/progress", post(routes::sandbox::report_progress))
+        .route("/api/sandbox/submit", post(routes::sandbox::submit_results))
+        .route("/api/sandbox/heartbeat", post(routes::sandbox::heartbeat))
+        // Deliver requirements
+        .route("/api/requirements/:id/deliver", post(routes::requirements::deliver_requirement))
+        // Submit deliverables
+        .route("/api/jobs/:id/deliverables", post(routes::deliverables::submit_deliverable))
+        // Messages
+        .route("/api/jobs/:id/messages", get(routes::messages::list_messages))
+        .route("/api/jobs/:id/messages", post(routes::messages::send_message))
+        // Service updates (for managed services)
+        .route("/api/services/:id/updates", post(routes::services::create_update))
+        .layer(axum_mw::from_fn_with_state(
+            services.clone(),
+            |axum::extract::State(services): axum::extract::State<Arc<Services>>, req, next| async move {
+                crate::middleware::auth::agent_auth_middleware(Extension(services), req, next).await
+            }
+        ));
+
     Router::new()
         .merge(public_routes)
+        .merge(agent_routes)
         .merge(protected_routes)
         .layer(TraceLayer::new_for_http())
         .layer(rate_limit_layer)
