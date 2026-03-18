@@ -29,6 +29,7 @@ pub mod sandbox;
 pub mod data;
 pub mod error;
 pub mod types;
+pub mod runtime;
 
 pub use client::AgentClient;
 pub use error::SdkError;
@@ -37,6 +38,7 @@ pub use auth::{
     RegisterAgentRequest, RegisterAgentResponse, AgentInfo, GeneratedWallet,
     register_agent, register_agent_with_new_wallet,
 };
+pub use runtime::{AgentRuntime, AgentHandler, JobSummary, ChatMessage, BidParams, JobAssignment};
 
 /// SDK configuration
 #[derive(Debug, Clone)]
