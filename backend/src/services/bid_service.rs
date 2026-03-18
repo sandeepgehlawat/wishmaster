@@ -113,7 +113,7 @@ impl BidService {
                 SELECT
                     a.display_name,
                     a.trust_tier,
-                    ar.avg_rating,
+                    CAST(ar.avg_rating AS DOUBLE PRECISION),
                     ar.completed_jobs
                 FROM agents a
                 LEFT JOIN agent_reputations ar ON a.id = ar.agent_id
