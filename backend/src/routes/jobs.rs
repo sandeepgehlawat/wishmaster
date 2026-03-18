@@ -74,11 +74,11 @@ pub async fn publish_job(
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
-    // ATOMIC: Claim the job for publishing by transitioning from 'draft' to 'publishing'
+    // ATOMIC: Claim the job for publishing by transitioning from 'draft' to 'open'
     // This prevents race conditions where two requests could both see 'draft' status
     let job = sqlx::query_as::<_, crate::models::Job>(
         r#"
-        UPDATE jobs SET status = 'publishing', updated_at = NOW()
+        UPDATE jobs SET status = 'open', published_at = NOW()
         WHERE id = $1 AND client_id = $2 AND status = 'draft'
         RETURNING *
         "#
@@ -99,7 +99,7 @@ pub async fn publish_job(
         Ok(e) => e,
         Err(err) => {
             // Rollback: set status back to draft if escrow creation fails
-            let _ = sqlx::query("UPDATE jobs SET status = 'draft' WHERE id = $1 AND status = 'publishing'")
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1 AND status = 'open'")
                 .bind(id)
                 .execute(&services.db)
                 .await;
@@ -115,7 +115,7 @@ pub async fn publish_job(
         Ok(t) => t,
         Err(err) => {
             // Rollback: set status back to draft if transaction generation fails
-            let _ = sqlx::query("UPDATE jobs SET status = 'draft' WHERE id = $1 AND status = 'publishing'")
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1 AND status = 'open'")
                 .bind(id)
                 .execute(&services.db)
                 .await;
@@ -123,18 +123,7 @@ pub async fn publish_job(
         }
     };
 
-    // ATOMIC: Complete publishing by transitioning to 'open'
-    let updated = sqlx::query(
-        "UPDATE jobs SET status = 'open', published_at = NOW(), updated_at = NOW() WHERE id = $1 AND status = 'publishing'"
-    )
-    .bind(id)
-    .execute(&services.db)
-    .await?;
-
-    if updated.rows_affected() == 0 {
-        return Err(AppError::Conflict("Job publish was interrupted".to_string()));
-    }
-
+    // Job is already 'open' status from the first atomic update
     Ok(Json(serde_json::json!({
         "job_id": id,
         "escrow_pda": escrow.escrow_pda,
@@ -229,11 +218,11 @@ pub async fn approve_job(
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
-    // ATOMIC: Claim the job for approval by transitioning from 'delivered' to 'approving'
+    // ATOMIC: Transition from 'delivered' to 'completed' in one step
     // This prevents race conditions and ensures only one approval process runs
     let job = sqlx::query_as::<_, crate::models::Job>(
         r#"
-        UPDATE jobs SET status = 'approving', updated_at = NOW()
+        UPDATE jobs SET status = 'completed', completed_at = NOW()
         WHERE id = $1 AND client_id = $2 AND status = 'delivered'
         RETURNING *
         "#
@@ -257,7 +246,7 @@ pub async fn approve_job(
         Ok(tier) => tier,
         Err(err) => {
             // Rollback: set status back to delivered
-            let _ = sqlx::query("UPDATE jobs SET status = 'delivered' WHERE id = $1 AND status = 'approving'")
+            let _ = sqlx::query("UPDATE jobs SET status = 'delivered', completed_at = NULL WHERE id = $1 AND status = 'completed'")
                 .bind(id)
                 .execute(&services.db)
                 .await;
@@ -270,25 +259,13 @@ pub async fn approve_job(
         Ok(r) => r,
         Err(err) => {
             // Rollback: set status back to delivered
-            let _ = sqlx::query("UPDATE jobs SET status = 'delivered' WHERE id = $1 AND status = 'approving'")
+            let _ = sqlx::query("UPDATE jobs SET status = 'delivered', completed_at = NULL WHERE id = $1 AND status = 'completed'")
                 .bind(id)
                 .execute(&services.db)
                 .await;
             return Err(err);
         }
     };
-
-    // ATOMIC: Complete approval by transitioning to 'completed'
-    let updated = sqlx::query(
-        "UPDATE jobs SET status = 'completed', completed_at = NOW(), updated_at = NOW() WHERE id = $1 AND status = 'approving'"
-    )
-    .bind(id)
-    .execute(&services.db)
-    .await?;
-
-    if updated.rows_affected() == 0 {
-        return Err(AppError::Conflict("Job approval was interrupted".to_string()));
-    }
 
     // Update agent reputation (non-critical, don't fail if this errors)
     let _ = services.reputation.calculate_agent_reputation(agent_id).await;
