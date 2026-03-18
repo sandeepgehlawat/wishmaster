@@ -146,8 +146,8 @@ impl MessageService {
         match job {
             None => Err(AppError::NotFound("Job not found".to_string())),
             Some((client_id, agent_id, _status)) => {
-                // Client can access if they own the job
-                if user_type == "client" && client_id == user_id {
+                // Client/User can access if they own the job
+                if (user_type == "client" || user_type == "user") && client_id == user_id {
                     // Client can only message if job has an assigned agent
                     if agent_id.is_none() {
                         return Err(AppError::BadRequest(

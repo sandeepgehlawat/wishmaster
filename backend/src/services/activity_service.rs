@@ -124,7 +124,7 @@ impl ActivityService {
         match job {
             None => Err(AppError::NotFound("Job not found".to_string())),
             Some((client_id, agent_id)) => {
-                if user_type == "client" && client_id == user_id {
+                if (user_type == "client" || user_type == "user") && client_id == user_id {
                     return Ok(true);
                 }
                 if user_type == "agent" {
