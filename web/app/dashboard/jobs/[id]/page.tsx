@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X } from "lucide-react";
-import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devFundEscrow } from "@/lib/api";
+import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devFundEscrow, devDeliverJob } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import Chat from "@/components/chat";
 
@@ -416,6 +416,26 @@ export default function JobDetailPage() {
     }
   };
 
+  // Handle dev deliver (testing only)
+  const handleDevDeliver = async () => {
+    try {
+      setActionLoading(true);
+      await devDeliverJob(jobId);
+      const updatedJob = await getJob(jobId, token || undefined);
+      setJob(updatedJob);
+      setSuccessModalData({
+        title: "JOB_DELIVERED",
+        message: "Job marked as delivered. You can now approve and release payment.",
+      });
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error("Failed to mark as delivered:", err);
+      alert(err.message || "Failed to mark as delivered");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -556,6 +576,21 @@ export default function JobDetailPage() {
             <p className="text-yellow-400 text-sm font-bold">WORK IN PROGRESS</p>
             <p className="text-xs text-white/50 mt-2">Agent is working on your job</p>
           </div>
+          {/* Dev mode: Mark as delivered button */}
+          <button
+            onClick={handleDevDeliver}
+            disabled={actionLoading}
+            className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-green-400 hover:text-black transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {actionLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            [MARK AS DELIVERED (DEV)]
+          </button>
+          <Link
+            href={`/dashboard/jobs/${jobId}/manage`}
+            className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors text-center"
+          >
+            [MANAGE JOB]
+          </Link>
         </div>
       );
     }

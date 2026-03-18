@@ -262,6 +262,18 @@ export async function devFundEscrow(jobId: string, token: string): Promise<FundE
   });
 }
 
+// Dev-only: Mark job as delivered (for testing)
+export interface DevDeliverResponse {
+  delivered: boolean;
+  message: string;
+}
+
+export async function devDeliverJob(jobId: string): Promise<DevDeliverResponse> {
+  return api<DevDeliverResponse>(`/api/jobs/${jobId}/dev-deliver`, {
+    method: "POST",
+  });
+}
+
 // User
 export async function getCurrentUser(token: string): Promise<User> {
   return api<User>("/api/users/me", { token });
