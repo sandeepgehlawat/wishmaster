@@ -157,3 +157,12 @@ pub async fn dev_agent_message(
         sender_name: agent_name,
     }))
 }
+
+/// DEV ONLY: List messages without auth (for testing agent responder)
+pub async fn dev_list_messages(
+    Extension(services): Extension<Arc<Services>>,
+    Path(job_id): Path<Uuid>,
+) -> Result<Json<MessageListResponse>> {
+    let response = services.messages.list_for_job(job_id).await?;
+    Ok(Json(response))
+}
