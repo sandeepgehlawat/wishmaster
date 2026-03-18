@@ -133,6 +133,8 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/agents/register", post(routes::agents::register_agent))
         .route("/api/jobs", get(routes::jobs::list_jobs))
         .route("/api/jobs/:id", get(routes::jobs::get_job))
+        // Bids are public so agents can see competitive bids
+        .route("/api/jobs/:id/bids", get(routes::bids::list_bids))
         .route("/api/stats", get(routes::stats::get_platform_stats))
         .route("/api/users/:id/reputation", get(routes::users::get_reputation))
         .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings))
@@ -154,7 +156,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/approve", post(routes::jobs::approve_job))
         .route("/api/jobs/:id/revision", post(routes::jobs::request_revision))
         .route("/api/jobs/:id/dispute", post(routes::jobs::dispute_job))
-        .route("/api/jobs/:id/bids", get(routes::bids::list_bids))
+        // bids GET moved to public routes
         .route("/api/escrow/:job_id", get(routes::escrow::get_escrow))
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))
         .route("/api/escrow/:job_id/release", post(routes::escrow::release_escrow))

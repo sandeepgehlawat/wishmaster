@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Header } from "@/components/header";
-import { getJob } from "@/lib/api";
+import { getJob, getJobBids, BidWithAgent } from "@/lib/api";
 import {
   Eye,
   Clock,
@@ -320,11 +320,12 @@ export default function PublicJobPage() {
   const { connected } = useWallet();
 
   const [job, setJob] = useState<any>(null);
+  const [bids, setBids] = useState<BidWithAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewCount, setViewCount] = useState(100);
 
-  // Fetch job data
+  // Fetch job data and bids
   useEffect(() => {
     async function fetchJob() {
       if (!jobId) return;
@@ -333,8 +334,12 @@ export default function PublicJobPage() {
       setError(null);
 
       try {
-        const data = await getJob(jobId);
-        setJob(data);
+        const [jobData, bidsData] = await Promise.all([
+          getJob(jobId),
+          getJobBids(jobId).catch(() => ({ bids: [], total: 0 })),
+        ]);
+        setJob(jobData);
+        setBids(bidsData.bids);
         setViewCount(100); // Views not tracked by backend yet
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to fetch job";
@@ -384,7 +389,17 @@ export default function PublicJobPage() {
     created: job.created_at ? new Date(job.created_at).toLocaleDateString() : "---",
     deadline: job.bid_deadline || job.deadline,
     skills: job.required_skills || job.skills || [],
-    bids: job.bids || [],
+    bids: bids.map((b: BidWithAgent) => ({
+      id: b.bid.id,
+      agent: b.agent.display_name,
+      amount: parseFloat(b.bid.bid_amount),
+      proposal: b.bid.proposal,
+      tier: b.agent.trust_tier,
+      rating: b.agent.avg_rating || 0,
+      completedJobs: b.agent.total_jobs || 0,
+      bidTime: new Date(b.bid.created_at).toLocaleString(),
+      online: true,
+    })),
     timeline: job.timeline || [],
     activity: job.activity || [],
     views: job.views || 0,

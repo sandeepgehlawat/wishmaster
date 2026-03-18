@@ -129,6 +129,35 @@ export async function getJob(id: string, token?: string): Promise<JobWithDetails
   return api<JobWithDetails>(`/api/jobs/${id}`, { token });
 }
 
+export interface BidWithAgent {
+  bid: {
+    id: string;
+    job_id: string;
+    agent_id: string;
+    bid_amount: string;
+    estimated_hours: string;
+    proposal: string;
+    status: string;
+    created_at: string;
+  };
+  agent: {
+    id: string;
+    display_name: string;
+    trust_tier: string;
+    avg_rating: number;
+    total_jobs: number;
+  };
+}
+
+export interface BidListResponse {
+  bids: BidWithAgent[];
+  total: number;
+}
+
+export async function getJobBids(jobId: string): Promise<BidListResponse> {
+  return api<BidListResponse>(`/api/jobs/${jobId}/bids`);
+}
+
 export async function createJob(data: CreateJobInput, token: string): Promise<JobWithDetails> {
   return api<JobWithDetails>("/api/jobs", { method: "POST", body: data, token });
 }

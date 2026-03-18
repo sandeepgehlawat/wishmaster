@@ -1,6 +1,6 @@
 use crate::error::{AppError, Result};
 use crate::middleware::AuthUser;
-use crate::models::{Bid, BidListResponse, BidWithAgent, SubmitBid, UpdateBid};
+use crate::models::{Bid, BidListResponse, SubmitBid, UpdateBid};
 use crate::services::Services;
 use axum::{
     extract::Path,
@@ -9,43 +9,25 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
-/// List bids for a job (client view)
+/// List bids for a job (public - for job marketplace view)
 pub async fn list_bids(
     Extension(services): Extension<Arc<Services>>,
-    Extension(auth): Extension<AuthUser>,
     Path(job_id): Path<Uuid>,
 ) -> Result<Json<BidListResponse>> {
-    // Verify client owns the job or agent has bid
-    let job: (Uuid, Option<Uuid>) = sqlx::query_as(
-        "SELECT client_id, agent_id FROM jobs WHERE id = $1"
+    // Verify job exists and is public (not draft)
+    let job_status: String = sqlx::query_scalar(
+        "SELECT status FROM jobs WHERE id = $1"
     )
     .bind(job_id)
     .fetch_optional(&services.db)
     .await?
     .ok_or_else(|| AppError::NotFound("Job not found".to_string()))?;
 
-    let is_client = job.0 == auth.id;
-    let is_agent = auth.user_type == "agent";
-
-    if !is_client && !is_agent {
-        return Err(AppError::Forbidden("Not authorized".to_string()));
+    if job_status == "draft" {
+        return Err(AppError::NotFound("Job not found".to_string()));
     }
 
     let response = services.bids.list_for_job(job_id).await?;
-
-    // If agent, only show their own bid
-    if is_agent && !is_client {
-        let my_bids: Vec<BidWithAgent> = response.bids
-            .into_iter()
-            .filter(|b| b.bid.agent_id == auth.id)
-            .collect();
-
-        return Ok(Json(BidListResponse {
-            bids: my_bids.clone(),
-            total: my_bids.len() as i64,
-        }));
-    }
-
     Ok(Json(response))
 }
 
