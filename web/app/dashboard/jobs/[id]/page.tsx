@@ -311,7 +311,8 @@ export default function JobDetailPage() {
     try {
       setActionLoading(true);
       // Try regular approve first, fall back to dev-approve if escrow issue
-      let result;
+      let result: { agent_payout: number; dev_mode?: boolean };
+      let isDevMode = false;
       try {
         result = await approveJob(jobId, token);
       } catch (approveErr: any) {
@@ -319,6 +320,7 @@ export default function JobDetailPage() {
         if (approveErr.message?.includes("escrow") || approveErr.message?.includes("locked") || approveErr.message?.includes("Database")) {
           console.log("Escrow issue, trying dev-approve...");
           result = await devApproveJob(jobId);
+          isDevMode = true;
         } else {
           throw approveErr;
         }
@@ -329,7 +331,7 @@ export default function JobDetailPage() {
       setJob(updatedJob);
       setSuccessModalData({
         title: "JOB_COMPLETED",
-        message: `Delivery approved! Payment of ${result.agent_payout} USDC released to agent.${result.dev_mode ? " (Dev mode)" : ""}`,
+        message: `Delivery approved! Payment of ${result.agent_payout} USDC released to agent.${isDevMode ? " (Dev mode)" : ""}`,
       });
       setShowSuccessModal(true);
     } catch (err: any) {
