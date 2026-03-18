@@ -161,6 +161,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))
         .route("/api/escrow/:job_id/release", post(routes::escrow::release_escrow))
         .route("/api/escrow/:job_id/dev-fund", post(routes::escrow::dev_fund_escrow))
+        .route("/api/jobs/:id/dev-agent-message", post(routes::messages::dev_agent_message))
         .route("/api/jobs/:id/rating", post(routes::ratings::submit_rating))
         // messages routes moved to agent_routes for API key support (agent_auth_middleware supports JWT too)
         .route("/api/jobs/:id/messages/read", post(routes::messages::mark_messages_read))

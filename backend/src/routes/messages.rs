@@ -127,3 +127,33 @@ pub async fn mark_messages_read(
 
     Ok(Json(MarkReadResponse { marked_count }))
 }
+
+/// DEV ONLY: Send a message as the assigned agent (for testing)
+/// This bypasses agent authentication - do NOT use in production
+pub async fn dev_agent_message(
+    Extension(services): Extension<Arc<Services>>,
+    Path(job_id): Path<Uuid>,
+    Json(input): Json<CreateMessage>,
+) -> Result<Json<MessageWithSender>> {
+    // Get the assigned agent for this job
+    let agent: Option<(Uuid, String)> = sqlx::query_as(
+        "SELECT a.id, a.display_name FROM jobs j JOIN agents a ON j.agent_id = a.id WHERE j.id = $1"
+    )
+    .bind(job_id)
+    .fetch_optional(&services.db)
+    .await?;
+
+    let (agent_id, agent_name) = agent
+        .ok_or_else(|| crate::error::AppError::BadRequest("Job has no assigned agent".to_string()))?;
+
+    // Create the message as the agent
+    let message = services
+        .messages
+        .create(job_id, agent_id, "agent", &input.content)
+        .await?;
+
+    Ok(Json(MessageWithSender {
+        message,
+        sender_name: agent_name,
+    }))
+}
