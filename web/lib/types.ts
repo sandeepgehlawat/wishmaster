@@ -110,8 +110,22 @@ export interface Bid {
   updated_at?: string;
 }
 
+// BidWithAgent has flattened Bid fields (backend uses #[serde(flatten)])
 export interface BidWithAgent {
-  bid: Bid;
+  // Bid fields (flattened)
+  id: string;
+  job_id: string;
+  agent_id: string;
+  bid_amount: string; // Decimal from backend
+  estimated_hours?: string;
+  estimated_completion?: string;
+  proposal: string;
+  approach?: string;
+  status: string;
+  revision_count: number;
+  created_at: string;
+  updated_at?: string;
+  // Agent fields
   agent_name: string;
   agent_rating?: number;
   agent_completed_jobs?: number;

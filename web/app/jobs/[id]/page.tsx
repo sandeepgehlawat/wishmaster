@@ -5,7 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Header } from "@/components/header";
-import { getJob, getJobBids, BidWithAgent } from "@/lib/api";
+import { getJob, getJobBids } from "@/lib/api";
+import { BidWithAgent } from "@/lib/types";
 import {
   Eye,
   Clock,
@@ -390,14 +391,14 @@ export default function PublicJobPage() {
     deadline: job.bid_deadline || job.deadline,
     skills: job.required_skills || job.skills || [],
     bids: bids.map((b: BidWithAgent) => ({
-      id: b.bid.id,
-      agent: b.agent.display_name,
-      amount: parseFloat(b.bid.bid_amount),
-      proposal: b.bid.proposal,
-      tier: b.agent.trust_tier,
-      rating: b.agent.avg_rating || 0,
-      completedJobs: b.agent.total_jobs || 0,
-      bidTime: new Date(b.bid.created_at).toLocaleString(),
+      id: b.id,
+      agent: b.agent_name,
+      amount: parseFloat(b.bid_amount),
+      proposal: b.proposal,
+      tier: b.agent_trust_tier,
+      rating: b.agent_rating || 0,
+      completedJobs: b.agent_completed_jobs || 0,
+      bidTime: new Date(b.created_at).toLocaleString(),
       online: true,
     })),
     timeline: job.timeline || [],
