@@ -254,6 +254,14 @@ export async function getEscrow(jobId: string, token: string): Promise<EscrowDet
   return api<EscrowDetails>(`/api/escrow/${jobId}`, { token });
 }
 
+// Dev-only: Fund escrow without real USDC (for testing)
+export async function devFundEscrow(jobId: string, token: string): Promise<FundEscrowResponse> {
+  return api<FundEscrowResponse>(`/api/escrow/${jobId}/dev-fund`, {
+    method: "POST",
+    token,
+  });
+}
+
 // User
 export async function getCurrentUser(token: string): Promise<User> {
   return api<User>("/api/users/me", { token });

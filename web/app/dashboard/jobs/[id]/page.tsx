@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X } from "lucide-react";
-import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid } from "@/lib/api";
+import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devFundEscrow } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import Chat from "@/components/chat";
 
@@ -216,6 +216,7 @@ export default function JobDetailPage() {
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
   const [showSelectBidModal, setShowSelectBidModal] = useState(false);
+  const [fundingEscrow, setFundingEscrow] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -394,6 +395,27 @@ export default function JobDetailPage() {
     }
   };
 
+  // Handle dev fund escrow (testing only)
+  const handleDevFundEscrow = async () => {
+    if (!token) return;
+    try {
+      setFundingEscrow(true);
+      await devFundEscrow(jobId, token);
+      const updatedJob = await getJob(jobId, token);
+      setJob(updatedJob);
+      setSuccessModalData({
+        title: "ESCROW_FUNDED",
+        message: "Escrow has been funded (dev mode). You can now select a bid.",
+      });
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error("Failed to fund escrow:", err);
+      alert(err.message || "Failed to fund escrow");
+    } finally {
+      setFundingEscrow(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -476,13 +498,28 @@ export default function JobDetailPage() {
           >
             [VIEW IN MARKETPLACE]
           </Link>
+          {/* Dev mode: Fund escrow button */}
+          {jobData.escrowStatus !== "FUNDED" && (
+            <button
+              onClick={handleDevFundEscrow}
+              disabled={fundingEscrow}
+              className="border-2 border-yellow-400 text-yellow-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-yellow-400 hover:text-black transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {fundingEscrow && <Loader2 className="h-4 w-4 animate-spin" />}
+              {fundingEscrow ? "[FUNDING...]" : "[FUND ESCROW (DEV)]"}
+            </button>
+          )}
           <button
             onClick={() => setShowDeleteModal(true)}
             className="border-2 border-red-500 text-red-500 px-4 py-2 text-sm font-bold tracking-wider hover:bg-red-500 hover:text-black transition-colors"
           >
             [CANCEL JOB]
           </button>
-          <p className="text-xs text-white/50 text-center">Waiting for agent bids...</p>
+          <p className="text-xs text-white/50 text-center">
+            {jobData.escrowStatus === "FUNDED"
+              ? "Escrow funded. Select a bid to assign an agent."
+              : "Fund escrow to enable bid selection."}
+          </p>
         </div>
       );
     }
