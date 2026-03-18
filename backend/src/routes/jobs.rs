@@ -166,6 +166,8 @@ pub async fn cancel_job(
 }
 
 /// Select winning bid
+/// Uses atomic approach: if bid is already accepted (from failed prior attempt),
+/// just complete the remaining steps (lock escrow + assign agent)
 pub async fn select_bid(
     Extension(services): Extension<Arc<Services>>,
     Extension(auth): Extension<AuthUser>,
@@ -178,8 +180,14 @@ pub async fn select_bid(
         return Err(AppError::Forbidden("Not your job".to_string()));
     }
 
-    if job.status != "bidding" {
-        return Err(AppError::BadRequest("Job not in bidding status".to_string()));
+    // Allow selection from 'bidding' status, or if already partially processed
+    // (bid accepted but job not assigned due to prior failure)
+    if job.status != "bidding" && job.status != "open" {
+        // Check if this is a retry of a partially completed selection
+        if job.agent_id.is_some() {
+            return Err(AppError::BadRequest("Job already has an assigned agent".to_string()));
+        }
+        return Err(AppError::BadRequest(format!("Job not in bidding status (current: {})", job.status)));
     }
 
     // Get the selected bid
@@ -189,8 +197,13 @@ pub async fn select_bid(
         return Err(AppError::BadRequest("Bid does not belong to this job".to_string()));
     }
 
-    // Accept bid and reject others
-    services.bids.accept(input.bid_id).await?;
+    // Accept bid if not already accepted (idempotent - handles retry case)
+    if bid.status == "pending" {
+        services.bids.accept(input.bid_id).await?;
+    } else if bid.status != "accepted" {
+        return Err(AppError::BadRequest(format!("Bid is not selectable (status: {})", bid.status)));
+    }
+    // If bid.status == "accepted", it was accepted in a prior failed attempt - continue
 
     // Get agent wallet for escrow lock
     let agent_wallet: String = sqlx::query_scalar(
