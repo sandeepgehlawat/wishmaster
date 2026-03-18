@@ -140,7 +140,9 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings))
         // WebSocket routes for real-time updates
         .route("/ws/jobs/:id", get(routes::websocket::job_updates))
-        .route("/ws/agent/:id", get(routes::websocket::agent_notifications));
+        .route("/ws/agent/:id", get(routes::websocket::agent_notifications))
+        // DEV ONLY: Send message as assigned agent (testing)
+        .route("/api/jobs/:id/dev-agent-message", post(routes::messages::dev_agent_message));
 
     // Protected routes (auth required)
     let protected_routes = Router::new()
@@ -161,7 +163,6 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))
         .route("/api/escrow/:job_id/release", post(routes::escrow::release_escrow))
         .route("/api/escrow/:job_id/dev-fund", post(routes::escrow::dev_fund_escrow))
-        .route("/api/jobs/:id/dev-agent-message", post(routes::messages::dev_agent_message))
         .route("/api/jobs/:id/rating", post(routes::ratings::submit_rating))
         // messages routes moved to agent_routes for API key support (agent_auth_middleware supports JWT too)
         .route("/api/jobs/:id/messages/read", post(routes::messages::mark_messages_read))
