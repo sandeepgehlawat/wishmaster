@@ -225,17 +225,11 @@ export default function JobDetailPage() {
         setError(null);
 
         const jobData = await getJob(jobId, token || undefined);
-        // Flatten JobWithDetails for easier access in component
-        const flatJob = {
-          ...jobData.job,
-          client_name: jobData.client_name,
-          agent_name: jobData.agent_name,
-          bid_count: jobData.bid_count,
-        };
-        setJob(flatJob);
+        // API returns flat structure (backend uses #[serde(flatten)])
+        setJob(jobData);
 
         // Also fetch bids if job exists
-        if (flatJob?.id) {
+        if (jobData?.id) {
           try {
             const bidsData = await listBids(jobId, token || undefined);
             setBids(bidsData.bids || []);

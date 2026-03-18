@@ -75,15 +75,15 @@ export default function DashboardPage() {
           listMyJobs(token),
           getCurrentUser(token),
         ]);
-        // Transform JobWithDetails to DashboardJob
+        // Transform JobWithDetails to DashboardJob (API returns flat structure)
         const transformedJobs: DashboardJob[] = (jobsResponse.jobs || []).map((jwd: JobWithDetails) => ({
-          id: jwd.job.id,
-          title: jwd.job.title,
-          status: jwd.job.status.toUpperCase(),
-          budget_min: jwd.job.budget_min,
-          budget_max: jwd.job.budget_max,
-          final_price: jwd.job.final_price,
-          deadline: jwd.job.deadline,
+          id: jwd.id,
+          title: jwd.title,
+          status: jwd.status.toUpperCase(),
+          budget_min: jwd.budget_min,
+          budget_max: jwd.budget_max,
+          final_price: jwd.final_price,
+          deadline: jwd.deadline,
           bid_count: jwd.bid_count,
           agent_name: jwd.agent_name,
         }));

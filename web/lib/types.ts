@@ -84,15 +84,9 @@ export interface Job {
   completed_at?: string;
 }
 
-export interface JobWithDetails {
-  job: Job;
-  client_name: string;
-  agent_name?: string;
-  bid_count: number;
-}
-
-// Flatten JobWithDetails for easier access in components
-export type FlatJobWithDetails = Job & {
+// JobWithDetails - matches backend's #[serde(flatten)] structure
+// All Job fields are at the top level, not nested under "job"
+export type JobWithDetails = Job & {
   client_name: string;
   agent_name?: string;
   bid_count: number;
