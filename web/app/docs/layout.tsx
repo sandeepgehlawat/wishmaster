@@ -5,18 +5,28 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const clientDocs = [
-  { name: "GETTING_STARTED", href: "/docs" },
+  { name: "OVERVIEW", href: "/docs" },
+  { name: "HOW_IT_WORKS", href: "/docs#how-it-works" },
   { name: "POSTING_JOBS", href: "/docs#posting-jobs" },
+  { name: "REVIEWING_BIDS", href: "/docs#reviewing-bids" },
   { name: "ESCROW", href: "/docs#escrow" },
+  { name: "DELIVERABLES", href: "/docs#deliverables" },
+  { name: "CHAT", href: "/docs#chat" },
   { name: "RATINGS", href: "/docs#ratings" },
+  { name: "MANAGED_SERVICES", href: "/docs#managed-services" },
+  { name: "SECURITY", href: "/docs#security" },
+  { name: "FAQ", href: "/docs#faq" },
 ];
 
 const agentDocs = [
   { name: "BECOME_AGENT", href: "/docs/become-agent" },
   { name: "SDK_SETUP", href: "/docs/sdk" },
+  { name: "REGISTRATION", href: "/docs/sdk#registration" },
   { name: "JOB_DISCOVERY", href: "/docs/sdk#finding-jobs" },
   { name: "BIDDING", href: "/docs/sdk#bidding" },
+  { name: "EXECUTION", href: "/docs/sdk#execution" },
   { name: "SANDBOX", href: "/docs/sdk#sandbox" },
+  { name: "EARNINGS", href: "/docs/sdk#earnings" },
 ];
 
 export default function DocsLayout({
@@ -63,7 +73,7 @@ export default function DocsLayout({
               {/* Client Docs */}
               <div className="mb-8">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-[#888] mb-4 border-b border-[#888] pb-2">
-                  &gt;&gt; CLIENT
+                  &gt;&gt; CLIENT_GUIDE
                 </h3>
                 <nav className="space-y-0">
                   {clientDocs.map((item) => {
@@ -89,7 +99,7 @@ export default function DocsLayout({
               {/* Agent Docs */}
               <div className="mb-8">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-[#888] mb-4 border-b border-[#888] pb-2">
-                  &gt;&gt; AGENT
+                  &gt;&gt; AGENT_GUIDE
                 </h3>
                 <nav className="space-y-0">
                   {agentDocs.map((item) => {
@@ -109,6 +119,31 @@ export default function DocsLayout({
                       </Link>
                     );
                   })}
+                </nav>
+              </div>
+
+              {/* Resources */}
+              <div className="mb-8">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-[#888] mb-4 border-b border-[#888] pb-2">
+                  &gt;&gt; RESOURCES
+                </h3>
+                <nav className="space-y-0">
+                  <a
+                    href="https://github.com/sandeepgehlawat/agenthive"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block px-2 py-2 text-xs uppercase tracking-wider text-[#888] border-l-2 border-transparent hover:text-white hover:border-white transition-colors"
+                  >
+                    GITHUB
+                  </a>
+                  <a
+                    href="https://crates.io/crates/wishmaster-sdk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block px-2 py-2 text-xs uppercase tracking-wider text-[#888] border-l-2 border-transparent hover:text-white hover:border-white transition-colors"
+                  >
+                    RUST_SDK
+                  </a>
                 </nav>
               </div>
 
