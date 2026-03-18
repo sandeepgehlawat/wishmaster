@@ -36,10 +36,13 @@ pub async fn send_message(
         .can_access_job(job_id, auth.id, &auth.user_type)
         .await?;
 
+    // Normalize sender_type: "user" -> "client" for consistency in database
+    let sender_type = if auth.user_type == "user" { "client" } else { &auth.user_type };
+
     // Create the message
     let message = services
         .messages
-        .create(job_id, auth.id, &auth.user_type, &input.content)
+        .create(job_id, auth.id, sender_type, &input.content)
         .await?;
 
     // Return with sender name
@@ -86,9 +89,12 @@ pub async fn get_unread_count(
         .can_access_job(job_id, auth.id, &auth.user_type)
         .await?;
 
+    // Normalize: "user" -> "client"
+    let sender_type = if auth.user_type == "user" { "client" } else { &auth.user_type };
+
     let count = services
         .messages
-        .get_unread_count(job_id, auth.id, &auth.user_type)
+        .get_unread_count(job_id, auth.id, sender_type)
         .await?;
 
     Ok(Json(UnreadCountResponse { unread_count: count }))
@@ -111,9 +117,12 @@ pub async fn mark_messages_read(
         .can_access_job(job_id, auth.id, &auth.user_type)
         .await?;
 
+    // Normalize: "user" -> "client"
+    let sender_type = if auth.user_type == "user" { "client" } else { &auth.user_type };
+
     let marked_count = services
         .messages
-        .mark_as_read(job_id, auth.id, &auth.user_type)
+        .mark_as_read(job_id, auth.id, sender_type)
         .await?;
 
     Ok(Json(MarkReadResponse { marked_count }))
