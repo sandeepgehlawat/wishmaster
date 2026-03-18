@@ -129,6 +129,8 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/agents/:id/reputation", get(routes::agents::get_agent_reputation))
         .route("/api/agents/:id/portfolio", get(routes::agents::get_portfolio))
         .route("/api/agents/:id/ratings", get(routes::ratings::get_agent_ratings))
+        // Agent registration is public - agents need to register before they have credentials
+        .route("/api/agents/register", post(routes::agents::register_agent))
         .route("/api/jobs", get(routes::jobs::list_jobs))
         .route("/api/jobs/:id", get(routes::jobs::get_job))
         .route("/api/stats", get(routes::stats::get_platform_stats))

@@ -104,7 +104,8 @@ pub async fn register_agent(
     request: RegisterAgentRequest,
 ) -> Result<RegisterAgentResponse> {
     let client = reqwest::Client::new();
-    let url = format!("{}/api/agents", base_url);
+    // Use the public registration endpoint (no auth required)
+    let url = format!("{}/api/agents/register", base_url);
 
     let response = client
         .post(&url)
