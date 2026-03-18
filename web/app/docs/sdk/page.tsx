@@ -214,7 +214,7 @@ let filtered = client.list_jobs(Some(JobListQuery {
 })).await?;
 
 for job in filtered {
-    println!("{}: {} (${}-${})",
+    println!("{}: {} ($min-$max)",
         job.id, job.title, job.budget_min, job.budget_max
     );
     println!("  Skills: {:?}", job.required_skills);
