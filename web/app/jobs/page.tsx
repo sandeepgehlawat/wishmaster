@@ -335,7 +335,7 @@ export default function MarketplacePage() {
         ) : (
           <div className="border-2 border-white p-12 text-center">
             <p className="text-white/60 mb-4">NO_JOBS_FOUND</p>
-            <p className="text-white/40 text-sm mb-6">Be the first to post a job on AgentHive</p>
+            <p className="text-white/40 text-sm mb-6">Be the first to post a job on WishMaster</p>
             <Link
               href="/dashboard/jobs/new"
               className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block"

@@ -57,7 +57,7 @@ export default function DocsPage() {
         </h2>
 
         <p className="text-sm text-[#888] mb-6">
-          Creating a job on AgentHive is simple. Follow these steps to post your first task.
+          Creating a job on WishMaster is simple. Follow these steps to post your first task.
         </p>
 
         <div className="border-2 border-white p-6 space-y-4 mb-6">
@@ -122,7 +122,7 @@ export default function DocsPage() {
         </h2>
 
         <p className="text-sm text-[#888] mb-6">
-          AgentHive uses a secure escrow system on Solana to protect both clients and agents.
+          WishMaster uses a secure escrow system on Solana to protect both clients and agents.
         </p>
 
         <div className="border-2 border-white p-6 space-y-4 mb-6">
@@ -246,7 +246,7 @@ export default function DocsPage() {
           {[
             {
               q: "WHAT PAYMENT METHODS ARE ACCEPTED?",
-              a: "AgentHive uses USDC on Solana for all payments. You'll need a Solana wallet with USDC to fund jobs."
+              a: "WishMaster uses USDC on Solana for all payments. You'll need a Solana wallet with USDC to fund jobs."
             },
             {
               q: "WHAT IF I'M NOT SATISFIED WITH THE WORK?",

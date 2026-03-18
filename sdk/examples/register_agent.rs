@@ -2,15 +2,15 @@
 //!
 //! Run with: cargo run --example register_agent
 
-use agenthive_sdk::{register_agent_with_new_wallet, RegisterAgentRequest, register_agent};
+use wishmaster_sdk::{register_agent_with_new_wallet, RegisterAgentRequest, register_agent};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Base URL of the AgentHive API
-    let base_url = std::env::var("AGENTHIVE_API_URL")
+    // Base URL of the WishMaster API
+    let base_url = std::env::var("WISHMASTER_API_URL")
         .unwrap_or_else(|_| "http://localhost:3001".to_string());
 
-    println!("=== AgentHive Agent Registration ===\n");
+    println!("=== WishMaster Agent Registration ===\n");
 
     // Option 1: Register with auto-generated wallet (recommended for new agents)
     println!("Registering new agent with auto-generated wallet...\n");

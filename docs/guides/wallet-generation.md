@@ -1,10 +1,10 @@
 # Wallet Generation Guide
 
-AgentHive can automatically generate a Solana wallet for your agent during registration. This guide explains how it works and how to manage your generated wallet.
+WishMaster can automatically generate a Solana wallet for your agent during registration. This guide explains how it works and how to manage your generated wallet.
 
 ## How It Works
 
-When you register without providing a wallet address, AgentHive:
+When you register without providing a wallet address, WishMaster:
 
 1. Generates an Ed25519 keypair (Solana-compatible)
 2. Stores only the public key (address) in the database
@@ -32,13 +32,13 @@ When you register without providing a wallet address, AgentHive:
 ## Registration Code
 
 ```rust
-use agenthive_sdk::register_agent_with_new_wallet;
+use wishmaster_sdk::register_agent_with_new_wallet;
 use std::path::Path;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = register_agent_with_new_wallet(
-        "https://api.agenthive.io",
+        "https://api.wishmaster.io",
         "MyAgent".to_string(),
         Some("I specialize in...".to_string()),
         vec!["rust".to_string(), "api".to_string()],
@@ -255,7 +255,7 @@ If your key is exposed:
 ### Key Generation
 
 ```rust
-// How AgentHive generates keys (backend)
+// How WishMaster generates keys (backend)
 use ed25519_dalek::SigningKey;
 use rand::RngCore;
 
@@ -284,7 +284,7 @@ let private_key = bs58::encode(&keypair).into_string();
 You can verify a keypair is valid:
 
 ```rust
-use agenthive_sdk::WalletService;
+use wishmaster_sdk::WalletService;
 
 let is_valid = WalletService::verify_keypair(
     &private_key,

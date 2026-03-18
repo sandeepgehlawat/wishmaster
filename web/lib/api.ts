@@ -12,6 +12,28 @@ import type {
   BidListResponse,
   AgentListResponse,
   EscrowDetails,
+  Message,
+  MessageListResponse,
+  Requirement,
+  RequirementListResponse,
+  CreateRequirementInput,
+  UpdateRequirementInput,
+  Deliverable,
+  DeliverableListResponse,
+  CreateDeliverableInput,
+  ActivityListResponse,
+  PortfolioItem,
+  PortfolioListResponse,
+  CreatePortfolioItemInput,
+  UpdatePortfolioItemInput,
+  ManagedService,
+  ServiceListResponse,
+  CreateManagedServiceInput,
+  UpdateManagedServiceInput,
+  ServiceUpdate,
+  ServiceUpdateListResponse,
+  CreateServiceUpdateInput,
+  BillingListResponse,
 } from "./types";
 
 // Determine API URL based on environment
@@ -21,8 +43,8 @@ const getApiBaseUrl = () => {
   // Check if we're in the browser
   if (typeof window !== "undefined") {
     // If on Railway production domain, use the production backend
-    if (window.location.hostname === "agenthive.up.railway.app") {
-      return "https://agenthivebackend.up.railway.app";
+    if (window.location.hostname === "wishmaster.up.railway.app") {
+      return "https://wishmasterbackend.up.railway.app";
     }
   }
   // Fallback to env var or localhost
@@ -244,4 +266,315 @@ export async function updateUser(data: UpdateUserInput, token: string): Promise<
 // Stats
 export async function getStats(): Promise<StatsResponse> {
   return api<StatsResponse>("/api/stats");
+}
+
+// Messages
+export async function getMessages(jobId: string, token: string): Promise<MessageListResponse> {
+  return api<MessageListResponse>(`/api/jobs/${jobId}/messages`, { token });
+}
+
+export async function sendMessage(jobId: string, content: string, token: string): Promise<Message> {
+  return api<Message>(`/api/jobs/${jobId}/messages`, {
+    method: "POST",
+    body: { content },
+    token,
+  });
+}
+
+export interface MarkReadResponse {
+  marked_count: number;
+}
+
+export async function markMessagesRead(jobId: string, token: string): Promise<MarkReadResponse> {
+  return api<MarkReadResponse>(`/api/jobs/${jobId}/messages/read`, {
+    method: "POST",
+    token,
+  });
+}
+
+// ==================== Requirements ====================
+
+export async function getRequirements(jobId: string, token: string): Promise<RequirementListResponse> {
+  return api<RequirementListResponse>(`/api/jobs/${jobId}/requirements`, { token });
+}
+
+export async function addRequirement(
+  jobId: string,
+  data: CreateRequirementInput,
+  token: string
+): Promise<Requirement> {
+  return api<Requirement>(`/api/jobs/${jobId}/requirements`, {
+    method: "POST",
+    body: data,
+    token,
+  });
+}
+
+export async function updateRequirement(
+  id: string,
+  data: UpdateRequirementInput,
+  token: string
+): Promise<Requirement> {
+  return api<Requirement>(`/api/requirements/${id}`, {
+    method: "PATCH",
+    body: data,
+    token,
+  });
+}
+
+export async function deleteRequirement(id: string, token: string): Promise<{ deleted: boolean }> {
+  return api<{ deleted: boolean }>(`/api/requirements/${id}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function deliverRequirement(id: string, token: string): Promise<Requirement> {
+  return api<Requirement>(`/api/requirements/${id}/deliver`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function acceptRequirement(id: string, token: string): Promise<Requirement> {
+  return api<Requirement>(`/api/requirements/${id}/accept`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function rejectRequirement(
+  id: string,
+  feedback: string,
+  token: string
+): Promise<Requirement> {
+  return api<Requirement>(`/api/requirements/${id}/reject`, {
+    method: "POST",
+    body: { feedback },
+    token,
+  });
+}
+
+// ==================== Deliverables ====================
+
+export async function getDeliverables(jobId: string, token: string): Promise<DeliverableListResponse> {
+  return api<DeliverableListResponse>(`/api/jobs/${jobId}/deliverables`, { token });
+}
+
+export async function submitDeliverable(
+  jobId: string,
+  data: CreateDeliverableInput,
+  token: string
+): Promise<Deliverable> {
+  return api<Deliverable>(`/api/jobs/${jobId}/deliverables`, {
+    method: "POST",
+    body: data,
+    token,
+  });
+}
+
+export async function approveDeliverable(id: string, token: string): Promise<Deliverable> {
+  return api<Deliverable>(`/api/deliverables/${id}/approve`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function requestChanges(
+  id: string,
+  feedback: string,
+  token: string
+): Promise<Deliverable> {
+  return api<Deliverable>(`/api/deliverables/${id}/request-changes`, {
+    method: "POST",
+    body: { feedback },
+    token,
+  });
+}
+
+// ==================== Activity ====================
+
+export interface ActivityListParams {
+  limit?: number;
+  offset?: number;
+  action?: string;
+}
+
+export async function getActivities(
+  jobId: string,
+  token: string,
+  params?: ActivityListParams
+): Promise<ActivityListResponse> {
+  const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : "";
+  return api<ActivityListResponse>(`/api/jobs/${jobId}/activity${query}`, { token });
+}
+
+// ==================== Portfolio ====================
+
+export interface PortfolioListParams {
+  category?: string;
+  featured_only?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export async function getAgentPortfolio(
+  agentId: string,
+  params?: PortfolioListParams
+): Promise<PortfolioListResponse> {
+  const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : "";
+  return api<PortfolioListResponse>(`/api/agents/${agentId}/portfolio${query}`);
+}
+
+export async function createPortfolioItem(
+  data: CreatePortfolioItemInput,
+  token: string
+): Promise<PortfolioItem> {
+  return api<PortfolioItem>("/api/portfolio", {
+    method: "POST",
+    body: data,
+    token,
+  });
+}
+
+export async function updatePortfolioItem(
+  id: string,
+  data: UpdatePortfolioItemInput,
+  token: string
+): Promise<PortfolioItem> {
+  return api<PortfolioItem>(`/api/portfolio/${id}`, {
+    method: "PATCH",
+    body: data,
+    token,
+  });
+}
+
+export async function deletePortfolioItem(id: string, token: string): Promise<{ deleted: boolean }> {
+  return api<{ deleted: boolean }>(`/api/portfolio/${id}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function createPortfolioFromJob(
+  jobId: string,
+  token: string
+): Promise<{ created: boolean; item?: PortfolioItem }> {
+  return api<{ created: boolean; item?: PortfolioItem }>(`/api/portfolio/from-job/${jobId}`, {
+    method: "POST",
+    token,
+  });
+}
+
+// ==================== Managed Services ====================
+
+export async function getServices(token: string): Promise<ServiceListResponse> {
+  return api<ServiceListResponse>("/api/services", { token });
+}
+
+export async function getService(id: string, token: string): Promise<ManagedService> {
+  return api<ManagedService>(`/api/services/${id}`, { token });
+}
+
+export async function convertToService(
+  jobId: string,
+  agentId: string,
+  data: CreateManagedServiceInput,
+  token: string
+): Promise<ManagedService> {
+  return api<ManagedService>(`/api/jobs/${jobId}/convert-to-service`, {
+    method: "POST",
+    body: { agent_id: agentId, ...data },
+    token,
+  });
+}
+
+export async function acceptService(id: string, token: string): Promise<ManagedService> {
+  return api<ManagedService>(`/api/services/${id}/accept`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function updateService(
+  id: string,
+  data: UpdateManagedServiceInput,
+  token: string
+): Promise<ManagedService> {
+  return api<ManagedService>(`/api/services/${id}`, {
+    method: "PATCH",
+    body: data,
+    token,
+  });
+}
+
+export async function pauseService(id: string, token: string): Promise<ManagedService> {
+  return api<ManagedService>(`/api/services/${id}/pause`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function resumeService(id: string, token: string): Promise<ManagedService> {
+  return api<ManagedService>(`/api/services/${id}/resume`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function cancelService(id: string, token: string): Promise<ManagedService> {
+  return api<ManagedService>(`/api/services/${id}/cancel`, {
+    method: "POST",
+    token,
+  });
+}
+
+// ==================== Service Updates ====================
+
+export async function getServiceUpdates(serviceId: string, token: string): Promise<ServiceUpdateListResponse> {
+  return api<ServiceUpdateListResponse>(`/api/services/${serviceId}/updates`, { token });
+}
+
+export async function createServiceUpdate(
+  serviceId: string,
+  data: CreateServiceUpdateInput,
+  token: string
+): Promise<ServiceUpdate> {
+  return api<ServiceUpdate>(`/api/services/${serviceId}/updates`, {
+    method: "POST",
+    body: data,
+    token,
+  });
+}
+
+export async function approveServiceUpdate(id: string, token: string): Promise<ServiceUpdate> {
+  return api<ServiceUpdate>(`/api/service-updates/${id}/approve`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function rejectServiceUpdate(
+  id: string,
+  feedback: string,
+  token: string
+): Promise<ServiceUpdate> {
+  return api<ServiceUpdate>(`/api/service-updates/${id}/reject`, {
+    method: "POST",
+    body: { feedback },
+    token,
+  });
+}
+
+export async function deployServiceUpdate(id: string, token: string): Promise<ServiceUpdate> {
+  return api<ServiceUpdate>(`/api/service-updates/${id}/deploy`, {
+    method: "POST",
+    token,
+  });
+}
+
+// ==================== Service Billing ====================
+
+export async function getServiceBilling(serviceId: string, token: string): Promise<BillingListResponse> {
+  return api<BillingListResponse>(`/api/services/${serviceId}/billing`, { token });
 }

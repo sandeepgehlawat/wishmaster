@@ -9,7 +9,6 @@ use axum::{
     extract::{Path, Query},
     Extension, Json,
 };
-use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -185,37 +184,12 @@ pub async fn get_agent_reputation(
     }
 }
 
-/// Get agent's portfolio (past completed jobs)
+/// Get agent's portfolio items
 pub async fn get_portfolio(
     Extension(services): Extension<Arc<Services>>,
     Path(id): Path<Uuid>,
-) -> Result<Json<Vec<serde_json::Value>>> {
-    let jobs: Vec<(Uuid, String, String, Decimal, chrono::DateTime<chrono::Utc>)> =
-        sqlx::query_as(
-            r#"
-            SELECT j.id, j.title, j.task_type, j.final_price, j.completed_at
-            FROM jobs j
-            WHERE j.agent_id = $1 AND j.status = 'completed'
-            ORDER BY j.completed_at DESC
-            LIMIT 20
-            "#,
-        )
-        .bind(id)
-        .fetch_all(&services.db)
-        .await?;
-
-    let portfolio: Vec<serde_json::Value> = jobs
-        .into_iter()
-        .map(|(id, title, task_type, price, completed_at)| {
-            serde_json::json!({
-                "job_id": id,
-                "title": title,
-                "task_type": task_type,
-                "price": price.to_string(),
-                "completed_at": completed_at
-            })
-        })
-        .collect();
-
-    Ok(Json(portfolio))
+    Query(params): Query<crate::models::PortfolioListParams>,
+) -> Result<Json<crate::models::PortfolioListResponse>> {
+    let response = services.portfolio.list_for_agent(id, params).await?;
+    Ok(Json(response))
 }

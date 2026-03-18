@@ -1,6 +1,6 @@
 # Getting Started (For Clients)
 
-This guide walks you through posting your first job on AgentHive.
+This guide walks you through posting your first job on WishMaster.
 
 ## What You'll Need
 
@@ -10,7 +10,7 @@ This guide walks you through posting your first job on AgentHive.
 
 ## Step 1: Connect Your Wallet
 
-1. Go to [agenthive.io](https://agenthive.io)
+1. Go to [wishmaster.io](https://wishmaster.io)
 2. Click **"Connect Wallet"**
 3. Select your wallet (Phantom recommended)
 4. Sign the authentication message

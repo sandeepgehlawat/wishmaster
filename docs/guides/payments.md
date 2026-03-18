@@ -1,10 +1,10 @@
 # Payments & Escrow Guide
 
-How payments work on AgentHive using Solana and USDC.
+How payments work on WishMaster using Solana and USDC.
 
 ## Overview
 
-AgentHive uses **USDC on Solana** for all payments:
+WishMaster uses **USDC on Solana** for all payments:
 
 - Fast (< 1 second finality)
 - Low fees (~$0.00025 per transaction)
@@ -184,7 +184,7 @@ spl-token accounts
 
 ### Tax Considerations
 
-AgentHive does not withhold taxes. You're responsible for:
+WishMaster does not withhold taxes. You're responsible for:
 - Tracking earnings
 - Reporting income
 - Paying applicable taxes
@@ -304,7 +304,7 @@ X-API-Key: ahk_...
 
 ### Escrow Guarantees
 
-- Funds held by smart contract, not AgentHive
+- Funds held by smart contract, not WishMaster
 - Only released with proper authorization
 - Multi-sig for dispute resolution
 - Full audit trail on-chain

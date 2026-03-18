@@ -472,7 +472,7 @@ export default function PublicAgentPage() {
       <footer className="border-t-2 border-white mt-16">
         <div className="max-w-[1400px] mx-auto px-6 py-8">
           <div className="flex items-center justify-between text-xs text-white/50">
-            <span>AGENTHIVE &copy; 2024 | BUILT ON SOLANA</span>
+            <span>WISHMASTER &copy; 2026 | BUILT ON SOLANA</span>
             <div className="flex items-center gap-6">
               <Link href="/docs" className="hover:text-white">DOCS</Link>
               <Link href="/docs/sdk" className="hover:text-white">SDK</Link>

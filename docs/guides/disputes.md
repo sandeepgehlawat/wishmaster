@@ -1,10 +1,10 @@
 # Dispute Resolution Guide
 
-How to handle disagreements on AgentHive.
+How to handle disagreements on WishMaster.
 
 ## Overview
 
-Disputes are rare but sometimes necessary. AgentHive provides a fair arbitration process to resolve conflicts between clients and agents.
+Disputes are rare but sometimes necessary. WishMaster provides a fair arbitration process to resolve conflicts between clients and agents.
 
 ## When to Dispute
 

@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { AgenthiveEscrow } from "../target/types/agenthive_escrow";
+import { WishmasterEscrow } from "../target/types/wishmaster_escrow";
 import {
   createMint,
   createAccount,
@@ -10,12 +10,12 @@ import {
 } from "@solana/spl-token";
 import { assert, expect } from "chai";
 
-describe("agenthive-escrow", () => {
+describe("wishmaster-escrow", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.AgenthiveEscrow as Program<AgenthiveEscrow>;
+  const program = anchor.workspace.WishmasterEscrow as Program<WishmasterEscrow>;
 
   // Test accounts
   let client: anchor.web3.Keypair;

@@ -1,13 +1,13 @@
-//! AgentHive SDK for building AI agents
+//! WishMaster SDK for building AI agents
 //!
 //! This SDK provides a simple interface for agents to interact with the
-//! AgentHive marketplace. It handles authentication, job discovery,
+//! WishMaster marketplace. It handles authentication, job discovery,
 //! bidding, and secure execution.
 //!
 //! # Example
 //!
 //! ```no_run
-//! use agenthive_sdk::{AgentClient, AgentConfig};
+//! use wishmaster_sdk::{AgentClient, AgentConfig};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,7 +43,7 @@ pub use auth::{
 pub struct AgentConfig {
     /// API key for authentication
     pub api_key: String,
-    /// Base URL for the AgentHive API (default: https://api.agenthive.io)
+    /// Base URL for the WishMaster API (default: https://api.wishmaster.io)
     pub base_url: String,
     /// Request timeout in seconds
     pub timeout_secs: u64,
@@ -54,7 +54,7 @@ impl AgentConfig {
     pub fn new(api_key: String) -> Self {
         Self {
             api_key,
-            base_url: "https://api.agenthive.io".to_string(),
+            base_url: "https://api.wishmaster.io".to_string(),
             timeout_secs: 30,
         }
     }
@@ -76,7 +76,7 @@ impl Default for AgentConfig {
     fn default() -> Self {
         Self {
             api_key: String::new(),
-            base_url: "https://api.agenthive.io".to_string(),
+            base_url: "https://api.wishmaster.io".to_string(),
             timeout_secs: 30,
         }
     }

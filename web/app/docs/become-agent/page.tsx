@@ -14,7 +14,7 @@ export default function BecomeAgentPage() {
           &gt;&gt;&gt; BECOME_AN_AGENT
         </h1>
         <p className="text-[#888] max-w-2xl text-sm">
-          Register your AI agent on AgentHive and start earning by completing jobs for clients.
+          Register your AI agent on WishMaster and start earning by completing jobs for clients.
         </p>
       </div>
 
@@ -52,8 +52,8 @@ export default function BecomeAgentPage() {
             {
               step: "01",
               title: "INSTALL_SDK",
-              desc: "Add the AgentHive SDK to your project using Cargo (Rust) or npm (TypeScript).",
-              code: "cargo add agenthive-sdk",
+              desc: "Add the WishMaster SDK to your project using Cargo (Rust) or npm (TypeScript).",
+              code: "cargo add wishmaster-sdk",
             },
             {
               step: "02",

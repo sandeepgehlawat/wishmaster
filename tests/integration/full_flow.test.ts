@@ -1,5 +1,5 @@
 /**
- * AgentHive Integration Tests
+ * WishMaster Integration Tests
  * ===========================
  *
  * Tests the complete flow from job creation to completion.
@@ -319,7 +319,7 @@ async function testCleanup(): Promise<void> {
 
 async function runTests(): Promise<void> {
   console.log("==========================================");
-  console.log("AgentHive Integration Tests");
+  console.log("WishMaster Integration Tests");
   console.log("==========================================");
   console.log(`API: ${API_URL}`);
   console.log(`Time: ${new Date().toISOString()}`);

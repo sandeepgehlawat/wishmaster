@@ -1,4 +1,4 @@
-// Core types for AgentHive frontend
+// Core types for WishMaster frontend
 
 // User types
 export interface User {
@@ -240,4 +240,266 @@ export interface SubmitRatingInput {
   dimension_3?: number;
   review_text?: string;
   is_public?: boolean;
+}
+
+// Message types
+export interface Message {
+  id: string;
+  job_id: string;
+  sender_id: string;
+  sender_type: "client" | "agent";
+  sender_name: string;
+  content: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MessageListResponse {
+  messages: Message[];
+  total: number;
+}
+
+// ==================== Requirements ====================
+
+export type RequirementPriority = 'must_have' | 'should_have' | 'nice_to_have';
+export type RequirementStatus = 'pending' | 'in_progress' | 'delivered' | 'accepted' | 'rejected';
+
+export interface Requirement {
+  id: string;
+  job_id: string;
+  created_by: string;
+  title: string;
+  description?: string;
+  acceptance_criteria?: string;
+  priority: RequirementPriority;
+  status: RequirementStatus;
+  rejection_feedback?: string;
+  position: number;
+  created_at: string;
+  updated_at: string;
+  accepted_at?: string;
+}
+
+export interface CreateRequirementInput {
+  title: string;
+  description?: string;
+  acceptance_criteria?: string;
+  priority?: RequirementPriority;
+  position?: number;
+}
+
+export interface UpdateRequirementInput {
+  title?: string;
+  description?: string;
+  acceptance_criteria?: string;
+  priority?: RequirementPriority;
+  status?: RequirementStatus;
+  position?: number;
+}
+
+export interface RequirementListResponse {
+  requirements: Requirement[];
+  total: number;
+  completed: number;
+}
+
+// ==================== Deliverables ====================
+
+export type DeliverableStatus = 'pending_review' | 'approved' | 'changes_requested';
+
+export interface Deliverable {
+  id: string;
+  job_id: string;
+  requirement_id?: string;
+  agent_id: string;
+  title: string;
+  description?: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  mime_type?: string;
+  status: DeliverableStatus;
+  client_feedback?: string;
+  version: number;
+  parent_id?: string;
+  created_at: string;
+  reviewed_at?: string;
+  // Joined fields
+  requirement_title?: string;
+  agent_name: string;
+}
+
+export interface CreateDeliverableInput {
+  requirement_id?: string;
+  title: string;
+  description?: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  mime_type?: string;
+}
+
+export interface DeliverableListResponse {
+  deliverables: Deliverable[];
+  total: number;
+  pending_review: number;
+}
+
+// ==================== Activity ====================
+
+export type ActivityActorType = 'client' | 'agent' | 'system';
+
+export interface Activity {
+  id: string;
+  job_id: string;
+  actor_id: string;
+  actor_type: ActivityActorType;
+  action: string;
+  details: Record<string, unknown>;
+  created_at: string;
+  actor_name: string;
+}
+
+export interface ActivityListResponse {
+  activities: Activity[];
+  total: number;
+}
+
+// ==================== Portfolio ====================
+
+export interface PortfolioItem {
+  id: string;
+  agent_id: string;
+  job_id?: string;
+  title: string;
+  description?: string;
+  category?: string;
+  thumbnail_url?: string;
+  demo_url?: string;
+  github_url?: string;
+  client_testimonial?: string;
+  client_rating?: number;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePortfolioItemInput {
+  job_id?: string;
+  title: string;
+  description?: string;
+  category?: string;
+  thumbnail_url?: string;
+  demo_url?: string;
+  github_url?: string;
+  is_featured?: boolean;
+}
+
+export interface UpdatePortfolioItemInput {
+  title?: string;
+  description?: string;
+  category?: string;
+  thumbnail_url?: string;
+  demo_url?: string;
+  github_url?: string;
+  is_featured?: boolean;
+}
+
+export interface PortfolioListResponse {
+  items: PortfolioItem[];
+  total: number;
+}
+
+// ==================== Managed Services ====================
+
+export type ServiceStatus = 'pending' | 'active' | 'paused' | 'cancelled';
+export type UpdateChangeType = 'feature' | 'fix' | 'upgrade' | 'security' | 'other';
+export type UpdateStatus = 'pending' | 'approved' | 'rejected' | 'deployed';
+export type BillingStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+
+export interface ManagedService {
+  id: string;
+  original_job_id: string;
+  client_id: string;
+  agent_id: string;
+  name: string;
+  description?: string;
+  monthly_rate_usd: number;
+  status: ServiceStatus;
+  started_at?: string;
+  next_billing_at?: string;
+  paused_at?: string;
+  cancelled_at?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  client_name?: string;
+  agent_name?: string;
+  job_title?: string;
+}
+
+export interface CreateManagedServiceInput {
+  name: string;
+  description?: string;
+  monthly_rate_usd: number;
+}
+
+export interface UpdateManagedServiceInput {
+  name?: string;
+  description?: string;
+  monthly_rate_usd?: number;
+}
+
+export interface ServiceListResponse {
+  services: ManagedService[];
+  total: number;
+}
+
+export interface ServiceUpdate {
+  id: string;
+  service_id: string;
+  agent_id: string;
+  title: string;
+  description?: string;
+  change_type?: UpdateChangeType;
+  status: UpdateStatus;
+  file_url?: string;
+  file_name?: string;
+  client_feedback?: string;
+  created_at: string;
+  reviewed_at?: string;
+  deployed_at?: string;
+}
+
+export interface CreateServiceUpdateInput {
+  title: string;
+  description?: string;
+  change_type?: UpdateChangeType;
+  file_url?: string;
+  file_name?: string;
+}
+
+export interface ServiceUpdateListResponse {
+  updates: ServiceUpdate[];
+  total: number;
+  pending: number;
+}
+
+export interface ServiceBilling {
+  id: string;
+  service_id: string;
+  period_start: string;
+  period_end: string;
+  amount_usd: number;
+  status: BillingStatus;
+  escrow_pda?: string;
+  payment_tx?: string;
+  paid_at?: string;
+  created_at: string;
+}
+
+export interface BillingListResponse {
+  records: ServiceBilling[];
+  total: number;
+  total_paid_usd: number;
 }

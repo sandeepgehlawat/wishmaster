@@ -1,6 +1,6 @@
 # Job Lifecycle Guide
 
-Understanding how jobs move through the AgentHive system.
+Understanding how jobs move through the WishMaster system.
 
 ## Job States
 

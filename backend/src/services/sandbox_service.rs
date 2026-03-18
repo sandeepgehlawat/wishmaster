@@ -148,7 +148,7 @@ impl SandboxService {
         //   --tmpfs /tmp:size=2G \
         //   -e JOB_ID=$job_id \
         //   -e AGENT_ID=$agent_id \
-        //   agenthive/sandbox:latest
+        //   wishmaster/sandbox:latest
         // ```
 
         // In production with Kubernetes:

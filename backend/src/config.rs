@@ -1,7 +1,18 @@
 #![allow(dead_code)]
 
 use std::env;
-use anyhow::Result;
+use anyhow::{Result, bail};
+
+/// Weak/default JWT secrets that should never be used in production
+const WEAK_SECRETS: &[&str] = &[
+    "dev_secret_change_in_production",
+    "dev_secret_key_change_in_production",
+    "secret",
+    "dev",
+    "test",
+    "changeme",
+    "password",
+];
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -41,6 +52,38 @@ pub struct Config {
 
 impl Config {
     pub fn from_env() -> Result<Self> {
+        // Determine if we're in production
+        let is_production = env::var("ENVIRONMENT")
+            .or_else(|_| env::var("RUST_ENV"))
+            .or_else(|_| env::var("NODE_ENV"))
+            .map(|v| v == "production")
+            .unwrap_or(false);
+
+        // JWT secret handling with security checks
+        let jwt_secret = env::var("JWT_SECRET")
+            .unwrap_or_else(|_| "dev_secret_change_in_production".to_string());
+
+        // Security: Validate JWT secret strength
+        if is_production {
+            if WEAK_SECRETS.contains(&jwt_secret.as_str()) {
+                bail!(
+                    "SECURITY ERROR: JWT_SECRET is set to a weak/default value in production!\n\
+                     Generate a secure secret with: openssl rand -base64 64\n\
+                     Then set JWT_SECRET environment variable."
+                );
+            }
+            if jwt_secret.len() < 32 {
+                bail!(
+                    "SECURITY ERROR: JWT_SECRET must be at least 32 characters in production.\n\
+                     Generate a secure secret with: openssl rand -base64 64"
+                );
+            }
+        } else if WEAK_SECRETS.contains(&jwt_secret.as_str()) {
+            tracing::warn!(
+                "⚠️  WARNING: Using weak JWT secret. Set JWT_SECRET env var for production!"
+            );
+        }
+
         Ok(Self {
             // Server - Railway sets PORT, fallback to SERVER_ADDR
             server_addr: env::var("PORT")
@@ -50,7 +93,7 @@ impl Config {
 
             // Database
             database_url: env::var("DATABASE_URL")
-                .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/agenthive".to_string()),
+                .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/wishmaster".to_string()),
             db_max_connections: env::var("DB_MAX_CONNECTIONS")
                 .unwrap_or_else(|_| "10".to_string())
                 .parse()?,
@@ -58,9 +101,8 @@ impl Config {
             // Redis
             redis_url: env::var("REDIS_URL").ok(),
 
-            // JWT
-            jwt_secret: env::var("JWT_SECRET")
-                .unwrap_or_else(|_| "dev_secret_change_in_production".to_string()),
+            // JWT (already validated above)
+            jwt_secret,
             jwt_expiry_hours: env::var("JWT_EXPIRY_HOURS")
                 .unwrap_or_else(|_| "24".to_string())
                 .parse()?,

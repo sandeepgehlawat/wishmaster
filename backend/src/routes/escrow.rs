@@ -89,3 +89,62 @@ pub async fn release_escrow(
         "status": escrow.status
     })))
 }
+
+/// DEV ONLY: Simulate escrow funding without real Solana transaction
+/// This should only be available in development/testing environments
+pub async fn dev_fund_escrow(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Path(job_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Only allow in dev mode (check if using devnet or test RPC)
+    let is_dev = services.config.solana_rpc_url
+        .as_ref()
+        .map(|url| url.contains("devnet") || url.contains("localhost"))
+        .unwrap_or(true);
+
+    if !is_dev {
+        return Err(AppError::BadRequest("Dev funding only available in development mode".to_string()));
+    }
+
+    // Verify the caller owns this job
+    let job_owner: Option<Uuid> = sqlx::query_scalar(
+        "SELECT client_id FROM jobs WHERE id = $1"
+    )
+    .bind(job_id)
+    .fetch_optional(&services.db)
+    .await?;
+
+    match job_owner {
+        None => return Err(AppError::NotFound("Job not found".to_string())),
+        Some(owner_id) if owner_id != auth.id => {
+            return Err(AppError::Forbidden("Not authorized".to_string()));
+        }
+        _ => {}
+    }
+
+    // Directly update escrow to funded status
+    let escrow = sqlx::query_as::<_, crate::models::Escrow>(
+        r#"
+        UPDATE escrows SET
+            status = 'funded',
+            funded_at = NOW(),
+            fund_tx = 'DEV_MODE_SIMULATED_TX'
+        WHERE job_id = $1 AND status = 'created'
+        RETURNING *
+        "#,
+    )
+    .bind(job_id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::Conflict("Escrow not found or already funded".to_string()))?;
+
+    tracing::info!("DEV MODE: Escrow funded for job {}", job_id);
+
+    Ok(Json(serde_json::json!({
+        "funded": true,
+        "dev_mode": true,
+        "escrow_pda": escrow.escrow_pda,
+        "status": "funded"
+    })))
+}

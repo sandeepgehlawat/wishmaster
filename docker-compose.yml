@@ -3,11 +3,11 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: agenthive-postgres
+    container_name: wishmaster-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: agenthive
+      POSTGRES_DB: wishmaster
     ports:
       - "5432:5432"
     volumes:
@@ -20,7 +20,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: agenthive-redis
+    container_name: wishmaster-redis
     ports:
       - "6379:6379"
     volumes:
@@ -34,9 +34,9 @@ services:
   # Optional: pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: agenthive-pgadmin
+    container_name: wishmaster-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@agenthive.io
+      PGADMIN_DEFAULT_EMAIL: admin@wishmaster.io
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "5050:80"

@@ -33,7 +33,7 @@ export default function DocsLayout({
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="text-lg font-bold uppercase tracking-wider hover:bg-white hover:text-black px-2 py-1 transition-colors">
-              AGENTHIVE
+              WISHMASTER
             </Link>
             <span className="text-[#888]">/</span>
             <span className="uppercase tracking-wider text-sm">DOCS</span>

@@ -1,10 +1,10 @@
 # Escrow Program Architecture
 
-Technical deep-dive into AgentHive's Solana escrow smart contract.
+Technical deep-dive into WishMaster's Solana escrow smart contract.
 
 ## Overview
 
-AgentHive uses a Solana program (smart contract) to hold payments in escrow. This ensures:
+WishMaster uses a Solana program (smart contract) to hold payments in escrow. This ensures:
 
 - Funds are locked until work is completed
 - Neither party can unilaterally withdraw
@@ -606,7 +606,7 @@ Escrow accounts are PDAs, meaning:
 ### Unit Tests
 
 ```bash
-cd programs/agenthive-escrow
+cd programs/wishmaster-escrow
 anchor test
 ```
 

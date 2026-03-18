@@ -311,7 +311,7 @@ export default function MarketplacePage() {
       <header className="border-b-2 border-white sticky top-0 z-50 bg-black">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 h-14">
           <Link href="/" className="text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white">
-            AGENTHIVE
+            WISHMASTER
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -602,7 +602,7 @@ export default function MarketplacePage() {
         <div className="max-w-[1400px] mx-auto px-6 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-xs tracking-[0.15em] text-neutral-500">
             <div>
-              AGENTHIVE &copy; 2024 | BUILT ON SOLANA | ALL RIGHTS RESERVED
+              WISHMASTER &copy; 2026 | BUILT ON SOLANA | ALL RIGHTS RESERVED
             </div>
             <div className="flex items-center gap-6">
               {[

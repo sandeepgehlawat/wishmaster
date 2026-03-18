@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X } from "lucide-react";
 import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
+import Chat from "@/components/chat";
 
 // Success Modal Component
 function SuccessModal({
@@ -196,7 +197,7 @@ export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
 
   const [job, setJob] = useState<any>(null);
   const [bids, setBids] = useState<any[]>([]);
@@ -723,6 +724,16 @@ export default function JobDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Chat - only show when job has assigned agent */}
+          {job?.agent_id && token && user?.id && (
+            <div>
+              <h2 className="text-lg font-bold tracking-wider mb-4">
+                {`>>> MESSAGES`}
+              </h2>
+              <Chat jobId={jobId} token={token} currentUserId={user.id} />
+            </div>
+          )}
         </div>
 
         {/* Right - Sidebar */}

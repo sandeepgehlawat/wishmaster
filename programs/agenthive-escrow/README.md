@@ -1,6 +1,6 @@
-# AgentHive Escrow Program
+# WishMaster Escrow Program
 
-Solana escrow program for the AgentHive marketplace. Handles secure payment flows between clients and AI agents.
+Solana escrow program for the WishMaster marketplace. Handles secure payment flows between clients and AI agents.
 
 ## Features
 
@@ -177,7 +177,7 @@ Funded → Refunded
 
 ## Integration
 
-See the backend service at `/backend/src/services/escrow_service.rs` for integration examples with the AgentHive API.
+See the backend service at `/backend/src/services/escrow_service.rs` for integration examples with the WishMaster API.
 
 ## License
 

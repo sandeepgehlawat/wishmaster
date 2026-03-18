@@ -8,6 +8,9 @@ use axum::{
 };
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
+use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer, key_extractor::SmartIpKeyExtractor};
+use std::net::SocketAddr;
+use axum::extract::connect_info::IntoMakeServiceWithConnectInfo;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -27,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
     // Initialize tracing
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| "agenthive_backend=debug,tower_http=debug".into()))
+            .unwrap_or_else(|_| "wishmaster_backend=debug,tower_http=debug".into()))
         .with(tracing_subscriber::fmt::layer())
         .init();
 
@@ -35,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
     let config = Config::from_env()?;
 
-    tracing::info!("Starting AgentHive backend on {}", config.server_addr);
+    tracing::info!("Starting WishMaster backend on {}", config.server_addr);
 
     // Database connection pool
     let db_pool = PgPoolOptions::new()
@@ -68,11 +71,11 @@ async fn main() -> anyhow::Result<()> {
     // Build routes
     let app = build_router(services);
 
-    // Start server
+    // Start server with ConnectInfo for rate limiting
     let listener = tokio::net::TcpListener::bind(&config.server_addr).await?;
     tracing::info!("Server listening on {}", config.server_addr);
 
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await?;
 
     Ok(())
 }
@@ -91,6 +94,26 @@ fn build_router(services: Arc<Services>) -> Router {
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE, Method::OPTIONS])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
         .allow_credentials(true);
+
+    // Rate limiting configuration with SmartIpKeyExtractor for proxy support
+    let governor_config = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(services.config.rate_limit_requests_per_minute as u64 / 60)
+            .burst_size(services.config.rate_limit_burst)
+            .key_extractor(SmartIpKeyExtractor)
+            .finish()
+            .expect("Failed to create rate limiter config"),
+    );
+
+    let rate_limit_layer = GovernorLayer {
+        config: governor_config,
+    };
+
+    tracing::info!(
+        "Rate limiting: {} requests/min, burst: {}",
+        services.config.rate_limit_requests_per_minute,
+        services.config.rate_limit_burst
+    );
 
     // Public routes (no auth required)
     let public_routes = Router::new()
@@ -141,7 +164,49 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/escrow/:job_id", get(routes::escrow::get_escrow))
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))
         .route("/api/escrow/:job_id/release", post(routes::escrow::release_escrow))
+        .route("/api/escrow/:job_id/dev-fund", post(routes::escrow::dev_fund_escrow))
         .route("/api/jobs/:id/rating", post(routes::ratings::submit_rating))
+        .route("/api/jobs/:id/messages", get(routes::messages::list_messages))
+        .route("/api/jobs/:id/messages", post(routes::messages::send_message))
+        .route("/api/jobs/:id/messages/read", post(routes::messages::mark_messages_read))
+        .route("/api/jobs/:id/messages/unread", get(routes::messages::get_unread_count))
+        // Requirements
+        .route("/api/jobs/:id/requirements", get(routes::requirements::list_requirements))
+        .route("/api/jobs/:id/requirements", post(routes::requirements::add_requirement))
+        .route("/api/requirements/:id", patch(routes::requirements::update_requirement))
+        .route("/api/requirements/:id", delete(routes::requirements::delete_requirement))
+        .route("/api/requirements/:id/deliver", post(routes::requirements::deliver_requirement))
+        .route("/api/requirements/:id/accept", post(routes::requirements::accept_requirement))
+        .route("/api/requirements/:id/reject", post(routes::requirements::reject_requirement))
+        // Deliverables
+        .route("/api/jobs/:id/deliverables", get(routes::deliverables::list_deliverables))
+        .route("/api/jobs/:id/deliverables", post(routes::deliverables::submit_deliverable))
+        .route("/api/deliverables/:id/approve", post(routes::deliverables::approve_deliverable))
+        .route("/api/deliverables/:id/request-changes", post(routes::deliverables::request_changes))
+        // Activity
+        .route("/api/jobs/:id/activity", get(routes::activity::list_activities))
+        // Portfolio
+        .route("/api/portfolio", post(routes::portfolio::create_portfolio_item))
+        .route("/api/portfolio/:id", patch(routes::portfolio::update_portfolio_item))
+        .route("/api/portfolio/:id", delete(routes::portfolio::delete_portfolio_item))
+        .route("/api/portfolio/from-job/:job_id", post(routes::portfolio::create_from_job))
+        // Managed Services
+        .route("/api/services", get(routes::services::list_services))
+        .route("/api/services/:id", get(routes::services::get_service))
+        .route("/api/services/:id", patch(routes::services::update_service))
+        .route("/api/services/:id/pause", post(routes::services::pause_service))
+        .route("/api/services/:id/resume", post(routes::services::resume_service))
+        .route("/api/services/:id/cancel", post(routes::services::cancel_service))
+        .route("/api/jobs/:id/convert-to-service", post(routes::services::convert_to_service))
+        .route("/api/services/:id/accept", post(routes::services::accept_service))
+        // Service Updates
+        .route("/api/services/:id/updates", get(routes::services::list_updates))
+        .route("/api/services/:id/updates", post(routes::services::create_update))
+        .route("/api/service-updates/:id/approve", post(routes::services::approve_update))
+        .route("/api/service-updates/:id/reject", post(routes::services::reject_update))
+        .route("/api/service-updates/:id/deploy", post(routes::services::deploy_update))
+        // Service Billing
+        .route("/api/services/:id/billing", get(routes::services::list_billing))
         .layer(axum_mw::from_fn_with_state(
             services.clone(),
             |axum::extract::State(services): axum::extract::State<Arc<Services>>, req, next| async move {
@@ -153,6 +218,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .merge(public_routes)
         .merge(protected_routes)
         .layer(TraceLayer::new_for_http())
+        .layer(rate_limit_layer)
         .layer(cors)
         .layer(Extension(services))
 }

@@ -14,7 +14,7 @@ export function Header() {
           href="/"
           className="text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white"
         >
-          AGENTHIVE
+          WISHMASTER
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">

@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary
-COPY --from=builder /app/target/release/agenthive-backend /app/agenthive-backend
+COPY --from=builder /app/target/release/wishmaster-backend /app/wishmaster-backend
 
 # Copy migrations
 COPY --from=builder /app/migrations ./migrations
@@ -45,4 +45,4 @@ COPY --from=builder /app/migrations ./migrations
 EXPOSE 3001
 
 # Run
-CMD ["./agenthive-backend"]
+CMD ["./wishmaster-backend"]

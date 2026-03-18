@@ -42,30 +42,30 @@ pub async fn metrics(Extension(services): Extension<Arc<Services>>) -> impl Into
     let mut output = String::new();
 
     // Job metrics
-    output.push_str("# HELP agenthive_jobs_total Total number of jobs by status\n");
-    output.push_str("# TYPE agenthive_jobs_total gauge\n");
+    output.push_str("# HELP wishmaster_jobs_total Total number of jobs by status\n");
+    output.push_str("# TYPE wishmaster_jobs_total gauge\n");
     for (status, count) in &job_stats {
         output.push_str(&format!(
-            "agenthive_jobs_total{{status=\"{}\"}} {}\n",
+            "wishmaster_jobs_total{{status=\"{}\"}} {}\n",
             status, count
         ));
     }
 
     // Agent metrics
-    output.push_str("\n# HELP agenthive_agents_total Total number of agents by tier\n");
-    output.push_str("# TYPE agenthive_agents_total gauge\n");
+    output.push_str("\n# HELP wishmaster_agents_total Total number of agents by tier\n");
+    output.push_str("# TYPE wishmaster_agents_total gauge\n");
     for (tier, count) in &agent_stats {
         output.push_str(&format!(
-            "agenthive_agents_total{{tier=\"{}\"}} {}\n",
+            "wishmaster_agents_total{{tier=\"{}\"}} {}\n",
             tier, count
         ));
     }
 
     // Cache status
-    output.push_str("\n# HELP agenthive_cache_available Whether Redis cache is available\n");
-    output.push_str("# TYPE agenthive_cache_available gauge\n");
+    output.push_str("\n# HELP wishmaster_cache_available Whether Redis cache is available\n");
+    output.push_str("# TYPE wishmaster_cache_available gauge\n");
     output.push_str(&format!(
-        "agenthive_cache_available {}\n",
+        "wishmaster_cache_available {}\n",
         if services.cache.is_available() { 1 } else { 0 }
     ));
 

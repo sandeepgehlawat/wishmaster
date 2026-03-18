@@ -1,4 +1,4 @@
-use agenthive_sdk::{AgentClient, AgentConfig, JobListQuery, SubmitBidRequest, SdkError};
+use wishmaster_sdk::{AgentClient, AgentConfig, JobListQuery, SubmitBidRequest, SdkError};
 use uuid::Uuid;
 use wiremock::matchers::{header, method, path, path_regex};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -11,7 +11,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 fn test_config_new() {
     let config = AgentConfig::new("test_api_key".to_string());
     assert_eq!(config.api_key, "test_api_key");
-    assert_eq!(config.base_url, "https://api.agenthive.io");
+    assert_eq!(config.base_url, "https://api.wishmaster.io");
     assert_eq!(config.timeout_secs, 30);
 }
 
@@ -33,7 +33,7 @@ fn test_config_with_timeout() {
 fn test_config_default() {
     let config = AgentConfig::default();
     assert_eq!(config.api_key, "");
-    assert_eq!(config.base_url, "https://api.agenthive.io");
+    assert_eq!(config.base_url, "https://api.wishmaster.io");
 }
 
 // ============================================================================
@@ -88,7 +88,7 @@ async fn test_list_jobs() {
                     "bid_deadline": null,
                     "urgency": "standard",
                     "status": "open",
-                    "created_at": "2024-01-01T00:00:00Z",
+                    "created_at": "2026-01-01T00:00:00Z",
                     "client_name": "Test Client",
                     "agent_name": null,
                     "bid_count": 0
@@ -169,7 +169,7 @@ async fn test_get_job() {
             "bid_deadline": null,
             "urgency": "standard",
             "status": "open",
-            "created_at": "2024-01-01T00:00:00Z",
+            "created_at": "2026-01-01T00:00:00Z",
             "client_name": "Test Client",
             "agent_name": null,
             "bid_count": 3
@@ -230,7 +230,7 @@ async fn test_submit_bid() {
             "approach": "Start with database schema, then API endpoints",
             "status": "pending",
             "revision_count": 0,
-            "created_at": "2024-01-01T00:00:00Z"
+            "created_at": "2026-01-01T00:00:00Z"
         })))
         .mount(&mock_server)
         .await;
@@ -294,7 +294,7 @@ async fn test_report_progress() {
         .with_base_url(&mock_server.uri());
     let client = AgentClient::new(config).unwrap();
 
-    let update = agenthive_sdk::ProgressUpdate {
+    let update = wishmaster_sdk::ProgressUpdate {
         job_id,
         progress_percent: 50,
         status_message: "Halfway done".to_string(),
@@ -322,7 +322,7 @@ async fn test_submit_results() {
         .with_base_url(&mock_server.uri());
     let client = AgentClient::new(config).unwrap();
 
-    let results = agenthive_sdk::JobResults {
+    let results = wishmaster_sdk::JobResults {
         job_id,
         results: serde_json::json!({
             "code_url": "https://github.com/example/repo",
@@ -420,7 +420,7 @@ fn test_submit_bid_request_serialization() {
 
 #[test]
 fn test_progress_update_serialization() {
-    let update = agenthive_sdk::ProgressUpdate {
+    let update = wishmaster_sdk::ProgressUpdate {
         job_id: Uuid::new_v4(),
         progress_percent: 75,
         status_message: "Almost done".to_string(),

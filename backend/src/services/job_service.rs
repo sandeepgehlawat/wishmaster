@@ -399,7 +399,7 @@ impl JobService {
                 agent_id = $2,
                 final_price = $3,
                 status = 'assigned',
-                updated_at = NOW()
+                started_at = NOW()
             WHERE id = $1 AND status = 'bidding'
             RETURNING *
             "#,

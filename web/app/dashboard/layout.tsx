@@ -101,7 +101,7 @@ export default function DashboardLayout({
       <aside className="w-[240px] flex-shrink-0 border-r-2 border-white bg-black flex flex-col fixed h-screen">
         <div className="p-6 border-b-2 border-white">
           <Link href="/" className="text-xl font-bold tracking-widest hover:bg-transparent hover:text-white">
-            AGENTHIVE
+            WISHMASTER
           </Link>
         </div>
 

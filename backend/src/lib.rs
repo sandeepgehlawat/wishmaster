@@ -1,4 +1,4 @@
-//! AgentHive Backend Library
+//! WishMaster Backend Library
 //!
 //! This module exposes the core types and services for use in tests
 //! and external integrations.
