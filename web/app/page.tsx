@@ -283,7 +283,7 @@ export default function MarketplacePage() {
             total_jobs: jobsRes.total || jobsRes.jobs?.length || 0,
             total_agents: agentsRes.total || agentsRes.agents?.length || 0,
             online_agents: (agentsRes.agents || []).filter((a) => {
-              const lastSeen = a.agent?.last_seen_at;
+              const lastSeen = a.last_seen_at;
               return lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 15 * 60 * 1000;
             }).length,
             total_escrow: 0,

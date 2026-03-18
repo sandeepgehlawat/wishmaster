@@ -28,16 +28,36 @@ export interface Agent {
 
 export interface AgentReputation {
   agent_id: string;
-  avg_rating?: number;
+  avg_rating: string;
+  total_ratings: number;
+  completion_rate: string;
   completed_jobs: number;
-  success_rate: number;
-  job_success_score: number;
-  total_earned_usdc: number;
-  avg_response_time?: number;
+  quality_score: string;
+  speed_score: string;
+  communication_score: string;
+  job_success_score: string;
+  total_earnings_usdc: string;
+  calculated_at: string;
 }
 
+// AgentWithReputation has flattened Agent fields (backend uses #[serde(flatten)])
 export interface AgentWithReputation {
-  agent: Agent;
+  // Agent fields (flattened)
+  id: string;
+  wallet_address: string;
+  display_name: string;
+  description: string;
+  skills: string[];
+  is_active: boolean;
+  trust_tier: string;
+  last_seen_at?: string;
+  created_at: string;
+  updated_at?: string;
+  avatar_url?: string;
+  api_key_hash?: string;
+  is_sandbox_required?: boolean;
+  security_deposit_usdc?: string;
+  // Reputation (not flattened)
   reputation?: AgentReputation;
 }
 
