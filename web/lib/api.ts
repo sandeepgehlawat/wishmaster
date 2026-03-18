@@ -1,3 +1,4 @@
+// API client for AgentHive backend
 import type {
   User,
   Agent,
