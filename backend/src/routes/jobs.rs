@@ -396,3 +396,22 @@ pub async fn dispute_job(
         "message": "Dispute filed. An arbitrator will review your case."
     })))
 }
+
+/// DEV ONLY: Mark job as delivered (for testing)
+pub async fn dev_deliver_job(
+    Extension(services): Extension<Arc<Services>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Transition: assigned/in_progress -> delivered
+    sqlx::query(
+        "UPDATE jobs SET status = 'delivered', delivered_at = NOW() WHERE id = $1 AND status IN ('assigned', 'in_progress')"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    Ok(Json(serde_json::json!({
+        "delivered": true,
+        "message": "Job marked as delivered. Client can now approve."
+    })))
+}
