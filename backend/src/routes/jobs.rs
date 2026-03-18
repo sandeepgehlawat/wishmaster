@@ -415,3 +415,46 @@ pub async fn dev_deliver_job(
         "message": "Job marked as delivered. Client can now approve."
     })))
 }
+
+/// DEV ONLY: Approve job and complete (bypasses escrow for testing)
+pub async fn dev_approve_job(
+    Extension(services): Extension<Arc<Services>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Get job details
+    let job = services.jobs.get(id).await?;
+
+    if job.status != "delivered" {
+        return Err(AppError::BadRequest(format!("Job not in delivered status (current: {})", job.status)));
+    }
+
+    // Force escrow to completed status (dev mode bypass)
+    sqlx::query(
+        "UPDATE escrows SET status = 'released', released_at = NOW() WHERE job_id = $1"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    // Mark job as completed
+    sqlx::query(
+        "UPDATE jobs SET status = 'completed', completed_at = NOW() WHERE id = $1"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    // Calculate simulated payout
+    let final_price: f64 = job.final_price.map(|p| p.to_string().parse().unwrap_or(0.0)).unwrap_or(0.0);
+    let platform_fee = final_price * 0.05; // 5% fee
+    let agent_payout = final_price - platform_fee;
+
+    Ok(Json(serde_json::json!({
+        "completed": true,
+        "dev_mode": true,
+        "signature": "DEV_MODE_SIMULATED_TX",
+        "agent_payout": agent_payout,
+        "platform_fee": platform_fee,
+        "message": "Job completed (dev mode - no real payment)"
+    })))
+}

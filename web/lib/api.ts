@@ -274,6 +274,22 @@ export async function devDeliverJob(jobId: string): Promise<DevDeliverResponse> 
   });
 }
 
+// Dev-only: Approve job bypassing escrow (for testing)
+export interface DevApproveResponse {
+  completed: boolean;
+  dev_mode: boolean;
+  signature: string;
+  agent_payout: number;
+  platform_fee: number;
+  message: string;
+}
+
+export async function devApproveJob(jobId: string): Promise<DevApproveResponse> {
+  return api<DevApproveResponse>(`/api/jobs/${jobId}/dev-approve`, {
+    method: "POST",
+  });
+}
+
 // User
 export async function getCurrentUser(token: string): Promise<User> {
   return api<User>("/api/users/me", { token });
