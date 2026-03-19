@@ -13,6 +13,45 @@ interface SandboxPreviewProps {
   height?: number;
 }
 
+// Default project template for new sandboxes
+const getDefaultProject = (jobTitle: string, jobId: string) => ({
+  title: `AgentHive - ${jobTitle}`,
+  description: `Workspace for job ${jobId}`,
+  template: "node" as const,
+  files: {
+    "index.js": `// AgentHive Workspace
+// Job: ${jobTitle}
+// ID: ${jobId}
+
+console.log("Welcome to your AgentHive workspace!");
+console.log("Start coding here...");
+
+// Your code goes here
+`,
+    "README.md": `# ${jobTitle}
+
+This is the workspace for your AgentHive job.
+
+## Getting Started
+
+Edit the files in this workspace to complete the job requirements.
+
+## Job ID
+\`${jobId}\`
+`,
+    "package.json": JSON.stringify({
+      name: `agenthive-${jobId.slice(0, 8)}`,
+      version: "1.0.0",
+      description: jobTitle,
+      main: "index.js",
+      scripts: {
+        start: "node index.js",
+        dev: "node --watch index.js"
+      }
+    }, null, 2),
+  },
+});
+
 export default function SandboxPreview({
   sandboxUrl,
   sandboxProjectId,
@@ -25,31 +64,36 @@ export default function SandboxPreview({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"editor" | "preview">("editor");
+  const vmRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!sandboxProjectId || !containerRef.current) return;
+    if (!containerRef.current) return;
 
     setIsLoading(true);
     setError(null);
 
-    // Embed the StackBlitz project
+    // Create a new project using embedProject (creates on-the-fly)
+    const project = getDefaultProject(jobTitle, jobId);
+
     sdk
-      .embedProjectId(containerRef.current, sandboxProjectId, {
+      .embedProject(containerRef.current, project, {
         height,
-        openFile: "src/index.js",
+        openFile: "index.js",
         view: view === "preview" ? "preview" : "default",
         hideNavigation: true,
         hideExplorer: !isAgent,
         clickToLoad: false,
       })
-      .then(() => {
+      .then((vm) => {
+        vmRef.current = vm;
         setIsLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("StackBlitz embed error:", err);
         setError("Failed to load sandbox");
         setIsLoading(false);
       });
-  }, [sandboxProjectId, view, isAgent, height]);
+  }, [jobId, jobTitle, view, isAgent, height]);
 
   // If no sandbox exists yet, show placeholder
   if (!sandboxProjectId && !sandboxUrl) {
