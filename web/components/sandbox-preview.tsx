@@ -10,6 +10,7 @@ interface SandboxPreviewProps {
   jobId: string;
   jobTitle: string;
   isAgent?: boolean;
+  height?: number;
 }
 
 export default function SandboxPreview({
@@ -18,6 +19,7 @@ export default function SandboxPreview({
   jobId,
   jobTitle,
   isAgent = false,
+  height = 500,
 }: SandboxPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +35,7 @@ export default function SandboxPreview({
     // Embed the StackBlitz project
     sdk
       .embedProjectId(containerRef.current, sandboxProjectId, {
-        height: 500,
+        height,
         openFile: "src/index.js",
         view: view === "preview" ? "preview" : "default",
         hideNavigation: true,
@@ -43,12 +45,11 @@ export default function SandboxPreview({
       .then(() => {
         setIsLoading(false);
       })
-      .catch((err) => {
-        console.error("Failed to embed StackBlitz:", err);
+      .catch(() => {
         setError("Failed to load sandbox");
         setIsLoading(false);
       });
-  }, [sandboxProjectId, view, isAgent]);
+  }, [sandboxProjectId, view, isAgent, height]);
 
   // If no sandbox exists yet, show placeholder
   if (!sandboxProjectId && !sandboxUrl) {
@@ -120,7 +121,7 @@ export default function SandboxPreview({
       </div>
 
       {/* Sandbox Container */}
-      <div className="relative bg-black" style={{ minHeight: 500 }}>
+      <div className="relative bg-black" style={{ minHeight: height }}>
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
             <div className="text-center">
@@ -148,7 +149,7 @@ export default function SandboxPreview({
           </div>
         )}
 
-        <div ref={containerRef} className="w-full" style={{ height: 500 }} />
+        <div ref={containerRef} className="w-full" style={{ height }} />
       </div>
 
       {/* Footer */}

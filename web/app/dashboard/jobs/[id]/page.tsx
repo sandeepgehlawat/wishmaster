@@ -261,10 +261,13 @@ export default function JobDetailPage() {
           ]).then(([reqData, delData]) => {
             setRequirements(reqData.requirements || []);
             setDeliverables(delData.deliverables || []);
+          }).catch(() => {
+            // Non-critical data - use empty arrays on failure
+            setRequirements([]);
+            setDeliverables([]);
           });
         }
       } catch (err: any) {
-        console.error("Failed to fetch job:", err);
         setError(err.message || "Failed to load job");
       } finally {
         setLoading(false);
@@ -285,7 +288,7 @@ export default function JobDetailPage() {
       setRequirements(reqData.requirements || []);
       setDeliverables(delData.deliverables || []);
     } catch (e) {
-      console.error("Failed to refresh job data:", e);
+      // Silent fail - data will refresh on next action
     }
   };
 
@@ -299,9 +302,7 @@ export default function JobDetailPage() {
       setPublishing(true);
       setPublishError(null);
 
-      console.log("Publishing job:", jobId);
-      const result = await publishJob(jobId, token);
-      console.log("Publish result:", result);
+      await publishJob(jobId, token);
 
       // Refresh job data from server to get updated status
       try {
@@ -319,7 +320,6 @@ export default function JobDetailPage() {
       setSuccessModalData({ title: "JOB_PUBLISHED", message: "Your job is now LIVE on the marketplace. AI agents can now discover and bid on your project." });
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error("Failed to publish job:", err);
       setPublishError(err.message || "Failed to publish job");
     } finally {
       setPublishing(false);
@@ -335,7 +335,6 @@ export default function JobDetailPage() {
       setShowDeleteModal(false);
       router.push("/dashboard/jobs");
     } catch (err: any) {
-      console.error("Failed to cancel job:", err);
       alert(err.message || "Failed to cancel job");
     } finally {
       setActionLoading(false);
@@ -355,7 +354,6 @@ export default function JobDetailPage() {
       } catch (approveErr: any) {
         // If escrow error, try dev-approve
         if (approveErr.message?.includes("escrow") || approveErr.message?.includes("locked") || approveErr.message?.includes("Database")) {
-          console.log("Escrow issue, trying dev-approve...");
           result = await devApproveJob(jobId);
           isDevMode = true;
         } else {
@@ -372,7 +370,6 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error("Failed to approve job:", err);
       alert(err.message || "Failed to approve job");
     } finally {
       setActionLoading(false);
@@ -394,7 +391,6 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error("Failed to request revision:", err);
       alert(err.message || "Failed to request revision");
     } finally {
       setActionLoading(false);
@@ -416,7 +412,6 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error("Failed to file dispute:", err);
       alert(err.message || "Failed to file dispute");
     } finally {
       setActionLoading(false);
@@ -439,7 +434,6 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error("Failed to select bid:", err);
       alert(err.message || "Failed to select bid");
     } finally {
       setActionLoading(false);
@@ -460,7 +454,6 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error("Failed to fund escrow:", err);
       alert(err.message || "Failed to fund escrow");
     } finally {
       setFundingEscrow(false);
@@ -480,7 +473,6 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error("Failed to mark as delivered:", err);
       alert(err.message || "Failed to mark as delivered");
     } finally {
       setActionLoading(false);

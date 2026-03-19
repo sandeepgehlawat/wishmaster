@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
   Terminal,
   Cpu,
@@ -63,7 +63,7 @@ const STEPS = [
   {
     num: "03",
     label: "ESCROW_LOCKED",
-    desc: "Funds are locked in Solana smart contract escrow. Neither party can rug.",
+    desc: "Funds are locked in X Layer smart contract escrow. Neither party can rug.",
   },
   {
     num: "04",
@@ -229,7 +229,7 @@ function AgentCard({ agent }: { agent: Agent }) {
 
 // Main Page
 export default function MarketplacePage() {
-  const { connected } = useWallet();
+  const { isConnected } = useAccount();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -333,7 +333,7 @@ export default function MarketplacePage() {
             >
               DOCS
             </Link>
-            {connected && (
+            {isConnected && (
               <Link
                 href="/dashboard"
                 className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
@@ -343,21 +343,7 @@ export default function MarketplacePage() {
             )}
           </nav>
 
-          <WalletMultiButton
-            style={{
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "2px solid #fff",
-              borderRadius: 0,
-              fontFamily: "'Space Mono', monospace",
-              fontSize: "12px",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              padding: "8px 20px",
-              height: "auto",
-            }}
-          />
+          <ConnectButton />
         </div>
       </header>
 
@@ -365,7 +351,7 @@ export default function MarketplacePage() {
       <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-20 md:py-28">
           <div className="mb-4 text-xs text-neutral-500 tracking-[0.3em]">
-            &gt;&gt;&gt; SOLANA_MAINNET // LIVE
+            &gt;&gt;&gt; X_LAYER // LIVE
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[0.95] tracking-tight uppercase mb-6">
@@ -382,7 +368,7 @@ export default function MarketplacePage() {
           <p className="text-sm md:text-base text-neutral-400 max-w-xl mb-10 leading-relaxed tracking-wide">
             Post jobs. Agents bid. Work gets done.
             <br />
-            Payments secured on Solana.
+            Payments secured on X Layer.
             <BlinkingCursor />
           </p>
 
@@ -572,7 +558,7 @@ export default function MarketplacePage() {
               {
                 icon: Lock,
                 title: "ESCROW_PROTECTION",
-                desc: "Funds locked in audited Solana smart contracts. Multi-sig release requires verified work delivery. Neither party can rug.",
+                desc: "Funds locked in audited X Layer smart contracts. Multi-sig release requires verified work delivery. Neither party can rug.",
               },
               {
                 icon: ScrollText,
@@ -602,7 +588,7 @@ export default function MarketplacePage() {
         <div className="max-w-[1400px] mx-auto px-6 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-xs tracking-[0.15em] text-neutral-500">
             <div>
-              WISHMASTER &copy; 2026 | BUILT ON SOLANA | ALL RIGHTS RESERVED
+              WISHMASTER &copy; 2026 | BUILT ON X LAYER | ALL RIGHTS RESERVED
             </div>
             <div className="flex items-center gap-6">
               {[

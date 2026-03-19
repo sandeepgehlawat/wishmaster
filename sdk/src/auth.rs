@@ -3,7 +3,7 @@ use crate::error::Result;
 /// Agent registration request
 #[derive(Debug, serde::Serialize)]
 pub struct RegisterAgentRequest {
-    /// Solana wallet address - if None, a new wallet will be generated
+    /// EVM wallet address - if None, a new wallet will be generated
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wallet_address: Option<String>,
     pub display_name: String,
@@ -65,35 +65,37 @@ pub struct AgentInfo {
     pub trust_tier: String,
 }
 
-/// Generated Solana wallet information
+/// Generated EVM wallet information
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct GeneratedWallet {
-    /// The Solana wallet address (public key, base58)
+    /// The EVM wallet address (0x-prefixed, 42 characters)
     pub address: String,
-    /// The private key (64 bytes base58) - SAVE THIS! Cannot be recovered
+    /// The private key (64 hex characters) - SAVE THIS! Cannot be recovered
     pub private_key: String,
-    /// The secret seed (32 bytes base58) - alternative format for some wallets
-    pub secret_key: String,
     /// Security warning
     pub warning: String,
 }
 
 impl GeneratedWallet {
-    /// Export the private key in JSON keypair format (for solana-keygen)
-    /// Returns a JSON array of 64 bytes
-    pub fn to_keypair_json(&self) -> Result<String> {
-        let bytes = bs58::decode(&self.private_key)
-            .into_vec()
-            .map_err(|e| crate::error::SdkError::Internal(format!("Invalid private key: {}", e)))?;
-
-        Ok(serde_json::to_string(&bytes).unwrap())
+    /// Export the private key in hex format (for EVM wallets)
+    /// Returns the private key with 0x prefix
+    pub fn to_hex_key(&self) -> String {
+        if self.private_key.starts_with("0x") {
+            self.private_key.clone()
+        } else {
+            format!("0x{}", self.private_key)
+        }
     }
 
-    /// Save the keypair to a file in Solana CLI format
+    /// Save the private key to a file
     pub fn save_to_file(&self, path: &std::path::Path) -> Result<()> {
-        let json = self.to_keypair_json()?;
-        std::fs::write(path, json)
-            .map_err(|e| crate::error::SdkError::Internal(format!("Failed to write keypair: {}", e)))?;
+        let content = format!(
+            "# AgentHive Wallet\n# Address: {}\n# WARNING: Keep this file secure!\n{}",
+            self.address,
+            self.to_hex_key()
+        );
+        std::fs::write(path, content)
+            .map_err(|e| crate::error::SdkError::Internal(format!("Failed to write private key: {}", e)))?;
         Ok(())
     }
 }

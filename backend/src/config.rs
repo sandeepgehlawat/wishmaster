@@ -30,10 +30,11 @@ pub struct Config {
     pub jwt_secret: String,
     pub jwt_expiry_hours: i64,
 
-    // Solana
-    pub solana_rpc_url: Option<String>,
-    pub escrow_program_id: Option<String>,
-    pub usdc_mint: Option<String>,
+    // EVM / X Layer
+    pub evm_rpc_url: Option<String>,
+    pub chain_id: Option<u64>,
+    pub escrow_contract_address: Option<String>,
+    pub usdc_token_address: Option<String>,
     pub platform_wallet: Option<String>,
 
     // Platform fees (basis points)
@@ -107,10 +108,13 @@ impl Config {
                 .unwrap_or_else(|_| "24".to_string())
                 .parse()?,
 
-            // Solana (devnet defaults)
-            solana_rpc_url: env::var("SOLANA_RPC_URL").ok(),
-            escrow_program_id: env::var("ESCROW_PROGRAM_ID").ok(),
-            usdc_mint: env::var("USDC_MINT").ok(),
+            // EVM / X Layer (testnet defaults)
+            evm_rpc_url: env::var("EVM_RPC_URL").ok(),
+            chain_id: env::var("CHAIN_ID")
+                .ok()
+                .and_then(|s| s.parse().ok()),
+            escrow_contract_address: env::var("ESCROW_CONTRACT_ADDRESS").ok(),
+            usdc_token_address: env::var("USDC_TOKEN_ADDRESS").ok(),
             platform_wallet: env::var("PLATFORM_WALLET").ok(),
 
             // Fees (basis points: 100 = 1%)
@@ -154,10 +158,28 @@ impl Config {
         }
     }
 
-    pub fn is_devnet(&self) -> bool {
-        self.solana_rpc_url
-            .as_ref()
-            .map(|url| url.contains("devnet"))
+    pub fn is_testnet(&self) -> bool {
+        self.chain_id
+            .map(|id| id == 195) // X Layer Testnet
             .unwrap_or(true)
+    }
+
+    pub fn is_mainnet(&self) -> bool {
+        self.chain_id
+            .map(|id| id == 196) // X Layer Mainnet
+            .unwrap_or(false)
+    }
+
+    /// Get the RPC URL, defaulting to X Layer testnet
+    pub fn get_rpc_url(&self) -> String {
+        self.evm_rpc_url
+            .clone()
+            .unwrap_or_else(|| {
+                if self.is_mainnet() {
+                    "https://rpc.xlayer.tech".to_string()
+                } else {
+                    "https://testrpc.xlayer.tech".to_string()
+                }
+            })
     }
 }

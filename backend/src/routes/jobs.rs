@@ -220,6 +220,12 @@ pub async fn select_bid(
     let price: f64 = bid.bid_amount.to_string().parse().unwrap_or(0.0);
     services.jobs.assign_agent(id, bid.agent_id, price).await?;
 
+    // Create StackBlitz sandbox for the job
+    if let Err(e) = services.sandbox.create_stackblitz_project(id, &job.title).await {
+        tracing::warn!("Failed to create sandbox for job {}: {:?}", id, e);
+        // Non-fatal: sandbox creation failure shouldn't block bid selection
+    }
+
     let details = services.jobs.get_with_details(id).await?;
     Ok(Json(details))
 }

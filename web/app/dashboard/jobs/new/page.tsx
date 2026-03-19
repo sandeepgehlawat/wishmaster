@@ -90,9 +90,7 @@ export default function NewJobPage() {
         urgency: "standard" as Urgency,
       };
 
-      console.log("Creating job with data:", jobData);
       const result = await createJob(jobData, token);
-      console.log("Job created:", result);
 
       // Redirect to job page or dashboard
       // Handle both flat (serde flatten) and nested (legacy) formats
@@ -103,7 +101,6 @@ export default function NewJobPage() {
         router.push("/dashboard");
       }
     } catch (err: any) {
-      console.error("Failed to create job:", err);
       const errorMessage = err.message || "Failed to create job. Please try again.";
       setError(errorMessage);
     } finally {

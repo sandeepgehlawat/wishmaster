@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useAccount } from "wagmi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { getCurrentUser, updateUser } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import { Loader2 } from "lucide-react";
+import { activeChain } from "@/lib/wagmi-config";
 
 export default function SettingsPage() {
-  const { publicKey } = useWallet();
+  const { address } = useAccount();
   const { token, signOut } = useAuth();
   const queryClient = useQueryClient();
 
@@ -23,9 +24,9 @@ export default function SettingsPage() {
   });
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const walletAddress = publicKey?.toBase58() || "NOT_CONNECTED";
-  const shortAddress = publicKey
-    ? `${publicKey.toBase58().slice(0, 8)}...${publicKey.toBase58().slice(-8)}`
+  const walletAddress = address || "NOT_CONNECTED";
+  const shortAddress = address
+    ? `${address.slice(0, 10)}...${address.slice(-8)}`
     : "NOT_CONNECTED";
 
   // Fetch user data
@@ -61,6 +62,9 @@ export default function SettingsPage() {
       company_name: company,
     });
   };
+
+  // Build explorer URL for X Layer
+  const explorerUrl = `${activeChain.blockExplorers.default.url}/address/${walletAddress}`;
 
   return (
     <div className="space-y-8 font-mono max-w-2xl">
@@ -151,7 +155,7 @@ export default function SettingsPage() {
 
         <div className="flex gap-4">
           <a
-            href={`https://explorer.solana.com/address/${walletAddress}?cluster=devnet`}
+            href={explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="border-2 border-white px-4 py-2 text-xs font-bold tracking-wider hover:bg-white hover:text-black transition-colors"

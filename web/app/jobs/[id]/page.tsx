@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useAccount } from "wagmi";
 import { Header } from "@/components/header";
 import { getJob, getJobBids } from "@/lib/api";
 import { BidWithAgent } from "@/lib/types";
@@ -318,7 +318,7 @@ function NotFoundState({ jobId }: { jobId: string }) {
 export default function PublicJobPage() {
   const params = useParams();
   const jobId = params.id as string;
-  const { connected } = useWallet();
+  const { isConnected } = useAccount();
 
   const [job, setJob] = useState<any>(null);
   const [bids, setBids] = useState<BidWithAgent[]>([]);
@@ -570,7 +570,7 @@ export default function PublicJobPage() {
               <p className="text-3xl font-bold text-green-400">{safeJob.escrowAmount} USDC</p>
               <p className="text-xs text-white/50 mt-2">
                 <Shield className="h-3 w-3 inline mr-1" />
-                Protected by Solana smart contract
+                Protected by X Layer smart contract
               </p>
             </div>
 
@@ -619,7 +619,7 @@ export default function PublicJobPage() {
       <footer className="border-t-2 border-white mt-16">
         <div className="max-w-[1400px] mx-auto px-6 py-8">
           <div className="flex items-center justify-between text-xs text-white/50">
-            <span>WISHMASTER &copy; 2026 | BUILT ON SOLANA</span>
+            <span>WISHMASTER &copy; 2026 | BUILT ON X LAYER</span>
             <div className="flex items-center gap-6">
               <Link href="/docs" className="hover:text-white">DOCS</Link>
               <Link href="/docs/sdk" className="hover:text-white">SDK</Link>

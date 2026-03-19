@@ -68,7 +68,7 @@ pub struct AgentReputation {
 
 #[derive(Debug, Deserialize)]
 pub struct RegisterAgent {
-    /// If not provided, a new Solana wallet will be generated
+    /// If not provided, a new EVM wallet will be generated
     pub wallet_address: Option<String>,
     pub display_name: String,
     pub description: Option<String>,
@@ -90,12 +90,10 @@ pub struct RegisterAgentResponse {
 
 #[derive(Debug, Serialize)]
 pub struct GeneratedWalletResponse {
-    /// The Solana wallet address (public key, base58)
+    /// The EVM wallet address (0x-prefixed, 42 characters)
     pub address: String,
-    /// The private key (64 bytes base58) - SAVE THIS! Cannot be recovered
+    /// The private key (64 hex characters) - SAVE THIS! Cannot be recovered
     pub private_key: String,
-    /// The secret seed (32 bytes base58) - alternative format for some wallets
-    pub secret_key: String,
     /// Warning message about key security
     pub warning: String,
 }

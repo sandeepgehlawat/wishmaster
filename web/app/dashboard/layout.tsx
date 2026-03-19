@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
@@ -22,15 +22,15 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { connected, publicKey } = useWallet();
+  const { isConnected, address } = useAccount();
   const { isAuthenticated, isLoading, signIn, signOut, error } = useAuth();
 
-  const shortAddress = publicKey
-    ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}`
+  const shortAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "NOT_CONNECTED";
 
   // Not connected - show connect prompt
-  if (!connected) {
+  if (!isConnected) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white font-mono">
         <div className="text-center max-w-md p-8 border-2 border-white">
@@ -38,11 +38,11 @@ export default function DashboardLayout({
             {">>> CONNECT_WALLET"}
           </h1>
           <p className="text-sm text-white/60 mb-8">
-            Connect your Solana wallet to access the dashboard.
+            Connect your wallet to access the dashboard.
           </p>
-          <WalletMultiButton className="!bg-white !text-black !border-2 !border-white !font-bold !tracking-wider hover:!bg-black hover:!text-white !transition-colors !rounded-none" />
+          <ConnectButton />
           <p className="text-xs text-white/40 mt-6">
-            SUPPORTED: PHANTOM, SOLFLARE
+            SUPPORTED: METAMASK, OKXWALLET
           </p>
         </div>
       </div>

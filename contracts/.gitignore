@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+artifacts/
+cache/
+typechain-types/
+
+# Coverage
+coverage/
+coverage.json
+
+# Local deployment files (contain addresses specific to local dev)
+deployment-localhost.json
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/

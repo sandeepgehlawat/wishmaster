@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useAccount } from "wagmi";
 import {
   Briefcase,
   DollarSign,
@@ -46,7 +46,7 @@ interface EscrowSummary {
 }
 
 export default function DashboardPage() {
-  const { publicKey } = useWallet();
+  const { address } = useAccount();
   const { token, _hasHydrated } = useAuthStore();
 
   const [jobs, setJobs] = useState<DashboardJob[]>([]);
@@ -54,8 +54,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const shortAddress = publicKey
-    ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}`
+  const shortAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "NOT_CONNECTED";
 
   // Fetch data when authenticated

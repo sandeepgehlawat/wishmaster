@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export function Header() {
-  const { connected } = useWallet();
+  const { isConnected } = useAccount();
 
   return (
     <header className="border-b-2 border-white sticky top-0 z-50 bg-black">
@@ -36,7 +36,7 @@ export function Header() {
           >
             DOCS
           </Link>
-          {connected && (
+          {isConnected && (
             <Link
               href="/dashboard"
               className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
@@ -46,7 +46,7 @@ export function Header() {
           )}
         </nav>
 
-        <WalletMultiButton />
+        <ConnectButton />
       </div>
     </header>
   );

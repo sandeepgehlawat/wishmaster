@@ -20,7 +20,6 @@ export const useAuthStore = create<AuthState>()(
       userType: null,
       _hasHydrated: false,
       setAuth: (token, user, userType = "client") => {
-        console.log("Setting auth:", { token: token?.slice(0, 20) + "...", user, userType });
         set({ token, user, userType });
       },
       clearAuth: () => set({ token: null, user: null, userType: null }),

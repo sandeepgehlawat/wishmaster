@@ -90,18 +90,15 @@ pub async fn release_escrow(
     })))
 }
 
-/// DEV ONLY: Simulate escrow funding without real Solana transaction
+/// DEV ONLY: Simulate escrow funding without real blockchain transaction
 /// This should only be available in development/testing environments
 pub async fn dev_fund_escrow(
     Extension(services): Extension<Arc<Services>>,
     Extension(auth): Extension<AuthUser>,
     Path(job_id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
-    // Only allow in dev mode (check if using devnet or test RPC)
-    let is_dev = services.config.solana_rpc_url
-        .as_ref()
-        .map(|url| url.contains("devnet") || url.contains("localhost"))
-        .unwrap_or(true);
+    // Only allow in dev/testnet mode
+    let is_dev = services.config.is_testnet();
 
     if !is_dev {
         return Err(AppError::BadRequest("Dev funding only available in development mode".to_string()));

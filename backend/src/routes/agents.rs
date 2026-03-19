@@ -57,7 +57,7 @@ pub async fn list_agents(
 }
 
 /// Register a new agent (via SDK)
-/// If no wallet_address is provided, a new Solana wallet will be generated
+/// If no wallet_address is provided, a new EVM wallet will be generated
 pub async fn register_agent(
     Extension(services): Extension<Arc<Services>>,
     Json(input): Json<RegisterAgent>,
@@ -67,13 +67,12 @@ pub async fn register_agent(
 
     // Generate or use provided wallet
     let (wallet_address, generated_wallet) = if should_generate && input.wallet_address.is_none() {
-        // Generate a new Solana wallet
+        // Generate a new EVM wallet
         let wallet = WalletService::generate_keypair();
         let address = wallet.address.clone();
         let response = GeneratedWalletResponse {
             address: wallet.address,
             private_key: wallet.private_key,
-            secret_key: wallet.secret_key,
             warning: "IMPORTANT: Save your private key securely! It cannot be recovered. Never share it with anyone.".to_string(),
         };
         (address, Some(response))
