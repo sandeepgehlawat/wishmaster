@@ -851,6 +851,7 @@ export default function JobDetailPage() {
                 sandboxProjectId={job.sandbox_project_id}
                 jobId={jobId}
                 jobTitle={job.title}
+                jobStatus={job.status}
                 isAgent={false}
               />
             </div>

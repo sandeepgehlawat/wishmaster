@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ExternalLink, Maximize2, Download, Code, Eye, Loader2 } from "lucide-react";
+import { ExternalLink, Maximize2, Code, Eye, Loader2, Lock, CheckCircle } from "lucide-react";
 import sdk from "@stackblitz/sdk";
 
 interface SandboxPreviewProps {
@@ -10,6 +10,7 @@ interface SandboxPreviewProps {
   jobId: string;
   jobTitle: string;
   isAgent?: boolean;
+  jobStatus?: string;
   height?: number;
 }
 
@@ -58,13 +59,17 @@ export default function SandboxPreview({
   jobId,
   jobTitle,
   isAgent = false,
+  jobStatus = "assigned",
   height = 500,
 }: SandboxPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"editor" | "preview">("editor");
   const vmRef = useRef<any>(null);
+
+  // Client can only see code after job is completed (payment released)
+  const isCompleted = jobStatus === "completed";
+  const canViewCode = isAgent || isCompleted;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -78,10 +83,12 @@ export default function SandboxPreview({
     sdk
       .embedProject(containerRef.current, project, {
         height,
-        openFile: "index.js",
-        view: view === "preview" ? "preview" : "default",
+        openFile: canViewCode ? "index.js" : undefined,
+        // Clients see preview only until job is completed
+        view: canViewCode ? "default" : "preview",
         hideNavigation: true,
-        hideExplorer: !isAgent,
+        // Hide file explorer for clients until completed
+        hideExplorer: !canViewCode,
         clickToLoad: false,
       })
       .then((vm) => {
@@ -93,7 +100,7 @@ export default function SandboxPreview({
         setError("Failed to load sandbox");
         setIsLoading(false);
       });
-  }, [jobId, jobTitle, view, isAgent, height]);
+  }, [jobId, jobTitle, canViewCode, height]);
 
   // If no sandbox exists yet, show placeholder
   if (!sandboxProjectId && !sandboxUrl) {
@@ -113,36 +120,30 @@ export default function SandboxPreview({
       {/* Header */}
       <div className="border-b border-white/30 px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Code className="h-4 w-4 text-green-400" />
-          <span className="text-sm font-bold tracking-wider">WORKSPACE</span>
+          {canViewCode ? (
+            <Code className="h-4 w-4 text-green-400" />
+          ) : (
+            <Eye className="h-4 w-4 text-yellow-400" />
+          )}
+          <span className="text-sm font-bold tracking-wider">
+            {canViewCode ? "WORKSPACE" : "PREVIEW"}
+          </span>
+          {!canViewCode && (
+            <span className="text-xs text-yellow-400 flex items-center gap-1">
+              <Lock className="h-3 w-3" />
+              CODE LOCKED
+            </span>
+          )}
+          {isCompleted && !isAgent && (
+            <span className="text-xs text-green-400 flex items-center gap-1">
+              <CheckCircle className="h-3 w-3" />
+              UNLOCKED
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          <div className="flex border border-white/30">
-            <button
-              onClick={() => setView("editor")}
-              className={`px-3 py-1 text-xs ${
-                view === "editor"
-                  ? "bg-white text-black"
-                  : "text-white/50 hover:text-white"
-              }`}
-            >
-              <Code className="h-3 w-3" />
-            </button>
-            <button
-              onClick={() => setView("preview")}
-              className={`px-3 py-1 text-xs border-l border-white/30 ${
-                view === "preview"
-                  ? "bg-white text-black"
-                  : "text-white/50 hover:text-white"
-              }`}
-            >
-              <Eye className="h-3 w-3" />
-            </button>
-          </div>
-
-          {/* Actions */}
-          {sandboxUrl && (
+          {/* Only show external link for agents or completed jobs */}
+          {canViewCode && sandboxUrl && (
             <>
               <a
                 href={sandboxUrl}
@@ -179,7 +180,7 @@ export default function SandboxPreview({
           <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
             <div className="text-center text-red-400">
               <p className="text-sm">{error}</p>
-              {sandboxUrl && (
+              {canViewCode && sandboxUrl && (
                 <a
                   href={sandboxUrl}
                   target="_blank"
@@ -199,10 +200,14 @@ export default function SandboxPreview({
       {/* Footer */}
       <div className="border-t border-white/30 px-4 py-2 flex items-center justify-between">
         <span className="text-[10px] text-white/30">
-          {isAgent ? "You have full edit access" : "Read-only view"}
+          {isAgent
+            ? "You have full edit access"
+            : isCompleted
+              ? "Full code access unlocked"
+              : "Preview only - code unlocks after payment"}
         </span>
         <div className="flex items-center gap-4">
-          {sandboxUrl && (
+          {canViewCode && sandboxUrl && (
             <a
               href={sandboxUrl}
               target="_blank"
@@ -212,6 +217,12 @@ export default function SandboxPreview({
               <ExternalLink className="h-3 w-3" />
               OPEN IN STACKBLITZ
             </a>
+          )}
+          {!canViewCode && (
+            <span className="text-xs text-yellow-400/70 flex items-center gap-1">
+              <Lock className="h-3 w-3" />
+              Approve delivery to unlock code
+            </span>
           )}
         </div>
       </div>
