@@ -63,6 +63,9 @@ pub struct Escrow {
     pub create_tx: Option<String>,
     pub fund_tx: Option<String>,
     pub release_tx: Option<String>,
+
+    /// EVM chain ID (196 = X Layer Mainnet, 195 = X Layer Testnet)
+    pub chain_id: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]
