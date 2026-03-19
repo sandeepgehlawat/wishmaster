@@ -6,6 +6,9 @@ use sha3::{Digest, Keccak256};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+// Explicit column list for Escrow queries (avoids SELECT * issues with schema changes)
+const ESCROW_COLUMNS: &str = "id, job_id, escrow_pda, client_wallet, agent_wallet, amount_usdc, platform_fee_usdc, agent_payout_usdc, status, created_at, funded_at, released_at, create_tx, fund_tx, release_tx";
+
 // Default escrow contract address (to be deployed on X Layer)
 const DEFAULT_ESCROW_CONTRACT: &str = "0x0000000000000000000000000000000000000000";
 
@@ -102,11 +105,11 @@ impl EscrowService {
         let escrow_id = Self::generate_escrow_id(job_id);
 
         let escrow = sqlx::query_as::<_, Escrow>(
-            r#"
+            &format!(r#"
             INSERT INTO escrows (id, job_id, escrow_pda, client_wallet, amount_usdc, status)
             VALUES ($1, $2, $3, $4, $5, 'created')
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, ESCROW_COLUMNS),
         )
         .bind(id)
         .bind(job_id)
@@ -122,7 +125,7 @@ impl EscrowService {
     /// Get escrow with details
     pub async fn get_escrow(&self, job_id: Uuid) -> Result<EscrowDetails> {
         let escrow: Escrow = sqlx::query_as(
-            "SELECT * FROM escrows WHERE job_id = $1"
+            &format!("SELECT {} FROM escrows WHERE job_id = $1", ESCROW_COLUMNS)
         )
         .bind(job_id)
         .fetch_optional(&self.db)
@@ -171,7 +174,7 @@ impl EscrowService {
         client_wallet: &str,
     ) -> Result<FundTransactionResponse> {
         let escrow = sqlx::query_as::<_, Escrow>(
-            "SELECT * FROM escrows WHERE job_id = $1"
+            &format!("SELECT {} FROM escrows WHERE job_id = $1", ESCROW_COLUMNS)
         )
         .bind(job_id)
         .fetch_optional(&self.db)
@@ -292,14 +295,14 @@ impl EscrowService {
 
         // Update escrow status
         let escrow = sqlx::query_as::<_, Escrow>(
-            r#"
+            &format!(r#"
             UPDATE escrows SET
                 status = 'funded',
                 funded_at = NOW(),
                 fund_tx = $2
             WHERE job_id = $1 AND status = 'created'
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, ESCROW_COLUMNS),
         )
         .bind(job_id)
         .bind(tx_hash)
@@ -319,13 +322,13 @@ impl EscrowService {
     /// Lock escrow to agent when bid is accepted
     pub async fn lock_to_agent(&self, job_id: Uuid, agent_wallet: &str) -> Result<Escrow> {
         let escrow = sqlx::query_as::<_, Escrow>(
-            r#"
+            &format!(r#"
             UPDATE escrows SET
                 status = 'locked',
                 agent_wallet = $2
             WHERE job_id = $1 AND status = 'funded'
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, ESCROW_COLUMNS),
         )
         .bind(job_id)
         .bind(agent_wallet.to_lowercase())
@@ -341,12 +344,12 @@ impl EscrowService {
     pub async fn release(&self, job_id: Uuid, trust_tier: &str) -> Result<ReleaseResult> {
         // ATOMIC: Single query that selects AND updates only if status is 'locked'
         let escrow = sqlx::query_as::<_, Escrow>(
-            r#"
+            &format!(r#"
             UPDATE escrows SET
                 status = 'releasing'
             WHERE job_id = $1 AND status = 'locked'
-            RETURNING *
-            "#
+            RETURNING {}
+            "#, ESCROW_COLUMNS)
         )
         .bind(job_id)
         .fetch_optional(&self.db)
@@ -425,11 +428,11 @@ impl EscrowService {
     pub async fn refund(&self, job_id: Uuid) -> Result<String> {
         // ATOMIC: Single query that selects AND updates only if status is 'funded'
         let escrow = sqlx::query_as::<_, Escrow>(
-            r#"
+            &format!(r#"
             UPDATE escrows SET status = 'refunding'
             WHERE job_id = $1 AND status = 'funded'
-            RETURNING *
-            "#
+            RETURNING {}
+            "#, ESCROW_COLUMNS)
         )
         .bind(job_id)
         .fetch_optional(&self.db)

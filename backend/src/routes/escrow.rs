@@ -10,6 +10,9 @@ use serde::Deserialize;
 use std::sync::Arc;
 use uuid::Uuid;
 
+// Explicit column list for Escrow queries (avoids SELECT * issues with schema changes)
+const ESCROW_COLUMNS: &str = "id, job_id, escrow_pda, client_wallet, agent_wallet, amount_usdc, platform_fee_usdc, agent_payout_usdc, status, created_at, funded_at, released_at, create_tx, fund_tx, release_tx";
+
 #[derive(Debug, Deserialize)]
 pub struct FundConfirmRequest {
     pub signature: String,
@@ -122,14 +125,14 @@ pub async fn dev_fund_escrow(
 
     // Directly update escrow to funded status
     let escrow = sqlx::query_as::<_, crate::models::Escrow>(
-        r#"
+        &format!(r#"
         UPDATE escrows SET
             status = 'funded',
             funded_at = NOW(),
             fund_tx = 'DEV_MODE_SIMULATED_TX'
         WHERE job_id = $1 AND status = 'created'
-        RETURNING *
-        "#,
+        RETURNING {}
+        "#, ESCROW_COLUMNS),
     )
     .bind(job_id)
     .fetch_optional(&services.db)
