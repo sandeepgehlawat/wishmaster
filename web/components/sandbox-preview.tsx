@@ -343,42 +343,57 @@ export default function SandboxPreview({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const vmRef = useRef<any>(null);
 
   // Client can only see code after job is completed (payment released)
   const isCompleted = jobStatus === "completed";
   const canViewCode = isAgent || isCompleted;
 
+  // Track mount state
   useEffect(() => {
-    if (!containerRef.current) return;
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
-    setIsLoading(true);
-    setError(null);
+  useEffect(() => {
+    // Wait for mount and container ref
+    if (!isMounted || !containerRef.current) return;
 
-    // Create a new project using embedProject (creates on-the-fly)
-    const project = getDefaultProject(jobTitle, jobId);
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      if (!containerRef.current) return;
 
-    sdk
-      .embedProject(containerRef.current, project, {
-        height,
-        openFile: canViewCode ? "index.js" : undefined,
-        // Clients see preview only until job is completed
-        view: canViewCode ? "default" : "preview",
-        hideNavigation: true,
-        // Hide file explorer for clients until completed
-        hideExplorer: !canViewCode,
-        clickToLoad: false,
-      })
-      .then((vm) => {
-        vmRef.current = vm;
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error("StackBlitz embed error:", err);
-        setError("Failed to load sandbox");
-        setIsLoading(false);
-      });
-  }, [jobId, jobTitle, canViewCode, height]);
+      setIsLoading(true);
+      setError(null);
+
+      // Create a new project using embedProject (creates on-the-fly)
+      const project = getDefaultProject(jobTitle, jobId);
+
+      sdk
+        .embedProject(containerRef.current, project, {
+          height,
+          openFile: canViewCode ? "index.html" : undefined,
+          // Clients see preview only until job is completed
+          view: canViewCode ? "default" : "preview",
+          hideNavigation: true,
+          // Hide file explorer for clients until completed
+          hideExplorer: !canViewCode,
+          clickToLoad: false,
+        })
+        .then((vm) => {
+          vmRef.current = vm;
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.error("StackBlitz embed error:", err);
+          setError("Failed to load sandbox");
+          setIsLoading(false);
+        });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isMounted, jobId, jobTitle, canViewCode, height]);
 
   // If no sandbox exists yet, show placeholder
   if (!sandboxProjectId && !sandboxUrl) {
