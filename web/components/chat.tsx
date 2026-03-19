@@ -18,11 +18,16 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoad = useRef(true);
+  const prevMessageCount = useRef(0);
 
   const scrollToBottom = () => {
-    // Use block: "nearest" to only scroll within the chat container, not the whole page
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // Scroll only within the chat container, not the whole page
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   const fetchMessages = async () => {
@@ -54,7 +59,12 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
   }, [jobId, token]);
 
   useEffect(() => {
-    scrollToBottom();
+    // Only auto-scroll if new messages arrived (not on initial load)
+    if (!isInitialLoad.current && messages.length > prevMessageCount.current) {
+      scrollToBottom();
+    }
+    isInitialLoad.current = false;
+    prevMessageCount.current = messages.length;
   }, [messages]);
 
   // Mark messages as read when component mounts or messages change
@@ -136,7 +146,7 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
       </div>
 
       {/* Messages */}
-      <div className="h-80 overflow-y-auto p-4 space-y-4">
+      <div ref={messagesContainerRef} className="h-80 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-white/50 text-sm">
             No messages yet. Start the conversation!
