@@ -64,7 +64,9 @@ export default function SettingsPage() {
   };
 
   // Build explorer URL for X Layer
-  const explorerUrl = `${activeChain.blockExplorers.default.url}/address/${walletAddress}`;
+  const explorerUrl = activeChain.blockExplorers?.default?.url
+    ? `${activeChain.blockExplorers.default.url}/address/${walletAddress}`
+    : `https://www.oklink.com/xlayer/address/${walletAddress}`;
 
   return (
     <div className="space-y-8 font-mono max-w-2xl">
