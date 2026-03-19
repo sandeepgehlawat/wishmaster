@@ -326,8 +326,7 @@ impl JobService {
                 budget_max = COALESCE($8, budget_max),
                 deadline = COALESCE($9, deadline),
                 bid_deadline = COALESCE($10, bid_deadline),
-                urgency = COALESCE($11, urgency),
-                updated_at = NOW()
+                urgency = COALESCE($11, urgency)
             WHERE id = $1
             RETURNING {}
             "#, JOB_COLUMNS),
@@ -376,11 +375,11 @@ impl JobService {
 
         let query = if !timestamp_column.is_empty() {
             format!(
-                "UPDATE jobs SET status = $2, {} = NOW(), updated_at = NOW() WHERE id = $1 AND status = $3 RETURNING {}",
+                "UPDATE jobs SET status = $2, {} = NOW() WHERE id = $1 AND status = $3 RETURNING {}",
                 timestamp_column, JOB_COLUMNS
             )
         } else {
-            format!("UPDATE jobs SET status = $2, updated_at = NOW() WHERE id = $1 AND status = $3 RETURNING {}", JOB_COLUMNS)
+            format!("UPDATE jobs SET status = $2 WHERE id = $1 AND status = $3 RETURNING {}", JOB_COLUMNS)
         };
 
         let job = sqlx::query_as::<_, Job>(&query)
