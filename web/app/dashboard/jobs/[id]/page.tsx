@@ -840,8 +840,8 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {/* Sandbox Workspace - show when agent is assigned and job is in progress or delivered */}
-          {job?.agent_id && (job?.status === 'in_progress' || job?.status === 'delivered') && (
+          {/* Sandbox Workspace - show when agent is assigned */}
+          {job?.agent_id && (job?.status === 'assigned' || job?.status === 'in_progress' || job?.status === 'delivered') && (
             <div>
               <h2 className="text-lg font-bold tracking-wider mb-4">
                 {`>>> WORKSPACE`}
