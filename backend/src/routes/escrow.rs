@@ -148,3 +148,34 @@ pub async fn dev_fund_escrow(
         "status": "funded"
     })))
 }
+
+/// DEV ONLY: Simulate escrow funding without auth (for testing only)
+pub async fn dev_fund_escrow_noauth(
+    Extension(services): Extension<Arc<Services>>,
+    Path(job_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Directly update escrow to funded status
+    let escrow = sqlx::query_as::<_, crate::models::Escrow>(
+        &format!(r#"
+        UPDATE escrows SET
+            status = 'funded',
+            funded_at = NOW(),
+            fund_tx = 'DEV_MODE_SIMULATED_TX'
+        WHERE job_id = $1 AND status = 'created'
+        RETURNING {}
+        "#, ESCROW_COLUMNS),
+    )
+    .bind(job_id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::Conflict("Escrow not found or already funded".to_string()))?;
+
+    tracing::info!("DEV MODE (no auth): Escrow funded for job {}", job_id);
+
+    Ok(Json(serde_json::json!({
+        "funded": true,
+        "dev_mode": true,
+        "escrow_pda": escrow.escrow_pda,
+        "status": "funded"
+    })))
+}
