@@ -5,6 +5,10 @@ use crate::models::{
 use sqlx::PgPool;
 use uuid::Uuid;
 
+// Explicit column list for Job queries (avoids SELECT * issues with schema changes)
+// Note: sandbox_url and sandbox_project_id are optional - use COALESCE for backward compat
+const JOB_COLUMNS: &str = "id, client_id, agent_id, title, description, task_type, required_skills, complexity, budget_min, budget_max, final_price, pricing_model, deadline, bid_deadline, urgency, status, created_at, published_at, started_at, delivered_at, completed_at, COALESCE(sandbox_url, NULL) as sandbox_url, COALESCE(sandbox_project_id, NULL) as sandbox_project_id";
+
 #[derive(Clone)]
 pub struct JobService {
     db: PgPool,
@@ -21,14 +25,14 @@ impl JobService {
             .map_err(|e| AppError::Internal(e.to_string()))?;
 
         let job = sqlx::query_as::<_, Job>(
-            r#"
+            &format!(r#"
             INSERT INTO jobs (
                 id, client_id, title, description, task_type, required_skills,
                 complexity, budget_min, budget_max, deadline, bid_deadline, urgency, status
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'draft')
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, JOB_COLUMNS),
         )
         .bind(id)
         .bind(client_id)
@@ -49,7 +53,7 @@ impl JobService {
     }
 
     pub async fn get(&self, id: Uuid) -> Result<Job> {
-        sqlx::query_as::<_, Job>("SELECT * FROM jobs WHERE id = $1")
+        sqlx::query_as::<_, Job>(&format!("SELECT {} FROM jobs WHERE id = $1", JOB_COLUMNS))
             .bind(id)
             .fetch_optional(&self.db)
             .await?
@@ -311,7 +315,7 @@ impl JobService {
         }
 
         let updated = sqlx::query_as::<_, Job>(
-            r#"
+            &format!(r#"
             UPDATE jobs SET
                 title = COALESCE($2, title),
                 description = COALESCE($3, description),
@@ -325,8 +329,8 @@ impl JobService {
                 urgency = COALESCE($11, urgency),
                 updated_at = NOW()
             WHERE id = $1
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, JOB_COLUMNS),
         )
         .bind(id)
         .bind(&input.title)
@@ -372,11 +376,11 @@ impl JobService {
 
         let query = if !timestamp_column.is_empty() {
             format!(
-                "UPDATE jobs SET status = $2, {} = NOW(), updated_at = NOW() WHERE id = $1 AND status = $3 RETURNING *",
-                timestamp_column
+                "UPDATE jobs SET status = $2, {} = NOW(), updated_at = NOW() WHERE id = $1 AND status = $3 RETURNING {}",
+                timestamp_column, JOB_COLUMNS
             )
         } else {
-            "UPDATE jobs SET status = $2, updated_at = NOW() WHERE id = $1 AND status = $3 RETURNING *".to_string()
+            format!("UPDATE jobs SET status = $2, updated_at = NOW() WHERE id = $1 AND status = $3 RETURNING {}", JOB_COLUMNS)
         };
 
         let job = sqlx::query_as::<_, Job>(&query)
@@ -394,15 +398,15 @@ impl JobService {
 
     pub async fn assign_agent(&self, job_id: Uuid, agent_id: Uuid, price: f64) -> Result<Job> {
         let job = sqlx::query_as::<_, Job>(
-            r#"
+            &format!(r#"
             UPDATE jobs SET
                 agent_id = $2,
                 final_price = $3,
                 status = 'assigned',
                 started_at = NOW()
             WHERE id = $1 AND status = 'bidding'
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, JOB_COLUMNS),
         )
         .bind(job_id)
         .bind(agent_id)

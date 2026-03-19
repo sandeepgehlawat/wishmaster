@@ -12,6 +12,10 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
+// Explicit column list for Job queries (avoids SELECT * issues with schema changes)
+// Note: sandbox_url and sandbox_project_id are optional - use COALESCE for backward compat
+const JOB_COLUMNS: &str = "id, client_id, agent_id, title, description, task_type, required_skills, complexity, budget_min, budget_max, final_price, pricing_model, deadline, bid_deadline, urgency, status, created_at, published_at, started_at, delivered_at, completed_at, COALESCE(sandbox_url, NULL) as sandbox_url, COALESCE(sandbox_project_id, NULL) as sandbox_project_id";
+
 /// List jobs (PUBLIC endpoint - excludes drafts and ignores client_id filter)
 pub async fn list_jobs(
     Extension(services): Extension<Arc<Services>>,
@@ -77,11 +81,11 @@ pub async fn publish_job(
     // ATOMIC: Claim the job for publishing by transitioning from 'draft' to 'open'
     // This prevents race conditions where two requests could both see 'draft' status
     let job = sqlx::query_as::<_, crate::models::Job>(
-        r#"
+        &format!(r#"
         UPDATE jobs SET status = 'open', published_at = NOW()
         WHERE id = $1 AND client_id = $2 AND status = 'draft'
-        RETURNING *
-        "#
+        RETURNING {}
+        "#, JOB_COLUMNS)
     )
     .bind(id)
     .bind(auth.id)
@@ -240,11 +244,11 @@ pub async fn approve_job(
     // ATOMIC: Transition from 'delivered' to 'completed' in one step
     // This prevents race conditions and ensures only one approval process runs
     let job = sqlx::query_as::<_, crate::models::Job>(
-        r#"
+        &format!(r#"
         UPDATE jobs SET status = 'completed', completed_at = NOW()
         WHERE id = $1 AND client_id = $2 AND status = 'delivered'
-        RETURNING *
-        "#
+        RETURNING {}
+        "#, JOB_COLUMNS)
     )
     .bind(id)
     .bind(auth.id)
