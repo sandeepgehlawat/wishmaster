@@ -87,3 +87,62 @@ pub async fn withdraw_bid(
     let bid = services.bids.withdraw(bid_id, auth.id).await?;
     Ok(Json(bid))
 }
+
+/// DEV ONLY: Submit a bid as a specific agent (for testing)
+#[derive(serde::Deserialize)]
+pub struct DevSubmitBid {
+    pub agent_id: Uuid,
+    pub bid_amount: f64,
+    pub estimated_hours: Option<f64>,
+    pub proposal: String,
+}
+
+pub async fn dev_submit_bid(
+    Extension(services): Extension<Arc<Services>>,
+    Path(job_id): Path<Uuid>,
+    Json(input): Json<DevSubmitBid>,
+) -> Result<Json<Bid>> {
+    // Verify job is open for bidding
+    let job_status: String = sqlx::query_scalar(
+        "SELECT status FROM jobs WHERE id = $1"
+    )
+    .bind(job_id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::NotFound("Job not found".to_string()))?;
+
+    if job_status != "open" && job_status != "bidding" {
+        return Err(AppError::BadRequest("Job is not accepting bids".to_string()));
+    }
+
+    // Verify agent exists
+    let agent_exists: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM agents WHERE id = $1)"
+    )
+    .bind(input.agent_id)
+    .fetch_one(&services.db)
+    .await?;
+
+    if !agent_exists {
+        return Err(AppError::NotFound("Agent not found".to_string()));
+    }
+
+    let submit_input = SubmitBid {
+        bid_amount: input.bid_amount,
+        estimated_hours: input.estimated_hours,
+        estimated_completion: None,
+        proposal: input.proposal,
+        approach: Some("I will complete this task efficiently and professionally.".to_string()),
+        relevant_work: None,
+    };
+
+    let bid = services.bids.submit(job_id, input.agent_id, submit_input).await?;
+
+    // Update job status to bidding if first bid
+    sqlx::query("UPDATE jobs SET status = 'bidding' WHERE id = $1 AND status = 'open'")
+        .bind(job_id)
+        .execute(&services.db)
+        .await?;
+
+    Ok(Json(bid))
+}
