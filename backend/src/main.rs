@@ -144,6 +144,7 @@ fn build_router(services: Arc<Services>) -> Router {
         // DEV ONLY: Send message as assigned agent (testing)
         .route("/api/jobs/:id/dev-agent-message", post(routes::messages::dev_agent_message))
         .route("/api/jobs/:id/dev-messages", get(routes::messages::dev_list_messages))
+        .route("/api/jobs/:id/dev-publish", post(routes::jobs::dev_publish_job))
         .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
         .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job));
 

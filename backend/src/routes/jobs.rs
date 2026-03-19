@@ -407,6 +407,70 @@ pub async fn dispute_job(
     })))
 }
 
+/// DEV ONLY: Publish job (for testing - bypasses auth)
+pub async fn dev_publish_job(
+    Extension(services): Extension<Arc<Services>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Get job details
+    let job = services.jobs.get(id).await?;
+
+    if job.status != "draft" {
+        return Err(AppError::BadRequest(format!("Job not in draft status (current: {})", job.status)));
+    }
+
+    // Get client wallet
+    let client_wallet: String = sqlx::query_scalar(
+        "SELECT wallet_address FROM users WHERE id = $1"
+    )
+    .bind(job.client_id)
+    .fetch_one(&services.db)
+    .await?;
+
+    // ATOMIC: Update job status to open
+    sqlx::query(
+        "UPDATE jobs SET status = 'open', published_at = NOW() WHERE id = $1 AND status = 'draft'"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    // Create escrow
+    let amount: f64 = job.budget_max.to_string().parse().unwrap_or(0.0);
+    let escrow = match services.escrow.create_escrow(id, &client_wallet, amount).await {
+        Ok(e) => e,
+        Err(err) => {
+            // Rollback
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
+
+    // Generate fund transaction
+    let tx_response = match services.escrow.generate_fund_transaction(id, &client_wallet).await {
+        Ok(t) => t,
+        Err(err) => {
+            // Rollback
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
+
+    Ok(Json(serde_json::json!({
+        "dev_mode": true,
+        "job_id": id,
+        "escrow_pda": escrow.escrow_pda,
+        "transaction": tx_response.transaction,
+        "amount_usdc": tx_response.amount_usdc
+    })))
+}
+
 /// DEV ONLY: Mark job as delivered (for testing)
 pub async fn dev_deliver_job(
     Extension(services): Extension<Arc<Services>>,
