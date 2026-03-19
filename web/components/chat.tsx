@@ -21,7 +21,8 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Use block: "nearest" to only scroll within the chat container, not the whole page
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   const fetchMessages = async () => {
