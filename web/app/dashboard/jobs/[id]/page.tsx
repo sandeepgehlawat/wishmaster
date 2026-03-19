@@ -3,10 +3,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X } from "lucide-react";
-import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devFundEscrow, devDeliverJob, devApproveJob } from "@/lib/api";
+import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X, Briefcase } from "lucide-react";
+import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devFundEscrow, devDeliverJob, devApproveJob, getRequirements, getDeliverables, getActivities } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import Chat from "@/components/chat";
+import RequirementsChecklist from "@/components/requirements-checklist";
+import Deliverables from "@/components/deliverables";
+import ActivityFeed from "@/components/activity-feed";
+import ConvertToServiceModal from "@/components/convert-to-service-modal";
+import SandboxPreview from "@/components/sandbox-preview";
+import type { Requirement, Deliverable as DeliverableType } from "@/lib/types";
 
 // Success Modal Component
 function SuccessModal({
@@ -218,6 +224,11 @@ export default function JobDetailPage() {
   const [showSelectBidModal, setShowSelectBidModal] = useState(false);
   const [fundingEscrow, setFundingEscrow] = useState(false);
 
+  // Requirements, deliverables, and service conversion states
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [deliverables, setDeliverables] = useState<DeliverableType[]>([]);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+
   useEffect(() => {
     async function fetchData() {
       if (!jobId) return;
@@ -241,6 +252,17 @@ export default function JobDetailPage() {
             setBids([]);
           }
         }
+
+        // Fetch requirements and deliverables if job has an agent assigned
+        if (flatJob?.agent_id && token) {
+          Promise.all([
+            getRequirements(jobId, token).catch(() => ({ requirements: [] })),
+            getDeliverables(jobId, token).catch(() => ({ deliverables: [] })),
+          ]).then(([reqData, delData]) => {
+            setRequirements(reqData.requirements || []);
+            setDeliverables(delData.deliverables || []);
+          });
+        }
       } catch (err: any) {
         console.error("Failed to fetch job:", err);
         setError(err.message || "Failed to load job");
@@ -251,6 +273,21 @@ export default function JobDetailPage() {
 
     fetchData();
   }, [jobId, token]);
+
+  // Refresh requirements and deliverables
+  const refreshJobData = async () => {
+    if (!token || !jobId) return;
+    try {
+      const [reqData, delData] = await Promise.all([
+        getRequirements(jobId, token).catch(() => ({ requirements: [] })),
+        getDeliverables(jobId, token).catch(() => ({ deliverables: [] })),
+      ]);
+      setRequirements(reqData.requirements || []);
+      setDeliverables(delData.deliverables || []);
+    } catch (e) {
+      console.error("Failed to refresh job data:", e);
+    }
+  };
 
   const handlePublish = async () => {
     if (!token) {
@@ -611,9 +648,29 @@ export default function JobDetailPage() {
 
     if (status === "completed") {
       return (
-        <div className="border-2 border-green-400 p-4 text-center">
-          <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
-          <p className="text-green-400 text-sm font-bold">JOB COMPLETED</p>
+        <div className="space-y-4">
+          <div className="border-2 border-green-400 p-4 text-center">
+            <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
+            <p className="text-green-400 text-sm font-bold">JOB COMPLETED</p>
+          </div>
+          {/* Convert to Managed Service CTA */}
+          {job?.agent_id && (
+            <div className="border-2 border-blue-400 bg-blue-400/5 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Briefcase className="h-5 w-5 text-blue-400" />
+                <p className="text-blue-400 font-bold text-sm">KEEP THE MOMENTUM</p>
+              </div>
+              <p className="text-xs text-white/60 mb-4">
+                Happy with the work? Convert to a managed service for ongoing updates and maintenance.
+              </p>
+              <button
+                onClick={() => setShowConvertModal(true)}
+                className="w-full border-2 border-blue-400 text-blue-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-blue-400 hover:text-black transition-colors"
+              >
+                [CONVERT TO MANAGED SERVICE]
+              </button>
+            </div>
+          )}
         </div>
       );
     }
@@ -760,6 +817,85 @@ export default function JobDetailPage() {
             </div>
           </div>
 
+          {/* Pending Review Alert */}
+          {deliverables.filter(d => d.status === 'pending_review').length > 0 && (
+            <div className="border-2 border-yellow-400 bg-yellow-400/10 p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-400 font-bold text-sm">
+                  {deliverables.filter(d => d.status === 'pending_review').length} deliverable(s) awaiting your review
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Progress Bar - show for in_progress jobs with requirements */}
+          {job?.status === 'in_progress' && requirements.length > 0 && (
+            <div className="border-2 border-white p-4">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-bold tracking-wider">PROGRESS</span>
+                <span className="text-xs text-white/50">
+                  {requirements.filter(r => r.status === 'accepted').length} / {requirements.length} complete
+                </span>
+              </div>
+              <div className="h-3 bg-white/10 border border-white">
+                <div
+                  className="h-full bg-green-400 transition-all duration-500"
+                  style={{
+                    width: `${requirements.length > 0 ? (requirements.filter(r => r.status === 'accepted').length / requirements.length) * 100 : 0}%`
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Sandbox Workspace - show when agent is assigned and job is in progress or delivered */}
+          {job?.agent_id && (job?.status === 'in_progress' || job?.status === 'delivered') && (
+            <div>
+              <h2 className="text-lg font-bold tracking-wider mb-4">
+                {`>>> WORKSPACE`}
+              </h2>
+              <SandboxPreview
+                sandboxUrl={job.sandbox_url}
+                sandboxProjectId={job.sandbox_project_id}
+                jobId={jobId}
+                jobTitle={job.title}
+                isAgent={false}
+              />
+            </div>
+          )}
+
+          {/* Requirements - show when agent is assigned */}
+          {job?.agent_id && token && (
+            <div>
+              <h2 className="text-lg font-bold tracking-wider mb-4">
+                {`>>> REQUIREMENTS`}
+              </h2>
+              <RequirementsChecklist
+                requirements={requirements}
+                token={token}
+                userType="client"
+                onUpdate={refreshJobData}
+              />
+            </div>
+          )}
+
+          {/* Deliverables - show when agent is assigned */}
+          {job?.agent_id && token && (
+            <div>
+              <h2 className="text-lg font-bold tracking-wider mb-4">
+                {`>>> DELIVERABLES`}
+              </h2>
+              <Deliverables
+                jobId={jobId}
+                deliverables={deliverables}
+                requirements={requirements}
+                token={token}
+                userType="client"
+                onUpdate={refreshJobData}
+              />
+            </div>
+          )}
+
           {/* Bids */}
           <div>
             <h2 className="text-lg font-bold tracking-wider mb-4">
@@ -820,6 +956,16 @@ export default function JobDetailPage() {
               <Chat jobId={jobId} token={token} currentUserId={user.id} />
             </div>
           )}
+
+          {/* Activity Log - show when agent is assigned */}
+          {job?.agent_id && token && (
+            <div>
+              <h2 className="text-lg font-bold tracking-wider mb-4">
+                {`>>> ACTIVITY LOG`}
+              </h2>
+              <ActivityFeed jobId={jobId} token={token} />
+            </div>
+          )}
         </div>
 
         {/* Right - Sidebar */}
@@ -857,6 +1003,23 @@ export default function JobDetailPage() {
         </div>
       </div>
     </div>
+
+      {/* Convert to Service Modal */}
+      {showConvertModal && job && (
+        <ConvertToServiceModal
+          job={job}
+          token={token!}
+          onClose={() => setShowConvertModal(false)}
+          onSuccess={(serviceId) => {
+            setShowConvertModal(false);
+            setSuccessModalData({
+              title: "SERVICE_CREATED",
+              message: "Managed service offer sent to agent. They will be notified to accept.",
+            });
+            setShowSuccessModal(true);
+          }}
+        />
+      )}
     </>
   );
 }

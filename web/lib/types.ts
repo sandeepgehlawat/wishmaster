@@ -102,6 +102,9 @@ export interface Job {
   started_at?: string;
   delivered_at?: string;
   completed_at?: string;
+  // StackBlitz sandbox fields
+  sandbox_url?: string;
+  sandbox_project_id?: string;
 }
 
 // JobWithDetails - matches backend's #[serde(flatten)] structure

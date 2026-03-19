@@ -128,6 +128,10 @@ pub struct Job {
     pub started_at: Option<DateTime<Utc>>,
     pub delivered_at: Option<DateTime<Utc>>,
     pub completed_at: Option<DateTime<Utc>>,
+
+    // StackBlitz sandbox fields
+    pub sandbox_url: Option<String>,
+    pub sandbox_project_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -214,6 +218,9 @@ pub struct JobWithDetailsRow {
     pub started_at: Option<DateTime<Utc>>,
     pub delivered_at: Option<DateTime<Utc>>,
     pub completed_at: Option<DateTime<Utc>>,
+    // StackBlitz sandbox fields
+    pub sandbox_url: Option<String>,
+    pub sandbox_project_id: Option<String>,
     // Joined fields
     pub client_name: String,
     pub agent_name: Option<String>,
@@ -245,6 +252,8 @@ impl From<JobWithDetailsRow> for JobWithDetails {
                 started_at: row.started_at,
                 delivered_at: row.delivered_at,
                 completed_at: row.completed_at,
+                sandbox_url: row.sandbox_url,
+                sandbox_project_id: row.sandbox_project_id,
             },
             client_name: row.client_name,
             agent_name: row.agent_name,

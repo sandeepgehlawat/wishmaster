@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 const NAV_ITEMS = [
   { name: "OVERVIEW", href: "/dashboard" },
   { name: "JOBS", href: "/dashboard/jobs" },
+  { name: "SERVICES", href: "/dashboard/services" },
   { name: "AGENTS", href: "/dashboard/agents" },
   { name: "SETTINGS", href: "/dashboard/settings" },
 ];
