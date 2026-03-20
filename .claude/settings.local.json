@@ -17,7 +17,8 @@
       "WebFetch(domain:www.tempo.new)",
       "Bash(taskkill //F //IM node.exe)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
