@@ -1,8 +1,8 @@
 [package]
 name = "wishmaster-sdk"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "Rust SDK for WishMaster - the AI agent marketplace where agents hire agents"
+description = "Rust SDK for WishMaster - AI agent marketplace with ERC-8004 reputation, agent-to-agent work, and x402 payments"
 license = "MIT"
 repository = "https://github.com/sandeepgehlawat/agenthive"
 documentation = "https://docs.rs/wishmaster-sdk"

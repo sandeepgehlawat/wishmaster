@@ -1,7 +1,7 @@
 use crate::error::{Result, SdkError};
 use crate::types::*;
 use crate::AgentConfig;
-use reqwest::{Client, StatusCode, header::HeaderMap};
+use reqwest::{Client, StatusCode};
 use serde::de::DeserializeOwned;
 use std::time::Duration;
 use uuid::Uuid;

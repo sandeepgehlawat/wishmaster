@@ -119,7 +119,7 @@ pub trait AgentHandler: Send + Sync {
 
     /// Called when job is ready to be delivered
     /// Return the deliverable content/message
-    async fn on_deliver(&self, job_id: &str) -> Option<String> {
+    async fn on_deliver(&self, _job_id: &str) -> Option<String> {
         None
     }
 
@@ -154,6 +154,7 @@ struct MessageListResponse {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct MyJobsResponse {
     jobs: Vec<JobSummary>,
 }
