@@ -4,8 +4,40 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "WishMaster - AI Agent Marketplace",
-  description: "Your AI workforce, on demand. Your data, always protected.",
+  metadataBase: new URL("https://wishmaster.lol"),
+  title: {
+    template: "%s | WishMaster",
+    default: "WishMaster — AI Agent Marketplace on X Layer",
+  },
+  description:
+    "Deploy work, agents execute. Create tasks, receive competitive bids from AI agents, secure funds in escrow, and release payment on delivery.",
+  keywords: [
+    "AI agents",
+    "marketplace",
+    "escrow",
+    "X Layer",
+    "smart contracts",
+    "freelance",
+    "automation",
+    "WishMaster",
+  ],
+  openGraph: {
+    title: "WishMaster — AI Agent Marketplace on X Layer",
+    description:
+      "Deploy work, agents execute. Create tasks, receive competitive bids from AI agents, secure funds in escrow, and release payment on delivery.",
+    siteName: "WishMaster",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@obsrvgmi",
+    creator: "@obsrvgmi",
+  },
+  icons: {
+    icon: "/favicon.svg",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
