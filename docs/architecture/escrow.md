@@ -1,540 +1,223 @@
-# Escrow Program Architecture
+# Escrow Contract Architecture
 
-Technical deep-dive into WishMaster's Solana escrow smart contract.
+Technical deep-dive into AgentHive's X Layer escrow smart contract.
 
 ## Overview
 
-WishMaster uses a Solana program (smart contract) to hold payments in escrow. This ensures:
+AgentHive uses a Solidity smart contract on X Layer (EVM L2) to hold payments in escrow. This ensures:
 
 - Funds are locked until work is completed
 - Neither party can unilaterally withdraw
 - Automatic fee calculation
 - Trustless dispute resolution
+- Automatic reputation updates via ERC-8004
 
-## Program Design
-
-### Built with Anchor
-
-We use the [Anchor framework](https://anchor-lang.com/) for:
-
-- Type safety
-- Account validation
-- Instruction parsing
-- Testing utilities
-
-### Program Address
+## Contract Address
 
 ```
-Mainnet: (TBD after audit)
-Devnet:  AHEscrowDev1111111111111111111111111111111
+X Layer Testnet: 0x4814FDf0a0b969B48a0CCCFC44ad1EF8D3491170
+Chain ID: 1952
 ```
 
-## Account Structure
+## Contract Design
 
-### Escrow Account (PDA)
+### Built with OpenZeppelin
 
-```rust
-#[account]
-#[derive(Default)]
-pub struct Escrow {
-    /// Job UUID (16 bytes)
-    pub job_id: [u8; 16],
+We use OpenZeppelin contracts for:
+- Ownable (access control)
+- ReentrancyGuard (security)
+- SafeERC20 (token transfers)
 
-    /// Client who funded the escrow
-    pub client: Pubkey,
+### Key State
 
-    /// Agent assigned to receive payment (set after selection)
-    pub agent: Pubkey,
+```solidity
+contract AgentHiveEscrow is Ownable, ReentrancyGuard {
+    IERC20 public immutable usdc;
 
-    /// Platform treasury for fee collection
-    pub platform: Pubkey,
+    enum EscrowStatus { None, Funded, Locked, Released, Refunded, Disputed }
 
-    /// Amount in USDC (6 decimals, so 1000000 = 1 USDC)
-    pub amount: u64,
+    struct Escrow {
+        address client;
+        address agent;
+        uint256 amount;
+        EscrowStatus status;
+        uint256 createdAt;
+    }
 
-    /// Platform fee in basis points (1500 = 15%)
-    pub platform_fee_bps: u16,
+    // jobId => Escrow
+    mapping(bytes32 => Escrow) public escrows;
 
-    /// Current escrow state
-    pub status: EscrowStatus,
+    // Platform fee in basis points (1000 = 10%)
+    uint256 public platformFeeBps = 1000;
 
-    /// Unix timestamp when created
-    pub created_at: i64,
-
-    /// Unix timestamp when funded
-    pub funded_at: i64,
-
-    /// PDA bump seed
-    pub bump: u8,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
-pub enum EscrowStatus {
-    Created,    // PDA exists, awaiting funds
-    Funded,     // Client deposited USDC
-    Locked,     // Agent assigned, funds locked
-    Released,   // Paid to agent
-    Refunded,   // Returned to client
-    Disputed,   // Frozen, awaiting resolution
+    // ERC-8004 registries for reputation
+    IIdentityRegistry public identityRegistry;
+    IReputationRegistry public reputationRegistry;
 }
 ```
 
-### PDA Derivation
+## Functions
 
-```rust
-// Seeds for escrow PDA
-let seeds = &[
-    b"escrow",
-    job_id.as_ref(),
-    &[bump],
-];
+### 1. Deposit
 
-// Derive address
-let (escrow_pda, bump) = Pubkey::find_program_address(
-    &[b"escrow", job_id.as_ref()],
-    &program_id
-);
-```
+Client deposits USDC into escrow.
 
-## Instructions
+```solidity
+function deposit(bytes32 jobId, uint256 amount) external nonReentrant {
+    require(escrows[jobId].status == EscrowStatus.None, "Escrow exists");
+    require(amount > 0, "Amount must be > 0");
 
-### 1. Create Escrow
+    usdc.safeTransferFrom(msg.sender, address(this), amount);
 
-Called when a job is published.
+    escrows[jobId] = Escrow({
+        client: msg.sender,
+        agent: address(0),
+        amount: amount,
+        status: EscrowStatus.Funded,
+        createdAt: block.timestamp
+    });
 
-```rust
-#[derive(Accounts)]
-#[instruction(job_id: [u8; 16], amount: u64, fee_bps: u16)]
-pub struct CreateEscrow<'info> {
-    #[account(
-        init,
-        payer = platform,
-        space = 8 + Escrow::LEN,
-        seeds = [b"escrow", job_id.as_ref()],
-        bump
-    )]
-    pub escrow: Account<'info, Escrow>,
-
-    /// Platform authority (backend signer)
-    #[account(mut)]
-    pub platform: Signer<'info>,
-
-    pub system_program: Program<'info, System>,
-}
-
-pub fn create_escrow(
-    ctx: Context<CreateEscrow>,
-    job_id: [u8; 16],
-    amount: u64,
-    fee_bps: u16,
-) -> Result<()> {
-    let escrow = &mut ctx.accounts.escrow;
-
-    escrow.job_id = job_id;
-    escrow.client = Pubkey::default(); // Set on deposit
-    escrow.agent = Pubkey::default();
-    escrow.platform = ctx.accounts.platform.key();
-    escrow.amount = amount;
-    escrow.platform_fee_bps = fee_bps;
-    escrow.status = EscrowStatus::Created;
-    escrow.created_at = Clock::get()?.unix_timestamp;
-    escrow.bump = ctx.bumps.escrow;
-
-    Ok(())
+    emit EscrowDeposited(jobId, msg.sender, amount);
 }
 ```
 
-### 2. Deposit
+### 2. Lock to Agent
 
-Client funds the escrow with USDC.
+Platform locks escrow to winning bidder.
 
-```rust
-#[derive(Accounts)]
-pub struct Deposit<'info> {
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow.job_id.as_ref()],
-        bump = escrow.bump,
-        constraint = escrow.status == EscrowStatus::Created
-    )]
-    pub escrow: Account<'info, Escrow>,
+```solidity
+function lockToAgent(bytes32 jobId, address agent, uint256 finalAmount) external onlyOwner {
+    Escrow storage escrow = escrows[jobId];
+    require(escrow.status == EscrowStatus.Funded, "Not funded");
+    require(agent != address(0), "Invalid agent");
 
-    /// Client wallet
-    #[account(mut)]
-    pub client: Signer<'info>,
+    escrow.agent = agent;
+    escrow.status = EscrowStatus.Locked;
 
-    /// Client's USDC token account
-    #[account(mut)]
-    pub client_usdc: Account<'info, TokenAccount>,
+    // Refund excess if final amount < deposited
+    if (finalAmount < escrow.amount) {
+        uint256 refund = escrow.amount - finalAmount;
+        escrow.amount = finalAmount;
+        usdc.safeTransfer(escrow.client, refund);
+    }
 
-    /// Escrow's USDC token account (PDA-owned)
-    #[account(mut)]
-    pub escrow_usdc: Account<'info, TokenAccount>,
-
-    pub token_program: Program<'info, Token>,
-}
-
-pub fn deposit(ctx: Context<Deposit>) -> Result<()> {
-    let escrow = &mut ctx.accounts.escrow;
-
-    // Transfer USDC from client to escrow
-    let cpi_ctx = CpiContext::new(
-        ctx.accounts.token_program.to_account_info(),
-        Transfer {
-            from: ctx.accounts.client_usdc.to_account_info(),
-            to: ctx.accounts.escrow_usdc.to_account_info(),
-            authority: ctx.accounts.client.to_account_info(),
-        },
-    );
-    token::transfer(cpi_ctx, escrow.amount)?;
-
-    // Update state
-    escrow.client = ctx.accounts.client.key();
-    escrow.status = EscrowStatus::Funded;
-    escrow.funded_at = Clock::get()?.unix_timestamp;
-
-    Ok(())
+    emit EscrowLocked(jobId, agent, escrow.amount);
 }
 ```
 
-### 3. Assign Agent
+### 3. Release
 
-Lock escrow to winning bidder.
+Pay agent on job approval. Automatically updates on-chain reputation.
 
-```rust
-#[derive(Accounts)]
-pub struct AssignAgent<'info> {
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow.job_id.as_ref()],
-        bump = escrow.bump,
-        constraint = escrow.status == EscrowStatus::Funded
-    )]
-    pub escrow: Account<'info, Escrow>,
+```solidity
+function release(bytes32 jobId) external nonReentrant {
+    Escrow storage escrow = escrows[jobId];
+    require(escrow.status == EscrowStatus.Locked, "Not locked");
+    require(msg.sender == escrow.client || msg.sender == owner(), "Not authorized");
 
-    /// Platform authority
-    #[account(
-        constraint = platform.key() == escrow.platform
-    )]
-    pub platform: Signer<'info>,
+    uint256 platformFee = (escrow.amount * platformFeeBps) / 10000;
+    uint256 agentAmount = escrow.amount - platformFee;
 
-    /// Agent wallet (no signature required)
-    /// CHECK: We just store the pubkey
-    pub agent: AccountInfo<'info>,
-}
+    escrow.status = EscrowStatus.Released;
 
-pub fn assign_agent(ctx: Context<AssignAgent>) -> Result<()> {
-    let escrow = &mut ctx.accounts.escrow;
+    usdc.safeTransfer(escrow.agent, agentAmount);
+    if (platformFee > 0) {
+        usdc.safeTransfer(owner(), platformFee);
+    }
 
-    escrow.agent = ctx.accounts.agent.key();
-    escrow.status = EscrowStatus::Locked;
+    // Update agent reputation via ERC-8004
+    _updateReputation(escrow.agent, 100, "job_completed");
 
-    Ok(())
+    emit EscrowReleased(jobId, escrow.agent, agentAmount, platformFee);
 }
 ```
 
-### 4. Release
-
-Pay agent on job approval.
-
-```rust
-#[derive(Accounts)]
-pub struct Release<'info> {
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow.job_id.as_ref()],
-        bump = escrow.bump,
-        constraint = escrow.status == EscrowStatus::Locked
-    )]
-    pub escrow: Account<'info, Escrow>,
-
-    /// Platform authority
-    #[account(
-        constraint = platform.key() == escrow.platform
-    )]
-    pub platform: Signer<'info>,
-
-    /// Escrow's USDC account
-    #[account(mut)]
-    pub escrow_usdc: Account<'info, TokenAccount>,
-
-    /// Agent's USDC account
-    #[account(
-        mut,
-        constraint = agent_usdc.owner == escrow.agent
-    )]
-    pub agent_usdc: Account<'info, TokenAccount>,
-
-    /// Platform treasury USDC account
-    #[account(mut)]
-    pub platform_usdc: Account<'info, TokenAccount>,
-
-    pub token_program: Program<'info, Token>,
-}
-
-pub fn release(ctx: Context<Release>) -> Result<()> {
-    let escrow = &ctx.accounts.escrow;
-
-    // Calculate amounts
-    let fee = (escrow.amount as u128)
-        .checked_mul(escrow.platform_fee_bps as u128)
-        .unwrap()
-        .checked_div(10000)
-        .unwrap() as u64;
-    let agent_amount = escrow.amount.checked_sub(fee).unwrap();
-
-    // PDA signer seeds
-    let seeds = &[
-        b"escrow",
-        escrow.job_id.as_ref(),
-        &[escrow.bump],
-    ];
-    let signer_seeds = &[&seeds[..]];
-
-    // Transfer to agent
-    let cpi_ctx = CpiContext::new_with_signer(
-        ctx.accounts.token_program.to_account_info(),
-        Transfer {
-            from: ctx.accounts.escrow_usdc.to_account_info(),
-            to: ctx.accounts.agent_usdc.to_account_info(),
-            authority: ctx.accounts.escrow.to_account_info(),
-        },
-        signer_seeds,
-    );
-    token::transfer(cpi_ctx, agent_amount)?;
-
-    // Transfer fee to platform
-    let cpi_ctx = CpiContext::new_with_signer(
-        ctx.accounts.token_program.to_account_info(),
-        Transfer {
-            from: ctx.accounts.escrow_usdc.to_account_info(),
-            to: ctx.accounts.platform_usdc.to_account_info(),
-            authority: ctx.accounts.escrow.to_account_info(),
-        },
-        signer_seeds,
-    );
-    token::transfer(cpi_ctx, fee)?;
-
-    // Update state
-    let escrow = &mut ctx.accounts.escrow;
-    escrow.status = EscrowStatus::Released;
-
-    Ok(())
-}
-```
-
-### 5. Refund
+### 4. Refund
 
 Return funds to client.
 
-```rust
-#[derive(Accounts)]
-pub struct Refund<'info> {
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow.job_id.as_ref()],
-        bump = escrow.bump,
-        constraint = escrow.status == EscrowStatus::Funded
-            || escrow.status == EscrowStatus::Locked
-    )]
-    pub escrow: Account<'info, Escrow>,
-
-    #[account(
-        constraint = platform.key() == escrow.platform
-    )]
-    pub platform: Signer<'info>,
-
-    #[account(mut)]
-    pub escrow_usdc: Account<'info, TokenAccount>,
-
-    #[account(
-        mut,
-        constraint = client_usdc.owner == escrow.client
-    )]
-    pub client_usdc: Account<'info, TokenAccount>,
-
-    pub token_program: Program<'info, Token>,
-}
-
-pub fn refund(ctx: Context<Refund>) -> Result<()> {
-    let escrow = &ctx.accounts.escrow;
-
-    let seeds = &[
-        b"escrow",
-        escrow.job_id.as_ref(),
-        &[escrow.bump],
-    ];
-    let signer_seeds = &[&seeds[..]];
-
-    // Transfer full amount back to client
-    let cpi_ctx = CpiContext::new_with_signer(
-        ctx.accounts.token_program.to_account_info(),
-        Transfer {
-            from: ctx.accounts.escrow_usdc.to_account_info(),
-            to: ctx.accounts.client_usdc.to_account_info(),
-            authority: ctx.accounts.escrow.to_account_info(),
-        },
-        signer_seeds,
+```solidity
+function refund(bytes32 jobId) external onlyOwner nonReentrant {
+    Escrow storage escrow = escrows[jobId];
+    require(
+        escrow.status == EscrowStatus.Funded ||
+        escrow.status == EscrowStatus.Locked,
+        "Cannot refund"
     );
-    token::transfer(cpi_ctx, escrow.amount)?;
 
-    let escrow = &mut ctx.accounts.escrow;
-    escrow.status = EscrowStatus::Refunded;
+    uint256 amount = escrow.amount;
+    escrow.status = EscrowStatus.Refunded;
 
-    Ok(())
+    usdc.safeTransfer(escrow.client, amount);
+
+    emit EscrowRefunded(jobId, escrow.client, amount);
 }
 ```
 
-### 6. Dispute
+### 5. Dispute
 
 Freeze funds for arbitration.
 
-```rust
-#[derive(Accounts)]
-pub struct Dispute<'info> {
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow.job_id.as_ref()],
-        bump = escrow.bump,
-        constraint = escrow.status == EscrowStatus::Locked
-    )]
-    pub escrow: Account<'info, Escrow>,
-
-    /// Either client or platform can dispute
-    pub disputer: Signer<'info>,
-}
-
-pub fn dispute(ctx: Context<Dispute>) -> Result<()> {
-    let escrow = &ctx.accounts.escrow;
-    let disputer = ctx.accounts.disputer.key();
-
-    // Only client, agent (via platform), or platform can dispute
-    require!(
-        disputer == escrow.client
-            || disputer == escrow.platform,
-        ErrorCode::Unauthorized
+```solidity
+function dispute(bytes32 jobId) external {
+    Escrow storage escrow = escrows[jobId];
+    require(escrow.status == EscrowStatus.Locked, "Not locked");
+    require(
+        msg.sender == escrow.client || msg.sender == owner(),
+        "Not authorized"
     );
 
-    let escrow = &mut ctx.accounts.escrow;
-    escrow.status = EscrowStatus::Disputed;
+    escrow.status = EscrowStatus.Disputed;
 
-    Ok(())
+    emit EscrowDisputed(jobId, msg.sender);
 }
 ```
 
-### 7. Resolve
+### 6. Resolve Dispute
 
-Arbitrator splits funds.
+Platform resolves dispute and splits funds.
 
-```rust
-#[derive(Accounts)]
-pub struct Resolve<'info> {
-    #[account(
-        mut,
-        seeds = [b"escrow", escrow.job_id.as_ref()],
-        bump = escrow.bump,
-        constraint = escrow.status == EscrowStatus::Disputed
-    )]
-    pub escrow: Account<'info, Escrow>,
+```solidity
+function resolveDispute(bytes32 jobId, bool releaseToAgent) external onlyOwner nonReentrant {
+    Escrow storage escrow = escrows[jobId];
+    require(escrow.status == EscrowStatus.Disputed, "Not disputed");
 
-    /// Platform (arbitrator)
-    #[account(
-        constraint = platform.key() == escrow.platform
-    )]
-    pub platform: Signer<'info>,
+    if (releaseToAgent) {
+        uint256 platformFee = (escrow.amount * platformFeeBps) / 10000;
+        uint256 agentAmount = escrow.amount - platformFee;
+        escrow.status = EscrowStatus.Released;
 
-    #[account(mut)]
-    pub escrow_usdc: Account<'info, TokenAccount>,
+        usdc.safeTransfer(escrow.agent, agentAmount);
+        if (platformFee > 0) {
+            usdc.safeTransfer(owner(), platformFee);
+        }
 
-    #[account(mut)]
-    pub client_usdc: Account<'info, TokenAccount>,
+        _updateReputation(escrow.agent, 50, "dispute_won");
 
-    #[account(mut)]
-    pub agent_usdc: Account<'info, TokenAccount>,
+        emit EscrowReleased(jobId, escrow.agent, agentAmount, platformFee);
+    } else {
+        escrow.status = EscrowStatus.Refunded;
+        usdc.safeTransfer(escrow.client, escrow.amount);
 
-    #[account(mut)]
-    pub platform_usdc: Account<'info, TokenAccount>,
+        _updateReputation(escrow.agent, -50, "dispute_lost");
 
-    pub token_program: Program<'info, Token>,
+        emit EscrowRefunded(jobId, escrow.client, escrow.amount);
+    }
+
+    emit DisputeResolved(jobId, releaseToAgent);
 }
+```
 
-pub fn resolve(
-    ctx: Context<Resolve>,
-    agent_share_bps: u16,  // 5000 = 50% to agent
-) -> Result<()> {
-    require!(agent_share_bps <= 10000, ErrorCode::InvalidShare);
+### Internal: Update Reputation
 
-    let escrow = &ctx.accounts.escrow;
-
-    // Calculate splits
-    let agent_gross = (escrow.amount as u128)
-        .checked_mul(agent_share_bps as u128)
-        .unwrap()
-        .checked_div(10000)
-        .unwrap() as u64;
-
-    let fee = (agent_gross as u128)
-        .checked_mul(escrow.platform_fee_bps as u128)
-        .unwrap()
-        .checked_div(10000)
-        .unwrap() as u64;
-
-    let agent_net = agent_gross.checked_sub(fee).unwrap();
-    let client_refund = escrow.amount.checked_sub(agent_gross).unwrap();
-
-    let seeds = &[
-        b"escrow",
-        escrow.job_id.as_ref(),
-        &[escrow.bump],
-    ];
-    let signer_seeds = &[&seeds[..]];
-
-    // Transfer to agent
-    if agent_net > 0 {
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            Transfer {
-                from: ctx.accounts.escrow_usdc.to_account_info(),
-                to: ctx.accounts.agent_usdc.to_account_info(),
-                authority: ctx.accounts.escrow.to_account_info(),
-            },
-            signer_seeds,
-        );
-        token::transfer(cpi_ctx, agent_net)?;
+```solidity
+function _updateReputation(address agentWallet, int128 value, string memory tag) internal {
+    if (address(reputationRegistry) != address(0) && address(identityRegistry) != address(0)) {
+        uint256 agentId = identityRegistry.getAgentByWallet(agentWallet);
+        if (agentId > 0) {
+            reputationRegistry.giveFeedback(agentId, value, tag, "", "");
+        }
     }
-
-    // Transfer fee to platform
-    if fee > 0 {
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            Transfer {
-                from: ctx.accounts.escrow_usdc.to_account_info(),
-                to: ctx.accounts.platform_usdc.to_account_info(),
-                authority: ctx.accounts.escrow.to_account_info(),
-            },
-            signer_seeds,
-        );
-        token::transfer(cpi_ctx, fee)?;
-    }
-
-    // Refund to client
-    if client_refund > 0 {
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            Transfer {
-                from: ctx.accounts.escrow_usdc.to_account_info(),
-                to: ctx.accounts.client_usdc.to_account_info(),
-                authority: ctx.accounts.escrow.to_account_info(),
-            },
-            signer_seeds,
-        );
-        token::transfer(cpi_ctx, client_refund)?;
-    }
-
-    let escrow = &mut ctx.accounts.escrow;
-    escrow.status = EscrowStatus::Released;
-
-    Ok(())
 }
 ```
 
@@ -542,7 +225,7 @@ pub fn resolve(
 
 ```
                     ┌────────────┐
-                    │  Created   │
+                    │    None    │
                     └─────┬──────┘
                           │ deposit()
                           ▼
@@ -550,7 +233,7 @@ pub fn resolve(
            ┌────────│   Funded   │────────┐
            │        └─────┬──────┘        │
            │              │               │
-    refund()│       assign_agent()   refund()
+    refund()│       lockToAgent()    refund()
            │              │               │
            │              ▼               │
            │        ┌────────────┐        │
@@ -564,153 +247,153 @@ pub fn resolve(
            │   │    │  Released  │ │ Disputed │
            │   │    └────────────┘ └────┬─────┘
            │   │                        │
-           │   │                   resolve()
+           │   │                resolveDispute()
            │   │                        │
            ▼   ▼                        ▼
         ┌────────────┐            ┌────────────┐
-        │  Refunded  │            │  Released  │
-        └────────────┘            └────────────┘
+        │  Refunded  │            │ Released/  │
+        └────────────┘            │ Refunded   │
+                                  └────────────┘
+```
+
+## Events
+
+```solidity
+event EscrowDeposited(bytes32 indexed jobId, address indexed client, uint256 amount);
+event EscrowLocked(bytes32 indexed jobId, address indexed agent, uint256 amount);
+event EscrowReleased(bytes32 indexed jobId, address indexed agent, uint256 agentAmount, uint256 platformFee);
+event EscrowRefunded(bytes32 indexed jobId, address indexed client, uint256 amount);
+event EscrowDisputed(bytes32 indexed jobId, address indexed disputer);
+event DisputeResolved(bytes32 indexed jobId, bool releasedToAgent);
 ```
 
 ## Security Considerations
 
 ### Access Control
 
-| Instruction | Who Can Call |
-|-------------|--------------|
-| create_escrow | Platform only |
-| deposit | Client only |
-| assign_agent | Platform only |
-| release | Platform only |
-| refund | Platform only |
-| dispute | Client or Platform |
-| resolve | Platform only |
+| Function | Who Can Call |
+|----------|--------------|
+| deposit | Anyone |
+| lockToAgent | Owner only |
+| release | Client or Owner |
+| refund | Owner only |
+| dispute | Client or Owner |
+| resolveDispute | Owner only |
 
-### Reentrancy
+### Reentrancy Protection
 
-All state changes happen before CPI calls to prevent reentrancy attacks.
+All state-changing functions use `nonReentrant` modifier.
 
-### Integer Overflow
+### Safe Token Transfers
 
-Using checked arithmetic (`checked_mul`, `checked_sub`) to prevent overflows.
+Using OpenZeppelin's `SafeERC20` for all USDC transfers.
 
-### PDA Security
+### Fee Limits
 
-Escrow accounts are PDAs, meaning:
-- Only the program can sign for them
-- No external party can drain funds
-- Seeds ensure uniqueness per job
+```solidity
+function setFee(uint256 newFeeBps) external onlyOwner {
+    require(newFeeBps <= 1000, "Fee too high"); // Max 10%
+    platformFeeBps = newFeeBps;
+    emit FeeUpdated(newFeeBps);
+}
+```
+
+## Integration
+
+### Backend Usage
+
+```rust
+// services/escrow_service.rs
+impl EscrowService {
+    pub async fn deposit(&self, job_id: Uuid, amount: Decimal) -> Result<String> {
+        let job_id_bytes = job_id.as_bytes();
+
+        // Build transaction
+        let tx = self.escrow_contract
+            .deposit(job_id_bytes, amount_to_wei(amount))
+            .send()
+            .await?;
+
+        Ok(format!("{:?}", tx.tx_hash()))
+    }
+
+    pub async fn release(&self, job_id: Uuid) -> Result<()> {
+        let job_id_bytes = job_id.as_bytes();
+
+        self.escrow_contract
+            .release(job_id_bytes)
+            .send()
+            .await?;
+
+        // Reputation is updated automatically by the contract
+        Ok(())
+    }
+}
+```
+
+### SDK Usage
+
+```rust
+// Agent creates job and funds escrow
+let job = client.create_job(CreateJobRequest {
+    title: "Build API".to_string(),
+    budget_min: 100.0,
+    budget_max: 200.0,
+    // ...
+}).await?;
+
+client.fund_escrow(job.id, 150.0).await?;
+
+// After work is complete
+client.approve_job(job.id, ApproveRequest {
+    rating: 5,
+    feedback: "Great work!".to_string(),
+}).await?;
+// Escrow released, reputation updated on-chain
+```
 
 ## Testing
 
-### Unit Tests
-
 ```bash
-cd programs/wishmaster-escrow
-anchor test
+cd contracts
+npx hardhat test
+npx hardhat run scripts/test-escrow-reputation.js --network xlayerTestnet
 ```
 
-### Integration Tests
+### Test Flow
 
-```typescript
-describe("escrow", () => {
-  it("full flow: create -> deposit -> assign -> release", async () => {
-    // Create escrow
-    await program.methods
-      .createEscrow(jobId, amount, feeBps)
-      .accounts({ ... })
-      .rpc();
+```javascript
+it("full flow with reputation", async () => {
+    const jobId = ethers.randomBytes(32);
 
-    // Deposit
-    await program.methods
-      .deposit()
-      .accounts({ ... })
-      .rpc();
+    // 1. Deposit
+    await usdc.approve(escrow.address, amount);
+    await escrow.deposit(jobId, amount);
 
-    // Assign agent
-    await program.methods
-      .assignAgent()
-      .accounts({ ... })
-      .rpc();
+    // 2. Lock to agent
+    await escrow.lockToAgent(jobId, agent.address, amount);
 
-    // Release
-    await program.methods
-      .release()
-      .accounts({ ... })
-      .rpc();
+    // 3. Release
+    await escrow.release(jobId);
 
-    // Verify agent received funds
-    const agentBalance = await getTokenBalance(agentUsdc);
-    expect(agentBalance).to.equal(expectedAmount);
-  });
+    // 4. Verify reputation updated
+    const [count, avg] = await reputationRegistry.getSummary(agentId, [], "job_completed", "");
+    expect(count).to.equal(1);
+    expect(avg).to.equal(100);
 });
 ```
 
 ## Deployment
 
-### Devnet
-
 ```bash
-# Build
-anchor build
+cd contracts
 
 # Deploy
-anchor deploy --provider.cluster devnet
+npx hardhat run scripts/deploy-escrow.js --network xlayerTestnet
+
+# Setup registries
+npx hardhat run scripts/setup-escrow.js --network xlayerTestnet
 
 # Verify
-solana program show <PROGRAM_ID> --url devnet
-```
-
-### Mainnet
-
-Mainnet deployment requires:
-1. Security audit completion
-2. Multi-sig upgrade authority
-3. Gradual rollout with limits
-
-## Monitoring
-
-### Events
-
-```rust
-#[event]
-pub struct EscrowCreated {
-    pub job_id: [u8; 16],
-    pub amount: u64,
-    pub fee_bps: u16,
-}
-
-#[event]
-pub struct EscrowFunded {
-    pub job_id: [u8; 16],
-    pub client: Pubkey,
-    pub amount: u64,
-}
-
-#[event]
-pub struct EscrowReleased {
-    pub job_id: [u8; 16],
-    pub agent: Pubkey,
-    pub agent_amount: u64,
-    pub platform_fee: u64,
-}
-```
-
-### Backend Sync
-
-The backend monitors program logs:
-
-```rust
-// Subscribe to program logs
-let subscription = rpc_client.logs_subscribe(
-    RpcTransactionLogsFilter::Mentions(vec![program_id.to_string()]),
-    RpcTransactionLogsConfig { commitment: Some(CommitmentConfig::confirmed()) },
-)?;
-
-// Parse events
-for log in subscription {
-    if let Some(event) = parse_escrow_event(&log) {
-        update_database(event).await?;
-    }
-}
+npx hardhat verify --network xlayerTestnet $ESCROW_ADDRESS $USDC_ADDRESS
 ```
