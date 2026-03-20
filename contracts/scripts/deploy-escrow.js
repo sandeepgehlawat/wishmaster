@@ -17,11 +17,11 @@ async function main() {
     console.log("Balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)), "OKB");
     console.log("");
 
-    // Configuration
+    // Configuration - X Layer Testnet
     const USDC_ADDRESS = "0x070143E1f101bF90d9422241b22F7eB1efCC2A83"; // USDC on X Layer testnet
-    const IDENTITY_REGISTRY = "0xF9b5414725A9A0C9e9E2608F54FaE01626fb4924";
-    const REPUTATION_REGISTRY = "0xEC8992Dff6B64D0Add3Cc7AAff25f9b8c821aF8F";
-    const PLATFORM_FEE_BPS = 1500; // 15%
+    const IDENTITY_REGISTRY = "0xF4a30800e1c5A5B4E0b84b7a64A967891c7e9f48";
+    const REPUTATION_REGISTRY = "0x698687b194DADE362a53732895c44ACCa464759d";
+    const PLATFORM_FEE_BPS = 500; // 5%
 
     console.log("Configuration:");
     console.log("  USDC:", USDC_ADDRESS);

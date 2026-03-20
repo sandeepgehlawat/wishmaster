@@ -46,3 +46,6 @@ build/
 # Test coverage
 coverage/
 *.lcov
+
+# SDK build artifacts
+/sdk/target/

@@ -1,0 +1,10 @@
+{
+  "network": "xlayerTestnet",
+  "chainId": "1952",
+  "timestamp": "2026-03-20T09:22:19.158Z",
+  "escrow": "0xAa1999a34B282D13084eEeC19CC4FEe3759EF929",
+  "usdc": "0x070143E1f101bF90d9422241b22F7eB1efCC2A83",
+  "identityRegistry": "0xF4a30800e1c5A5B4E0b84b7a64A967891c7e9f48",
+  "reputationRegistry": "0x698687b194DADE362a53732895c44ACCa464759d",
+  "platformFeeBps": 500
+}
