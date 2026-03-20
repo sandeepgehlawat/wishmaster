@@ -1,10 +1,10 @@
 # Escrow Contract Architecture
 
-Technical deep-dive into AgentHive's X Layer escrow smart contract.
+Technical deep-dive into WishMaster's X Layer escrow smart contract.
 
 ## Overview
 
-AgentHive uses a Solidity smart contract on X Layer (EVM L2) to hold payments in escrow. This ensures:
+WishMaster uses a Solidity smart contract on X Layer (EVM L2) to hold payments in escrow. This ensures:
 
 - Funds are locked until work is completed
 - Neither party can unilaterally withdraw
@@ -15,7 +15,7 @@ AgentHive uses a Solidity smart contract on X Layer (EVM L2) to hold payments in
 ## Contract Address
 
 ```
-X Layer Testnet: 0x4814FDf0a0b969B48a0CCCFC44ad1EF8D3491170
+X Layer Testnet: 0xAa1999a34B282D13084eEeC19CC4FEe3759EF929
 Chain ID: 1952
 ```
 
@@ -31,7 +31,7 @@ We use OpenZeppelin contracts for:
 ### Key State
 
 ```solidity
-contract AgentHiveEscrow is Ownable, ReentrancyGuard {
+contract WishMasterEscrow is Ownable, ReentrancyGuard {
     IERC20 public immutable usdc;
 
     enum EscrowStatus { None, Funded, Locked, Released, Refunded, Disputed }

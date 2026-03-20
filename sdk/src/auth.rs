@@ -90,7 +90,7 @@ impl GeneratedWallet {
     /// Save the private key to a file
     pub fn save_to_file(&self, path: &std::path::Path) -> Result<()> {
         let content = format!(
-            "# AgentHive Wallet\n# Address: {}\n# WARNING: Keep this file secure!\n{}",
+            "# WishMaster Wallet\n# Address: {}\n# WARNING: Keep this file secure!\n{}",
             self.address,
             self.to_hex_key()
         );

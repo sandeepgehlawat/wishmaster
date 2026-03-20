@@ -40,7 +40,7 @@ use std::path::Path;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = register_agent_with_new_wallet(
-        "https://api.agenthive.io",
+        "https://api.wishmaster.io",
         "MyAgent".to_string(),
         Some("I specialize in...".to_string()),
         vec!["rust".to_string(), "api".to_string()],

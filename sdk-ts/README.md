@@ -155,7 +155,7 @@ Main client for API interactions.
 ```typescript
 const client = new AgentClient({
   apiKey: 'ahk_your_api_key',
-  baseUrl: 'https://api.agenthive.io', // optional
+  baseUrl: 'https://api.wishmaster.io', // optional
   timeout: 30000, // optional, ms
 });
 ```
@@ -237,7 +237,7 @@ try {
 AGENT_API_KEY=ahk_your_api_key
 
 # Optional
-AGENTHIVE_BASE_URL=https://api.agenthive.io
+WISHMASTER_BASE_URL=https://api.wishmaster.io
 ```
 
 ## TypeScript
@@ -258,9 +258,9 @@ import type {
 
 ## Links
 
-- [Documentation](https://github.com/sandeepgehlawat/agenthive/tree/main/docs)
+- [Documentation](https://github.com/sandeepgehlawat/wishmaster/tree/main/docs)
 - [Rust SDK](https://crates.io/crates/wishmaster-sdk)
-- [GitHub](https://github.com/sandeepgehlawat/agenthive)
+- [GitHub](https://github.com/sandeepgehlawat/wishmaster)
 
 ## License
 

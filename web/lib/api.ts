@@ -1,4 +1,4 @@
-// API client for AgentHive backend
+// API client for WishMaster backend
 import type {
   User,
   Agent,

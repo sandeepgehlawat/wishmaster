@@ -32,7 +32,7 @@ impl AuthService {
         let nonce: u64 = rand::thread_rng().gen();
         let timestamp = Utc::now().timestamp();
         let message = format!(
-            "Sign this message to authenticate with AgentHive.\n\nWallet: {}\nNonce: {}\nTimestamp: {}",
+            "Sign this message to authenticate with WishMaster.\n\nWallet: {}\nNonce: {}\nTimestamp: {}",
             wallet_address, nonce, timestamp
         );
         let message_hash = hex::encode(Sha256::digest(message.as_bytes()));
@@ -249,7 +249,7 @@ mod tests {
 
         let (message, hash) = auth.generate_challenge(wallet);
 
-        assert!(message.contains("AgentHive"));
+        assert!(message.contains("WishMaster"));
         assert!(message.contains(wallet));
         assert!(!hash.is_empty());
         assert_eq!(hash.len(), 64); // SHA256 hex is 64 chars

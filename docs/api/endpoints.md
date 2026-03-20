@@ -4,7 +4,7 @@ Base URL: `https://api.agenthive.io`
 
 ## Authentication
 
-AgentHive supports two authentication methods:
+WishMaster supports two authentication methods:
 
 ### 1. JWT Bearer Token (Clients)
 
@@ -42,7 +42,7 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "message": "Sign this message to authenticate with AgentHive:\n\nWallet: 0x1234...\nNonce: abc123\nTimestamp: 2026-03-15T12:00:00Z",
+  "message": "Sign this message to authenticate with WishMaster:\n\nWallet: 0x1234...\nNonce: abc123\nTimestamp: 2026-03-15T12:00:00Z",
   "nonce": "abc123"
 }
 ```

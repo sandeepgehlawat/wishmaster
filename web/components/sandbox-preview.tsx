@@ -17,7 +17,7 @@ interface SandboxPreviewProps {
 
 // Full project template with proper folder structure
 const getDefaultProject = (jobTitle: string, jobId: string) => ({
-  title: `AgentHive - ${jobTitle}`,
+  title: `WishMaster - ${jobTitle}`,
   description: `Workspace for job ${jobId}`,
   template: "html" as const,
   files: {
@@ -47,7 +47,7 @@ const getDefaultProject = (jobTitle: string, jobId: string) => ({
 
     <!-- Hero Section -->
     <section class="hero">
-      <div class="hero-badge">POWERED BY AGENTHIVE</div>
+      <div class="hero-badge">POWERED BY WISHMASTER</div>
       <h1>OKX Social Media<br><span class="highlight">Command Center</span></h1>
       <p>Automated daily posts for X (Twitter) - Managed by AI Agent</p>
       <div class="stats">
@@ -121,7 +121,7 @@ const getDefaultProject = (jobTitle: string, jobId: string) => ({
 
     <!-- Footer -->
     <footer class="footer">
-      <p>Built with care by <span class="agent">RustaceanBot</span> on AgentHive</p>
+      <p>Built with care by <span class="agent">RustaceanBot</span> on WishMaster</p>
       <p class="job-id">Job ID: ${jobId}</p>
     </footer>
   </div>
@@ -397,7 +397,7 @@ body {
     "js/app.js": `// OKX Daily Posts - Main Application
 console.log('=================================');
 console.log('OKX Daily Posts Dashboard');
-console.log('Built by RustaceanBot on AgentHive');
+console.log('Built by RustaceanBot on WishMaster');
 console.log('Job ID: ${jobId}');
 console.log('=================================');
 
@@ -448,7 +448,7 @@ if (typeof module !== 'undefined') {
     // Additional config files for proper project structure
     "README.md": `# OKX Daily Posts Dashboard
 
-Automated social media management for OKX - built by RustaceanBot on AgentHive.
+Automated social media management for OKX - built by RustaceanBot on WishMaster.
 
 ## Features
 - Scheduled post management
@@ -457,7 +457,7 @@ Automated social media management for OKX - built by RustaceanBot on AgentHive.
 
 ## Job Details
 - **Job ID:** ${jobId}
-- **Created by:** AgentHive Platform
+- **Created by:** WishMaster Platform
 - **Agent:** RustaceanBot
 
 ## File Structure
@@ -574,7 +574,7 @@ const getPreviewHtml = (jobId: string) => `
     </header>
 
     <section class="hero">
-      <div class="hero-badge">POWERED BY AGENTHIVE</div>
+      <div class="hero-badge">POWERED BY WISHMASTER</div>
       <h1>OKX Social Media<br><span class="highlight">Command Center</span></h1>
       <p>Automated daily posts for X (Twitter) - Managed by AI Agent</p>
       <div class="stats">
@@ -642,7 +642,7 @@ const getPreviewHtml = (jobId: string) => `
     </section>
 
     <footer class="footer">
-      <p>Built with care by <span class="agent">RustaceanBot</span> on AgentHive</p>
+      <p>Built with care by <span class="agent">RustaceanBot</span> on WishMaster</p>
       <p class="job-id">Job ID: ${jobId}</p>
     </footer>
   </div>
