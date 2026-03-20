@@ -62,39 +62,49 @@ export default function JobDetailPage() {
   const jobId = params.id as string;
   const job = MOCK_JOBS[jobId] || { ...FALLBACK_JOB, id: jobId };
 
+  const statusBadgeClass = (status: string) => {
+    switch (status) {
+      case "BIDDING": return "bg-green-500/10 text-green-400 border-green-500/20";
+      case "IN_PROGRESS": return "bg-neutral-800/50 text-white/70 border-neutral-700/40";
+      case "COMPLETED": return "bg-neutral-800/50 text-gray-500 border-neutral-700/40";
+      case "DELIVERED": return "bg-neutral-800/50 text-white/60 border-neutral-700/40";
+      default: return "bg-neutral-800/50 text-gray-400 border-neutral-700/40";
+    }
+  };
+
   const renderActions = () => {
     switch (job.status) {
       case "DRAFT":
         return (
           <div className="flex flex-col gap-2">
-            <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors">
-              [PUBLISH]
+            <button className="bg-white text-black px-4 py-2 text-sm font-medium tracking-wide hover:bg-white/90 transition-colors duration-150">
+              Publish
             </button>
-            <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors">
-              [EDIT]
+            <button className="border border-neutral-700/40 px-4 py-2 text-sm font-medium tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150">
+              Edit
             </button>
-            <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white/10 transition-colors">
-              [DELETE]
+            <button className="border border-red-500/20 text-red-400 px-4 py-2 text-sm font-medium tracking-wide hover:bg-red-500/10 transition-colors duration-150">
+              Delete
             </button>
           </div>
         );
       case "BIDDING":
         return (
-          <button className="w-full border-2 border-white px-4 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors">
-            [SELECT BID]
+          <button className="w-full bg-white text-black px-4 py-2 text-sm font-medium tracking-wide hover:bg-white/90 transition-colors duration-150">
+            Select Bid
           </button>
         );
       case "DELIVERED":
         return (
           <div className="flex flex-col gap-2">
-            <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors">
-              [APPROVE]
+            <button className="bg-white text-black px-4 py-2 text-sm font-medium tracking-wide hover:bg-white/90 transition-colors duration-150">
+              Approve
             </button>
-            <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors">
-              [REQUEST REVISION]
+            <button className="border border-neutral-700/40 px-4 py-2 text-sm font-medium tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150">
+              Request Revision
             </button>
-            <button className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white/10 transition-colors">
-              [DISPUTE]
+            <button className="border border-red-500/20 text-red-400 px-4 py-2 text-sm font-medium tracking-wide hover:bg-red-500/10 transition-colors duration-150">
+              Dispute
             </button>
           </div>
         );
@@ -110,13 +120,13 @@ export default function JobDetailPage() {
         <div>
           <Link
             href="/dashboard/jobs"
-            className="text-xs text-white/50 hover:text-white tracking-wider"
+            className="text-xs text-gray-500 hover:text-white tracking-wide transition-colors duration-150"
           >
-            {"<"} BACK TO JOBS
+            {"<"} Back to Jobs
           </Link>
-          <div className="flex items-center gap-4 mt-2">
-            <h1 className="text-2xl font-bold tracking-wider">{job.title}</h1>
-            <span className="border-2 border-white px-3 py-1 text-xs tracking-wider">
+          <div className="flex items-center gap-3 mt-2">
+            <h1 className="text-2xl font-bold tracking-wide">{job.title}</h1>
+            <span className={`border px-3 py-1 text-xs tracking-wide ${statusBadgeClass(job.status)}`}>
               {job.status}
             </span>
           </div>
@@ -129,18 +139,18 @@ export default function JobDetailPage() {
         <div className="space-y-8">
           {/* Description */}
           <div>
-            <h2 className="text-xs text-white/50 tracking-wider mb-3">DESCRIPTION</h2>
+            <h2 className="text-xs text-gray-500 tracking-wide mb-3">Description</h2>
             <p className="text-sm leading-relaxed">{job.description}</p>
           </div>
 
           {/* Skills */}
           <div>
-            <h2 className="text-xs text-white/50 tracking-wider mb-3">REQUIRED SKILLS</h2>
+            <h2 className="text-xs text-gray-500 tracking-wide mb-3">Required Skills</h2>
             <div className="flex flex-wrap gap-2">
               {job.skills.map((skill: string) => (
                 <span
                   key={skill}
-                  className="border border-white px-3 py-1 text-xs tracking-wider"
+                  className="border border-neutral-700/40 px-3 py-1 text-xs tracking-wide text-gray-300"
                 >
                   {skill}
                 </span>
@@ -150,25 +160,25 @@ export default function JobDetailPage() {
 
           {/* Timeline */}
           <div>
-            <h2 className="text-xs text-white/50 tracking-wider mb-3">STATE MACHINE</h2>
-            <div className="border-2 border-white p-4">
+            <h2 className="text-xs text-gray-500 tracking-wide mb-3">State Machine</h2>
+            <div className="bg-[#1a1a1f] border border-neutral-700/40 p-4">
               <div className="flex items-center gap-0 text-xs overflow-x-auto">
                 {job.timeline.map((t: any, i: number) => (
                   <div key={t.state} className="flex items-center">
                     <div
-                      className={`px-3 py-2 border-2 border-white whitespace-nowrap ${
+                      className={`px-3 py-2 border whitespace-nowrap transition-colors duration-150 ${
                         t.active
-                          ? "bg-white text-black font-bold"
+                          ? "bg-green-500/10 text-green-400 font-bold border-green-500/20"
                           : t.date !== "---"
-                          ? "bg-white/10"
-                          : "text-white/30"
+                          ? "bg-[#1a1a1f] border-neutral-700/40"
+                          : "text-gray-600 border-neutral-700/30"
                       }`}
                     >
                       {t.state}
                       <div className="text-[10px] mt-0.5 opacity-60">{t.date}</div>
                     </div>
                     {i < job.timeline.length - 1 && (
-                      <div className={`w-4 h-[2px] ${t.date !== "---" ? "bg-white" : "bg-white/20"}`} />
+                      <div className={`w-4 h-px ${t.date !== "---" ? "bg-white/30" : "bg-neutral-700/40"}`} />
                     )}
                   </div>
                 ))}
@@ -178,35 +188,35 @@ export default function JobDetailPage() {
 
           {/* Bids */}
           <div>
-            <h2 className="text-lg font-bold tracking-wider mb-4">
-              {`>>> BIDS (${job.bids.length})`}
+            <h2 className="text-lg font-bold tracking-wide mb-4">
+              Bids ({job.bids.length})
             </h2>
             {job.bids.length > 0 ? (
-              <div className="border-2 border-white">
+              <div className="bg-[#1a1a1f] border border-neutral-700/40 overflow-hidden">
                 {job.bids.map((bid: any, i: number) => (
                   <div
                     key={bid.id}
                     className={`p-4 ${
-                      i !== job.bids.length - 1 ? "border-b border-white/30" : ""
+                      i !== job.bids.length - 1 ? "border-b border-neutral-700/40" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-4 mb-2">
                           <span className="font-bold">{bid.agent}</span>
-                          <span className="text-xs text-white/50">
+                          <span className="text-xs text-gray-500">
                             {"* ".repeat(Math.round(bid.rating))}({bid.rating})
                           </span>
-                          <span className="text-xs text-white/50">
+                          <span className="text-xs text-gray-500">
                             {bid.completedJobs} jobs
                           </span>
                         </div>
-                        <p className="text-sm text-white/70">{bid.proposal}</p>
+                        <p className="text-sm text-gray-400">{bid.proposal}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-xl font-bold">{bid.amount} USDC</p>
-                        <button className="mt-2 border border-white px-3 py-1 text-xs tracking-wider hover:bg-white hover:text-black transition-colors">
-                          [SELECT]
+                        <button className="mt-2 border border-neutral-700/40 px-3 py-1 text-xs tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150">
+                          Select
                         </button>
                       </div>
                     </div>
@@ -214,36 +224,36 @@ export default function JobDetailPage() {
                 ))}
               </div>
             ) : (
-              <div className="border-2 border-white p-8 text-center text-white/50">
-                WAITING_FOR_BIDS...
+              <div className="bg-[#1a1a1f] border border-neutral-700/40 p-8 text-center text-gray-500">
+                Waiting for bids...
               </div>
             )}
           </div>
         </div>
 
         {/* Right - Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Budget Info */}
-          <div className="border-2 border-white p-4 space-y-3">
-            <h3 className="text-xs text-white/50 tracking-wider">BUDGET</h3>
+          <div className="bg-[#1a1a1f] border border-neutral-700/40 p-4 space-y-3">
+            <h3 className="text-xs text-gray-500 tracking-wide">Budget</h3>
             <p className="text-2xl font-bold">{job.budgetMin} - {job.budgetMax} USDC</p>
           </div>
 
           {/* Escrow */}
-          <div className="border-2 border-white p-4 space-y-3">
-            <h3 className="text-xs text-white/50 tracking-wider">ESCROW</h3>
+          <div className="bg-[#1a1a1f] border border-neutral-700/40 p-4 space-y-3">
+            <h3 className="text-xs text-gray-500 tracking-wide">Escrow</h3>
             <p className="text-lg font-bold">{job.escrowAmount} USDC</p>
             <p className="text-xs">
-              STATUS:{" "}
-              <span className={job.escrowStatus === "FUNDED" ? "text-white" : "text-white/50"}>
+              Status:{" "}
+              <span className={job.escrowStatus === "FUNDED" ? "text-green-400" : "text-gray-500"}>
                 {job.escrowStatus}
               </span>
             </p>
           </div>
 
           {/* Deadline */}
-          <div className="border-2 border-white p-4 space-y-3">
-            <h3 className="text-xs text-white/50 tracking-wider">DEADLINE</h3>
+          <div className="bg-[#1a1a1f] border border-neutral-700/40 p-4 space-y-3">
+            <h3 className="text-xs text-gray-500 tracking-wide">Deadline</h3>
             <p className="text-lg font-bold">{job.deadline}</p>
           </div>
 

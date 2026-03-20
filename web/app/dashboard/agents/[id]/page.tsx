@@ -42,6 +42,15 @@ const FALLBACK_AGENT = {
   ratings: [],
 };
 
+const tierBadgeClass = (tier: string) => {
+  switch (tier) {
+    case "TOP_RATED": return "text-white/90";
+    case "ESTABLISHED": return "text-white/70";
+    case "RISING": return "text-white/50";
+    default: return "text-gray-400";
+  }
+};
+
 export default function AgentDetailPage() {
   const params = useParams();
   const agentId = params.id as string;
@@ -52,32 +61,32 @@ export default function AgentDetailPage() {
       {/* Back */}
       <Link
         href="/dashboard/agents"
-        className="text-xs text-white/50 hover:text-white tracking-wider"
+        className="text-xs text-gray-500 hover:text-white tracking-wide transition-colors duration-150"
       >
-        {"<"} BACK TO AGENTS
+        {"<"} Back to Agents
       </Link>
 
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold tracking-wider">{agent.name}</h1>
-        <span className="border-2 border-white px-3 py-1 text-xs tracking-wider">
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold tracking-wide">{agent.name}</h1>
+        <span className={`border border-neutral-700/40 px-3 py-1 text-xs tracking-wide ${tierBadgeClass(agent.tier)}`}>
           {agent.tier}
         </span>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "RATING", value: `${agent.rating} / 5.0` },
-          { label: "COMPLETED", value: agent.completedJobs },
+          { label: "Rating", value: `${agent.rating} / 5.0` },
+          { label: "Completed", value: agent.completedJobs },
           { label: "JSS", value: `${agent.jss}%` },
-          { label: "EARNINGS", value: agent.earnings },
+          { label: "Earnings", value: agent.earnings },
         ].map((stat) => (
           <div
             key={stat.label}
-            className="border-2 border-white p-4 -mt-[2px] first:mt-0 md:mt-0 md:-ml-[2px] md:first:ml-0"
+            className="bg-[#1a1a1f] border border-neutral-700/40 p-4"
           >
-            <p className="text-xs text-white/50 tracking-wider">{stat.label}</p>
+            <p className="text-xs text-gray-500 tracking-wide">{stat.label}</p>
             <p className="text-xl font-bold mt-1">{stat.value}</p>
           </div>
         ))}
@@ -85,88 +94,88 @@ export default function AgentDetailPage() {
 
       {/* About */}
       <div>
-        <h2 className="text-xs text-white/50 tracking-wider mb-3">ABOUT</h2>
+        <h2 className="text-xs text-gray-500 tracking-wide mb-3">About</h2>
         <p className="text-sm leading-relaxed">{agent.about}</p>
       </div>
 
       {/* Skills */}
       <div>
-        <h2 className="text-xs text-white/50 tracking-wider mb-3">SKILLS</h2>
+        <h2 className="text-xs text-gray-500 tracking-wide mb-3">Skills</h2>
         <div className="flex flex-wrap gap-2">
           {agent.skills.map((skill: string) => (
             <span
               key={skill}
-              className="border border-white px-3 py-1 text-xs tracking-wider"
+              className="border border-neutral-700/40 px-3 py-1 text-xs tracking-wide text-gray-300"
             >
               {skill}
             </span>
           ))}
           {agent.skills.length === 0 && (
-            <span className="text-white/40 text-sm">NO_SKILLS_LISTED</span>
+            <span className="text-gray-500 text-sm">No skills listed</span>
           )}
         </div>
       </div>
 
       {/* Recent Jobs */}
       <div>
-        <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> RECENT_JOBS`}</h2>
+        <h2 className="text-lg font-bold tracking-wide mb-4">Recent Jobs</h2>
         {agent.recentJobs.length > 0 ? (
-          <div className="border-2 border-white">
-            <div className="grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 border-b-2 border-white text-xs text-white/50 tracking-wider">
-              <span>TITLE</span>
-              <span>BUDGET</span>
-              <span>STATUS</span>
-              <span>DATE</span>
+          <div className="bg-[#1a1a1f] border border-neutral-700/40 overflow-hidden">
+            <div className="grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 border-b border-neutral-700/40 text-xs text-gray-500 tracking-wide">
+              <span>Title</span>
+              <span>Budget</span>
+              <span>Status</span>
+              <span>Date</span>
             </div>
             {agent.recentJobs.map((job: any, i: number) => (
               <div
                 key={i}
                 className={`grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 text-sm ${
-                  i !== agent.recentJobs.length - 1 ? "border-b border-white/30" : ""
+                  i !== agent.recentJobs.length - 1 ? "border-b border-neutral-700/40" : ""
                 }`}
               >
                 <span>{job.title}</span>
                 <span>{job.budget}</span>
                 <span className="text-xs">
-                  <span className="border border-white px-2 py-0.5">{job.status}</span>
+                  <span className="border border-green-500/20 bg-green-500/10 text-green-400 px-2 py-0.5">{job.status}</span>
                 </span>
-                <span className="text-white/50">{job.date}</span>
+                <span className="text-gray-500">{job.date}</span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="border-2 border-white p-8 text-center text-white/50">
-            NO_JOBS_YET
+          <div className="bg-[#1a1a1f] border border-neutral-700/40 p-8 text-center text-gray-500">
+            No jobs yet
           </div>
         )}
       </div>
 
       {/* Ratings */}
       <div>
-        <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> RATINGS (${agent.ratings.length})`}</h2>
+        <h2 className="text-lg font-bold tracking-wide mb-4">Ratings ({agent.ratings.length})</h2>
         {agent.ratings.length > 0 ? (
-          <div className="border-2 border-white">
+          <div className="bg-[#1a1a1f] border border-neutral-700/40 overflow-hidden">
             {agent.ratings.map((r: any, i: number) => (
               <div
                 key={i}
                 className={`p-4 ${
-                  i !== agent.ratings.length - 1 ? "border-b border-white/30" : ""
+                  i !== agent.ratings.length - 1 ? "border-b border-neutral-700/40" : ""
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-white/50">{r.from}</span>
+                  <span className="text-xs text-gray-500">{r.from}</span>
                   <span className="text-sm">
                     {"* ".repeat(r.score)}({r.score}/5)
                   </span>
                 </div>
-                <p className="text-sm text-white/80">{r.comment}</p>
-                <p className="text-xs text-white/30 mt-2">{r.date}</p>
+                <p className="text-sm text-gray-300">{r.comment}</p>
+                <p className="text-xs text-gray-600 mt-2">{r.date}</p>
               </div>
             ))}
           </div>
         ) : (
-          <div className="border-2 border-white p-8 text-center text-white/50">
-            NO_RATINGS_YET
+          <div className="bg-[#1a1a1f] border border-neutral-700/40 p-8 text-center text-gray-500">
+            No ratings yet
           </div>
         )}
       </div>

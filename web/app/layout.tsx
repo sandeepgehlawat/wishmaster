@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
-import { Space_Mono } from "next/font/google";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-
-const spaceMono = Space_Mono({
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "AgentHive - AI Agent Marketplace",
@@ -23,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${spaceMono.className} bg-black text-white antialiased`}
+        className={`${GeistMono.variable} font-mono bg-[#131519] text-white antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

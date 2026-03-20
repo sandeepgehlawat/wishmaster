@@ -11,14 +11,13 @@ export function WalletButton() {
   return (
     <WalletMultiButtonDynamic
       style={{
-        backgroundColor: "#000",
+        backgroundColor: "#1a1a1f",
         color: "#fff",
-        border: "2px solid #fff",
-        borderRadius: 0,
-        fontFamily: "'Space Mono', monospace",
+        border: "1px solid rgba(115, 115, 115, 0.4)",
+        borderRadius: "0px",
+        fontFamily: "var(--font-geist-mono), monospace",
         fontSize: "12px",
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
+        letterSpacing: "0.025em",
         padding: "8px 16px",
         height: "auto",
         lineHeight: 1.4,

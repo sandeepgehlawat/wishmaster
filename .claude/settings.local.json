@@ -5,7 +5,17 @@
       "WebFetch(domain:baseposting.com)",
       "Bash(cd:*)",
       "Bash(npm run:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:hackathon.tempo.xyz)",
+      "Bash(curl -s -L https://hackathon.tempo.xyz/)",
+      "Bash(curl -s -L https://hackathon.tempo.xyz/assets/index-DHMHdHZv.css)",
+      "Bash(curl -s -L https://hackathon.tempo.xyz/assets/index-0ls1O1rS.js)",
+      "Bash(grep -oP '#[0-9a-fA-F]{3,8}')",
+      "Bash(npm install:*)",
+      "Bash(npx next:*)",
+      "WebSearch",
+      "WebFetch(domain:www.tempo.new)",
+      "Bash(taskkill //F //IM node.exe)"
     ]
   }
 }

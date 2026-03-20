@@ -17,83 +17,83 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 font-mono max-w-2xl">
       {/* Header */}
-      <h1 className="text-2xl font-bold tracking-wider">SETTINGS</h1>
+      <h1 className="text-2xl font-bold tracking-wide">Settings</h1>
 
       {/* PROFILE */}
-      <div className="border-2 border-white p-6 space-y-6">
-        <h2 className="text-xs text-white/50 tracking-wider">PROFILE</h2>
+      <div className="border border-neutral-700/40 p-6 space-y-6 bg-[#1a1a1f]">
+        <h2 className="text-xs text-gray-500 tracking-wide">Profile</h2>
 
         <div>
-          <label className="block text-xs text-white/60 tracking-wider mb-2">DISPLAY_NAME</label>
+          <label className="block text-xs text-gray-500 tracking-wide mb-2">Display Name</label>
           <input
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full bg-black border-2 border-white px-4 py-3 text-sm text-white outline-none focus:bg-white/5"
+            className="w-full bg-[#111114] border border-neutral-700/40 px-4 py-3 text-sm text-white outline-none focus:border-white/25 transition-colors duration-150"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-white/60 tracking-wider mb-2">EMAIL</label>
+          <label className="block text-xs text-gray-500 tracking-wide mb-2">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-black border-2 border-white px-4 py-3 text-sm text-white outline-none focus:bg-white/5"
+            className="w-full bg-[#111114] border border-neutral-700/40 px-4 py-3 text-sm text-white outline-none focus:border-white/25 transition-colors duration-150"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-white/60 tracking-wider mb-2">COMPANY</label>
+          <label className="block text-xs text-gray-500 tracking-wide mb-2">Company</label>
           <input
             type="text"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             placeholder="Optional..."
-            className="w-full bg-black border-2 border-white px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/5"
+            className="w-full bg-[#111114] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-white/25 transition-colors duration-150"
           />
         </div>
 
-        <button className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors">
-          [SAVE]
+        <button className="bg-white text-black px-6 py-2 text-sm font-medium tracking-wide hover:bg-white/90 transition-colors duration-150">
+          Save
         </button>
       </div>
 
       {/* WALLET */}
-      <div className="border-2 border-white p-6 space-y-6">
-        <h2 className="text-xs text-white/50 tracking-wider">WALLET</h2>
+      <div className="border border-neutral-700/40 p-6 space-y-6 bg-[#1a1a1f]">
+        <h2 className="text-xs text-gray-500 tracking-wide">Wallet</h2>
 
         <div>
-          <p className="text-xs text-white/60 tracking-wider mb-2">CONNECTED_ADDRESS</p>
-          <p className="text-sm font-mono bg-white/5 border border-white/30 px-4 py-3">
+          <p className="text-xs text-gray-500 tracking-wide mb-2">Connected Address</p>
+          <p className="text-sm font-mono bg-[#111114] border border-neutral-700/40 px-4 py-3 text-gray-300">
             {walletAddress}
           </p>
         </div>
 
-        <button className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors">
-          [DISCONNECT]
+        <button className="border border-neutral-700/40 px-6 py-2 text-sm font-medium tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150">
+          Disconnect
         </button>
       </div>
 
       {/* NOTIFICATIONS */}
-      <div className="border-2 border-white p-6 space-y-6">
-        <h2 className="text-xs text-white/50 tracking-wider">NOTIFICATIONS</h2>
+      <div className="border border-neutral-700/40 p-6 space-y-6 bg-[#1a1a1f]">
+        <h2 className="text-xs text-gray-500 tracking-wide">Notifications</h2>
 
         <div className="space-y-4">
-          <label className="flex items-center justify-between py-2 border-b border-white/20 cursor-pointer">
-            <span className="text-sm">EMAIL_BID_ALERTS</span>
+          <label className="flex items-center justify-between py-2 border-b border-neutral-700/40 cursor-pointer">
+            <span className="text-sm">Email Bid Alerts</span>
             <input
               type="checkbox"
               checked={notifications.emailBids}
               onChange={() =>
                 setNotifications((prev) => ({ ...prev, emailBids: !prev.emailBids }))
               }
-              className="w-5 h-5 accent-white appearance-none border-2 border-white bg-black checked:bg-white cursor-pointer"
+              className="w-5 h-5 accent-white appearance-none border border-neutral-700/40 bg-[#111114] checked:bg-white cursor-pointer"
             />
           </label>
 
-          <label className="flex items-center justify-between py-2 border-b border-white/20 cursor-pointer">
-            <span className="text-sm">EMAIL_MESSAGES</span>
+          <label className="flex items-center justify-between py-2 border-b border-neutral-700/40 cursor-pointer">
+            <span className="text-sm">Email Messages</span>
             <input
               type="checkbox"
               checked={notifications.emailMessages}
@@ -103,12 +103,12 @@ export default function SettingsPage() {
                   emailMessages: !prev.emailMessages,
                 }))
               }
-              className="w-5 h-5 accent-white appearance-none border-2 border-white bg-black checked:bg-white cursor-pointer"
+              className="w-5 h-5 accent-white appearance-none border border-neutral-700/40 bg-[#111114] checked:bg-white cursor-pointer"
             />
           </label>
 
           <label className="flex items-center justify-between py-2 cursor-pointer">
-            <span className="text-sm">PUSH_ALERTS</span>
+            <span className="text-sm">Push Alerts</span>
             <input
               type="checkbox"
               checked={notifications.pushAlerts}
@@ -118,22 +118,22 @@ export default function SettingsPage() {
                   pushAlerts: !prev.pushAlerts,
                 }))
               }
-              className="w-5 h-5 accent-white appearance-none border-2 border-white bg-black checked:bg-white cursor-pointer"
+              className="w-5 h-5 accent-white appearance-none border border-neutral-700/40 bg-[#111114] checked:bg-white cursor-pointer"
             />
           </label>
         </div>
       </div>
 
       {/* DANGER ZONE */}
-      <div className="border-2 border-white p-6 space-y-6">
-        <h2 className="text-xs text-white/50 tracking-wider">DANGER_ZONE</h2>
+      <div className="border border-red-500/20 p-6 space-y-6 bg-red-500/[0.03]">
+        <h2 className="text-xs text-red-400 tracking-wide">Danger Zone</h2>
 
-        <p className="text-sm text-white/60">
+        <p className="text-sm text-gray-400">
           This action is irreversible. All data associated with your account will be permanently deleted.
         </p>
 
-        <button className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors">
-          {"\u26A0"} [DELETE ACCOUNT]
+        <button className="border border-red-500/20 text-red-400 px-6 py-2 text-sm font-medium tracking-wide hover:bg-red-500/10 transition-colors duration-150">
+          Delete Account
         </button>
       </div>
     </div>

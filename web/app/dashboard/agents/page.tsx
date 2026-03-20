@@ -56,6 +56,15 @@ const MOCK_AGENTS = [
   },
 ];
 
+const tierBadgeClass = (tier: string) => {
+  switch (tier) {
+    case "TOP_RATED": return "text-white/90";
+    case "ESTABLISHED": return "text-white/70";
+    case "RISING": return "text-white/50";
+    default: return "text-gray-400";
+  }
+};
+
 export default function AgentsPage() {
   const [search, setSearch] = useState("");
   const [activeTier, setActiveTier] = useState("ALL");
@@ -72,15 +81,15 @@ export default function AgentsPage() {
   return (
     <div className="space-y-6 font-mono">
       {/* Header */}
-      <h1 className="text-2xl font-bold tracking-wider">AGENTS</h1>
+      <h1 className="text-2xl font-bold tracking-wide">Agents</h1>
 
       {/* Search */}
       <input
         type="text"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="SEARCH AGENTS..."
-        className="w-full max-w-md bg-black border-2 border-white px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/5"
+        placeholder="Search agents..."
+        className="w-full max-w-md bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-neutral-600/60 transition-colors duration-150"
       />
 
       {/* Tier Filter */}
@@ -89,10 +98,10 @@ export default function AgentsPage() {
           <button
             key={tier}
             onClick={() => setActiveTier(tier)}
-            className={`tracking-wider pb-1 transition-colors ${
+            className={`tracking-wide pb-1 transition-colors duration-150 ${
               activeTier === tier
                 ? "text-white border-b-2 border-white"
-                : "text-white/50 hover:text-white"
+                : "text-gray-500 hover:text-white"
             }`}
           >
             {tier}
@@ -102,22 +111,22 @@ export default function AgentsPage() {
 
       {/* Agent Grid */}
       {filteredAgents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-          {filteredAgents.map((agent, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredAgents.map((agent) => (
             <div
               key={agent.id}
-              className="border-2 border-white -mt-[2px] first:mt-0 md:-ml-[2px] md:first:ml-0 p-6 hover:bg-white/5 transition-colors"
+              className="bg-[#1a1a1f] border border-neutral-700/40 p-6 hover:border-neutral-600/60 transition-colors duration-150"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-bold">{agent.name}</h3>
-                  <span className="border border-white px-2 py-0.5 text-xs tracking-wider mt-1 inline-block">
+                  <span className={`border border-neutral-700/40 px-2.5 py-0.5 text-xs tracking-wide mt-1 inline-block ${tierBadgeClass(agent.tier)}`}>
                     {agent.tier}
                   </span>
                 </div>
                 <div className="text-right text-sm">
                   <p>{"* ".repeat(Math.round(agent.rating))}({agent.rating})</p>
-                  <p className="text-xs text-white/50">{agent.completedJobs} jobs</p>
+                  <p className="text-xs text-gray-500">{agent.completedJobs} jobs</p>
                 </div>
               </div>
 
@@ -125,7 +134,7 @@ export default function AgentsPage() {
                 {agent.skills.map((skill) => (
                   <span
                     key={skill}
-                    className="border border-white/50 px-2 py-0.5 text-xs text-white/70"
+                    className="border border-neutral-700/40 px-2.5 py-0.5 text-xs text-gray-400"
                   >
                     {skill}
                   </span>
@@ -134,16 +143,16 @@ export default function AgentsPage() {
 
               <Link
                 href={`/dashboard/agents/${agent.id}`}
-                className="border-2 border-white px-4 py-2 text-xs font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block"
+                className="border border-neutral-700/40 px-4 py-2 text-xs font-medium tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150 inline-block"
               >
-                [VIEW PROFILE]
+                View Profile
               </Link>
             </div>
           ))}
         </div>
       ) : (
-        <div className="border-2 border-white p-12 text-center text-white/50">
-          NO_AGENTS_FOUND.
+        <div className="border border-neutral-700/40 p-12 text-center text-gray-500">
+          No agents found.
         </div>
       )}
     </div>

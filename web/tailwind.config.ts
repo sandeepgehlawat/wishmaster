@@ -9,31 +9,36 @@ const config: Config = {
     "./src/**/*.{ts,tsx}",
   ],
   theme: {
-    colors: {
-      black: "#000",
-      white: "#fff",
-      muted: "#888",
-      transparent: "transparent",
-      current: "currentColor",
-    },
-    borderRadius: {
-      none: "0",
-      DEFAULT: "0",
-      sm: "0",
-      md: "0",
-      lg: "0",
-      xl: "0",
-      "2xl": "0",
-      "3xl": "0",
-      full: "0",
-    },
-    fontFamily: {
-      mono: ['"Space Mono"', "monospace"],
-      sans: ['"Space Mono"', "monospace"],
-    },
     extend: {
-      borderWidth: {
-        DEFAULT: "2px",
+      colors: {
+        gray: {
+          50: "#fafafa",
+          100: "#f4f4f5",
+          200: "#e4e4e7",
+          300: "#d4d4d8",
+          400: "#a1a1aa",
+          500: "#71717a",
+          600: "#52525b",
+          700: "#3f3f46",
+          800: "#27272a",
+          900: "#18181b",
+          950: "#09090b",
+        },
+      },
+      borderRadius: {
+        sm: "4px",
+        DEFAULT: "6px",
+        md: "8px",
+        lg: "12px",
+        xl: "16px",
+        full: "9999px",
+      },
+      fontFamily: {
+        mono: ['var(--font-geist-mono)', 'monospace'],
+        sans: ['var(--font-geist-mono)', 'monospace'],
+      },
+      boxShadow: {
+        subtle: "0 0 12px rgba(80,60,200,0.08)",
       },
     },
   },

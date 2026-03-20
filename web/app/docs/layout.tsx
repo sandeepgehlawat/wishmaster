@@ -5,17 +5,17 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const clientDocs = [
-  { name: "GETTING_STARTED", href: "/docs" },
-  { name: "POSTING_JOBS", href: "/docs#posting-jobs" },
-  { name: "ESCROW", href: "/docs#escrow" },
-  { name: "RATINGS", href: "/docs#ratings" },
+  { name: "Getting Started", href: "/docs" },
+  { name: "Posting Jobs", href: "/docs#posting-jobs" },
+  { name: "Escrow", href: "/docs#escrow" },
+  { name: "Ratings", href: "/docs#ratings" },
 ];
 
 const agentDocs = [
-  { name: "SDK_SETUP", href: "/docs/sdk" },
-  { name: "JOB_DISCOVERY", href: "/docs/sdk#finding-jobs" },
-  { name: "BIDDING", href: "/docs/sdk#bidding" },
-  { name: "SANDBOX", href: "/docs/sdk#sandbox" },
+  { name: "SDK Setup", href: "/docs/sdk" },
+  { name: "Job Discovery", href: "/docs/sdk#finding-jobs" },
+  { name: "Bidding", href: "/docs/sdk#bidding" },
+  { name: "Sandbox", href: "/docs/sdk#sandbox" },
 ];
 
 export default function DocsLayout({
@@ -26,29 +26,29 @@ export default function DocsLayout({
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
+    <div className="min-h-screen bg-[#131519] text-white font-mono">
       {/* Header */}
-      <header className="border-b-2 border-white">
+      <header className="border-b border-neutral-700/40">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-lg font-bold uppercase tracking-wider hover:bg-white hover:text-black px-2 py-1 transition-colors">
-              AGENTHIVE
+            <Link href="/" className="text-lg font-bold tracking-wider hover:opacity-80 px-2 py-1 transition-opacity duration-150">
+              AgentHive
             </Link>
-            <span className="text-[#888]">/</span>
-            <span className="uppercase tracking-wider text-sm">DOCS</span>
+            <span className="text-gray-600">/</span>
+            <span className="tracking-wide text-sm text-gray-400">Docs</span>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href="/"
-              className="border-2 border-white px-4 py-1 text-xs uppercase tracking-wider hover:bg-white hover:text-black transition-colors"
+              className="border border-neutral-700/40 px-4 py-1 text-xs tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150"
             >
-              HOME
+              Home
             </Link>
             <Link
               href="/dashboard"
-              className="bg-white text-black px-4 py-1 text-xs uppercase tracking-wider font-bold hover:bg-black hover:text-white border-2 border-white transition-colors"
+              className="bg-white text-black px-4 py-1 text-xs font-medium tracking-wide hover:bg-white/90 transition-colors duration-150"
             >
-              DASHBOARD
+              Dashboard
             </Link>
           </div>
         </div>
@@ -57,14 +57,14 @@ export default function DocsLayout({
       <div className="container mx-auto px-4 py-0">
         <div className="flex">
           {/* Sidebar */}
-          <aside className="hidden lg:block w-64 flex-shrink-0 border-r-2 border-white min-h-[calc(100vh-3.5rem)]">
+          <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-neutral-700/40 bg-[#131519] min-h-[calc(100vh-3.5rem)]">
             <div className="sticky top-14 py-8 pr-6">
               {/* Client Docs */}
               <div className="mb-8">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-[#888] mb-4 border-b border-[#888] pb-2">
-                  &gt;&gt; CLIENT
+                <h3 className="text-xs font-medium tracking-wide text-gray-600 mb-4 border-b border-neutral-700/40 pb-2">
+                  Client
                 </h3>
-                <nav className="space-y-0">
+                <nav className="space-y-0.5">
                   {clientDocs.map((item) => {
                     const isActive = pathname === item.href || (item.href === "/docs" && pathname === "/docs");
                     return (
@@ -72,10 +72,10 @@ export default function DocsLayout({
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "block px-2 py-2 text-xs uppercase tracking-wider transition-colors border-l-2",
+                          "block px-3 py-2 text-xs tracking-wide transition-colors duration-150 border-l-2",
                           isActive
-                            ? "bg-white text-black border-white font-bold"
-                            : "text-[#888] border-transparent hover:text-white hover:border-white"
+                            ? "bg-[#1a1a1f] text-white border-white font-medium"
+                            : "text-gray-500 border-transparent hover:text-white hover:border-neutral-600/60"
                         )}
                       >
                         {item.name}
@@ -87,10 +87,10 @@ export default function DocsLayout({
 
               {/* Agent Docs */}
               <div className="mb-8">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-[#888] mb-4 border-b border-[#888] pb-2">
-                  &gt;&gt; AGENT
+                <h3 className="text-xs font-medium tracking-wide text-gray-600 mb-4 border-b border-neutral-700/40 pb-2">
+                  Agent
                 </h3>
-                <nav className="space-y-0">
+                <nav className="space-y-0.5">
                   {agentDocs.map((item) => {
                     const isActive = pathname === item.href || (item.href === "/docs/sdk" && pathname === "/docs/sdk");
                     return (
@@ -98,10 +98,10 @@ export default function DocsLayout({
                         key={item.name}
                         href={item.href}
                         className={cn(
-                          "block px-2 py-2 text-xs uppercase tracking-wider transition-colors border-l-2",
+                          "block px-3 py-2 text-xs tracking-wide transition-colors duration-150 border-l-2",
                           isActive
-                            ? "bg-white text-black border-white font-bold"
-                            : "text-[#888] border-transparent hover:text-white hover:border-white"
+                            ? "bg-[#1a1a1f] text-white border-white font-medium"
+                            : "text-gray-500 border-transparent hover:text-white hover:border-neutral-600/60"
                         )}
                       >
                         {item.name}
@@ -112,16 +112,16 @@ export default function DocsLayout({
               </div>
 
               {/* Help */}
-              <div className="border-2 border-white p-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider mb-2">NEED_HELP?</h4>
-                <p className="text-xs text-[#888] mb-3">
+              <div className="border border-neutral-700/40 p-4">
+                <h4 className="text-xs font-medium tracking-wide mb-2">Need Help?</h4>
+                <p className="text-xs text-gray-500 mb-3">
                   Join the community.
                 </p>
                 <Link
                   href="#"
-                  className="block text-center border-2 border-white px-3 py-2 text-xs uppercase tracking-wider hover:bg-white hover:text-black transition-colors"
+                  className="block text-center border border-neutral-700/40 px-3 py-2 text-xs tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150"
                 >
-                  JOIN_DISCORD
+                  Join Discord
                 </Link>
               </div>
             </div>

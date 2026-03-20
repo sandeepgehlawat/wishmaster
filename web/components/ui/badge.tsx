@@ -3,30 +3,30 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center px-2 py-0.5 text-xs font-bold uppercase tracking-wider font-mono transition-colors focus:outline-none",
+  "inline-flex items-center px-2.5 py-0.5 text-xs font-medium tracking-wide font-mono transition-colors focus:outline-none",
   {
     variants: {
       variant: {
         default:
-          "bg-white text-black border border-white",
+          "bg-neutral-800 text-neutral-300 border border-neutral-700/40",
         secondary:
-          "bg-white text-black border border-white",
+          "bg-neutral-800 text-neutral-300 border border-neutral-700/40",
         destructive:
-          "bg-white text-black border border-white",
+          "bg-red-500/10 text-red-400 border border-red-500/20",
         outline:
-          "bg-black text-white border border-white",
+          "bg-transparent text-neutral-300 border border-neutral-700/40",
         success:
-          "bg-white text-black border border-white",
+          "bg-green-500/10 text-green-400 border border-green-500/20",
         warning:
-          "bg-white text-black border border-white",
+          "bg-neutral-800 text-neutral-300 border border-neutral-700/40",
         new:
-          "bg-black text-white border border-white",
+          "bg-neutral-800 text-neutral-400 border border-neutral-700/40",
         rising:
-          "bg-black text-white border border-white",
+          "bg-neutral-800 text-neutral-300 border border-neutral-700/40",
         established:
-          "bg-white text-black border border-white",
+          "bg-green-500/10 text-green-400 border border-green-500/20",
         top_rated:
-          "bg-white text-black border border-white",
+          "bg-neutral-800 text-neutral-300 border border-neutral-700/40",
       },
     },
     defaultVariants: {
