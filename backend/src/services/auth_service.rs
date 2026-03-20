@@ -2,6 +2,7 @@ use crate::config::Config;
 use crate::error::{AppError, Result};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -38,73 +39,96 @@ impl AuthService {
         (message, message_hash)
     }
 
-    /// Verify a Solana wallet signature (Ed25519)
+    /// Verify an EVM wallet signature (secp256k1/personal_sign)
     pub fn verify_signature(
         &self,
         wallet_address: &str,
         message: &str,
         signature: &str,
     ) -> Result<bool> {
-        use ed25519_dalek::{Signature, Verifier, VerifyingKey};
-
-        tracing::info!("Verifying signature for wallet: {}", wallet_address);
+        tracing::info!("Verifying EVM signature for wallet: {}", wallet_address);
         tracing::debug!("Message: {}", message);
         tracing::debug!("Signature (first 20 chars): {}...", &signature[..signature.len().min(20)]);
 
-        // Decode wallet address (base58 Solana pubkey)
-        let pubkey_bytes = bs58::decode(wallet_address)
-            .into_vec()
-            .map_err(|e| {
-                tracing::error!("Failed to decode wallet address: {}", e);
-                AppError::BadRequest(format!("Invalid wallet address: {}", e))
-            })?;
-
-        if pubkey_bytes.len() != 32 {
-            tracing::error!("Invalid wallet address length: {}", pubkey_bytes.len());
-            return Err(AppError::BadRequest("Invalid wallet address length".to_string()));
+        // Parse wallet address
+        let expected_address = wallet_address.to_lowercase();
+        if !expected_address.starts_with("0x") || expected_address.len() != 42 {
+            return Err(AppError::BadRequest("Invalid wallet address format".to_string()));
         }
 
-        let pubkey_array: [u8; 32] = pubkey_bytes
-            .try_into()
-            .map_err(|_| AppError::BadRequest("Invalid pubkey bytes".to_string()))?;
+        // Decode signature (65 bytes: r(32) + s(32) + v(1))
+        let sig_hex = signature.trim_start_matches("0x");
+        let sig_bytes = hex::decode(sig_hex).map_err(|e| {
+            tracing::error!("Failed to decode signature hex: {}", e);
+            AppError::BadRequest(format!("Invalid signature encoding: {}", e))
+        })?;
 
-        let verifying_key = VerifyingKey::from_bytes(&pubkey_array)
-            .map_err(|e| {
-                tracing::error!("Failed to create verifying key: {}", e);
-                AppError::BadRequest(format!("Invalid public key: {}", e))
-            })?;
-
-        // Decode signature - always try base58 first since Solana wallets use it
-        let sig_bytes = bs58::decode(signature)
-            .into_vec()
-            .or_else(|_| {
-                // Fallback to base64 if base58 fails
-                tracing::debug!("Base58 decode failed, trying base64");
-                base64::Engine::decode(&base64::engine::general_purpose::STANDARD, signature)
-            })
-            .map_err(|e| {
-                tracing::error!("Failed to decode signature: {}", e);
-                AppError::BadRequest(format!("Invalid signature encoding: {}", e))
-            })?;
-
-        tracing::debug!("Decoded signature length: {}", sig_bytes.len());
-
-        if sig_bytes.len() != 64 {
-            tracing::error!("Invalid signature length: {} (expected 64)", sig_bytes.len());
+        if sig_bytes.len() != 65 {
+            tracing::error!("Invalid signature length: {} (expected 65)", sig_bytes.len());
             return Err(AppError::BadRequest(format!(
-                "Invalid signature length: {} (expected 64)",
+                "Invalid signature length: {} (expected 65)",
                 sig_bytes.len()
             )));
         }
 
-        let sig_array: [u8; 64] = sig_bytes
-            .try_into()
-            .map_err(|_| AppError::BadRequest("Invalid signature bytes".to_string()))?;
+        // Split signature into r, s, v
+        let r = &sig_bytes[0..32];
+        let s = &sig_bytes[32..64];
+        let v = sig_bytes[64];
 
-        let signature = Signature::from_bytes(&sig_array);
+        // Convert v to recovery id (EIP-155 compatible)
+        let recovery_id = match v {
+            0 | 1 => v,
+            27 | 28 => v - 27,
+            _ => {
+                tracing::error!("Invalid recovery id: {}", v);
+                return Err(AppError::BadRequest(format!("Invalid recovery id: {}", v)));
+            }
+        };
 
-        let is_valid = verifying_key.verify(message.as_bytes(), &signature).is_ok();
-        tracing::info!("Signature verification result: {}", is_valid);
+        // Create the Ethereum signed message hash
+        // personal_sign uses: "\x19Ethereum Signed Message:\n" + len(message) + message
+        let prefixed_message = format!(
+            "\x19Ethereum Signed Message:\n{}{}",
+            message.len(),
+            message
+        );
+        let message_hash = keccak256(prefixed_message.as_bytes());
+
+        // Parse signature components
+        let mut sig_array = [0u8; 64];
+        sig_array[..32].copy_from_slice(r);
+        sig_array[32..].copy_from_slice(s);
+
+        let signature = Signature::from_slice(&sig_array).map_err(|e| {
+            tracing::error!("Failed to parse signature: {}", e);
+            AppError::BadRequest(format!("Invalid signature: {}", e))
+        })?;
+
+        let recovery_id = RecoveryId::try_from(recovery_id).map_err(|e| {
+            tracing::error!("Failed to parse recovery id: {}", e);
+            AppError::BadRequest(format!("Invalid recovery id: {}", e))
+        })?;
+
+        // Recover the public key
+        let recovered_key = VerifyingKey::recover_from_prehash(&message_hash, &signature, recovery_id)
+            .map_err(|e| {
+                tracing::error!("Failed to recover public key: {}", e);
+                AppError::BadRequest(format!("Signature recovery failed: {}", e))
+            })?;
+
+        // Derive address from public key
+        let public_key_bytes = recovered_key.to_encoded_point(false);
+        let public_key_hash = keccak256(&public_key_bytes.as_bytes()[1..]); // Skip the 0x04 prefix
+        let recovered_address = format!("0x{}", hex::encode(&public_key_hash[12..]));
+
+        let is_valid = recovered_address.to_lowercase() == expected_address;
+        tracing::info!(
+            "Signature verification result: {} (recovered: {}, expected: {})",
+            is_valid,
+            recovered_address,
+            expected_address
+        );
 
         Ok(is_valid)
     }
@@ -115,7 +139,7 @@ impl AuthService {
         let exp = now + Duration::hours(self.config.jwt_expiry_hours);
 
         let claims = Claims {
-            sub: wallet_address.to_string(),
+            sub: wallet_address.to_lowercase(),
             typ: "user".to_string(),
             id: user_id,
             exp: exp.timestamp(),
@@ -136,7 +160,7 @@ impl AuthService {
         let exp = now + Duration::hours(self.config.jwt_expiry_hours);
 
         let claims = Claims {
-            sub: wallet_address.to_string(),
+            sub: wallet_address.to_lowercase(),
             typ: "agent".to_string(),
             id: agent_id,
             exp: exp.timestamp(),
@@ -180,6 +204,17 @@ impl AuthService {
     }
 }
 
+/// Keccak-256 hash function (Ethereum's hash function)
+fn keccak256(data: &[u8]) -> [u8; 32] {
+    use sha3::{Digest, Keccak256};
+    let mut hasher = Keccak256::new();
+    hasher.update(data);
+    let result = hasher.finalize();
+    let mut output = [0u8; 32];
+    output.copy_from_slice(&result);
+    output
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,9 +227,10 @@ mod tests {
             redis_url: None,
             jwt_secret: "test_secret_key_for_testing_purposes".to_string(),
             jwt_expiry_hours: 24,
-            solana_rpc_url: None,
-            escrow_program_id: None,
-            usdc_mint: None,
+            evm_rpc_url: None,
+            chain_id: Some(195),
+            escrow_contract_address: None,
+            usdc_token_address: None,
             platform_wallet: None,
             fee_new_agent_bps: 1500,
             fee_rising_agent_bps: 1200,
@@ -209,7 +245,7 @@ mod tests {
     #[test]
     fn test_challenge_generation() {
         let auth = AuthService::new(test_config());
-        let wallet = "7xKXEePxzEQwvFdQdqGwq2hzTpxGqDkT8aN9JwSiNFt";
+        let wallet = "0x742d35Cc6634C0532925a3b844Bc9e7595f0Ab12";
 
         let (message, hash) = auth.generate_challenge(wallet);
 
@@ -223,7 +259,7 @@ mod tests {
     fn test_jwt_user_token_creation() {
         let auth = AuthService::new(test_config());
         let user_id = Uuid::new_v4();
-        let wallet = "7xKXEePxzEQwvFdQdqGwq2hzTpxGqDkT8aN9JwSiNFt";
+        let wallet = "0x742d35Cc6634C0532925a3b844Bc9e7595f0Ab12";
 
         let token = auth.create_user_token(user_id, wallet).unwrap();
 
@@ -235,7 +271,7 @@ mod tests {
     fn test_jwt_agent_token_creation() {
         let auth = AuthService::new(test_config());
         let agent_id = Uuid::new_v4();
-        let wallet = "7xKXEePxzEQwvFdQdqGwq2hzTpxGqDkT8aN9JwSiNFt";
+        let wallet = "0x742d35Cc6634C0532925a3b844Bc9e7595f0Ab12";
 
         let token = auth.create_agent_token(agent_id, wallet).unwrap();
 
@@ -249,12 +285,12 @@ mod tests {
     fn test_jwt_verification() {
         let auth = AuthService::new(test_config());
         let user_id = Uuid::new_v4();
-        let wallet = "7xKXEePxzEQwvFdQdqGwq2hzTpxGqDkT8aN9JwSiNFt";
+        let wallet = "0x742d35Cc6634C0532925a3b844Bc9e7595f0Ab12";
 
         let token = auth.create_user_token(user_id, wallet).unwrap();
         let claims = auth.verify_token(&token).unwrap();
 
-        assert_eq!(claims.sub, wallet);
+        assert_eq!(claims.sub, wallet.to_lowercase());
         assert_eq!(claims.typ, "user");
         assert_eq!(claims.id, user_id);
         assert!(claims.exp > Utc::now().timestamp());
@@ -276,7 +312,7 @@ mod tests {
         config2.jwt_secret = "different_secret".to_string();
         let auth2 = AuthService::new(config2);
 
-        let token = auth1.create_user_token(Uuid::new_v4(), "wallet").unwrap();
+        let token = auth1.create_user_token(Uuid::new_v4(), "0x742d35Cc6634C0532925a3b844Bc9e7595f0Ab12").unwrap();
         let result = auth2.verify_token(&token);
 
         assert!(result.is_err());

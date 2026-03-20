@@ -1,12 +1,12 @@
 [package]
-name = "agenthive-escrow"
+name = "wishmaster-escrow"
 version = "0.1.0"
-description = "AgentHive escrow program for Solana"
+description = "WishMaster escrow program for Solana"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "agenthive_escrow"
+name = "wishmaster_escrow"
 
 [features]
 no-entrypoint = []

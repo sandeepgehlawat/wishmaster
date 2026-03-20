@@ -11,6 +11,12 @@ pub mod reputation_service;
 pub mod wallet_service;
 pub mod cache_service;
 pub mod audit_service;
+pub mod message_service;
+pub mod requirement_service;
+pub mod deliverable_service;
+pub mod activity_service;
+pub mod portfolio_service;
+pub mod managed_service_service;
 
 use sqlx::PgPool;
 use crate::config::Config;
@@ -26,6 +32,12 @@ pub use reputation_service::ReputationService;
 pub use wallet_service::WalletService;
 pub use cache_service::CacheService;
 pub use audit_service::{AuditService, AuditAction};
+pub use message_service::MessageService;
+pub use requirement_service::RequirementService;
+pub use deliverable_service::DeliverableService;
+pub use activity_service::ActivityService;
+pub use portfolio_service::PortfolioService;
+pub use managed_service_service::ManagedServiceService;
 
 pub struct Services {
     pub db: PgPool,
@@ -41,6 +53,12 @@ pub struct Services {
     pub reputation: ReputationService,
     pub cache: CacheService,
     pub audit: AuditService,
+    pub messages: MessageService,
+    pub requirements: RequirementService,
+    pub deliverables: DeliverableService,
+    pub activity: ActivityService,
+    pub portfolio: PortfolioService,
+    pub managed_services: ManagedServiceService,
 }
 
 impl Services {
@@ -56,6 +74,12 @@ impl Services {
             reputation: ReputationService::new(db.clone()),
             cache: CacheService::new(redis.clone()),
             audit: AuditService::new(db.clone()),
+            messages: MessageService::new(db.clone()),
+            requirements: RequirementService::new(db.clone()),
+            deliverables: DeliverableService::new(db.clone()),
+            activity: ActivityService::new(db.clone()),
+            portfolio: PortfolioService::new(db.clone()),
+            managed_services: ManagedServiceService::new(db.clone()),
             db,
             redis,
             config,

@@ -1,9 +1,13 @@
 use crate::error::{AppError, Result};
 use crate::models::{
-    CreateJob, Job, JobListQuery, JobListResponse, JobStatus, JobWithDetails, UpdateJob,
+    CreateJob, Job, JobListQuery, JobListResponse, JobStatus, JobWithDetails, JobWithDetailsRow, UpdateJob,
 };
 use sqlx::PgPool;
 use uuid::Uuid;
+
+// Explicit column list for Job queries (avoids SELECT * issues with schema changes)
+// Note: sandbox_url and sandbox_project_id are optional - use COALESCE for backward compat
+const JOB_COLUMNS: &str = "id, client_id, agent_id, title, description, task_type, required_skills, complexity, budget_min, budget_max, final_price, pricing_model, deadline, bid_deadline, urgency, status, created_at, published_at, started_at, delivered_at, completed_at, sandbox_url, sandbox_project_id";
 
 #[derive(Clone)]
 pub struct JobService {
@@ -21,14 +25,14 @@ impl JobService {
             .map_err(|e| AppError::Internal(e.to_string()))?;
 
         let job = sqlx::query_as::<_, Job>(
-            r#"
+            &format!(r#"
             INSERT INTO jobs (
                 id, client_id, title, description, task_type, required_skills,
                 complexity, budget_min, budget_max, deadline, bid_deadline, urgency, status
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'draft')
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, JOB_COLUMNS),
         )
         .bind(id)
         .bind(client_id)
@@ -49,7 +53,7 @@ impl JobService {
     }
 
     pub async fn get(&self, id: Uuid) -> Result<Job> {
-        sqlx::query_as::<_, Job>("SELECT * FROM jobs WHERE id = $1")
+        sqlx::query_as::<_, Job>(&format!("SELECT {} FROM jobs WHERE id = $1", JOB_COLUMNS))
             .bind(id)
             .fetch_optional(&self.db)
             .await?
@@ -57,59 +61,70 @@ impl JobService {
     }
 
     pub async fn get_with_details(&self, id: Uuid) -> Result<JobWithDetails> {
-        // Fetch job first
-        let job = self.get(id).await?;
-
-        // Fetch client name
-        let client_name: (String,) = sqlx::query_as(
-            "SELECT display_name FROM users WHERE id = $1"
-        )
-        .bind(job.client_id)
-        .fetch_one(&self.db)
-        .await?;
-
-        // Fetch agent name if assigned
-        let agent_name: Option<String> = if let Some(agent_id) = job.agent_id {
-            let result: Option<(String,)> = sqlx::query_as(
-                "SELECT display_name FROM agents WHERE id = $1"
-            )
-            .bind(agent_id)
-            .fetch_optional(&self.db)
-            .await?;
-            result.map(|r| r.0)
-        } else {
-            None
-        };
-
-        // Count bids
-        let bid_count: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM bids WHERE job_id = $1 AND status != 'withdrawn'"
+        // Single optimized query with JOINs (avoids N+1)
+        let row = sqlx::query_as::<_, JobWithDetailsRow>(
+            r#"
+            SELECT
+                j.*,
+                u.display_name as client_name,
+                a.display_name as agent_name,
+                COALESCE(b.bid_count, 0) as bid_count
+            FROM jobs j
+            INNER JOIN users u ON u.id = j.client_id
+            LEFT JOIN agents a ON a.id = j.agent_id
+            LEFT JOIN (
+                SELECT job_id, COUNT(*) as bid_count
+                FROM bids
+                WHERE status != 'withdrawn'
+                GROUP BY job_id
+            ) b ON b.job_id = j.id
+            WHERE j.id = $1
+            "#
         )
         .bind(id)
-        .fetch_one(&self.db)
-        .await?;
+        .fetch_optional(&self.db)
+        .await?
+        .ok_or_else(|| AppError::NotFound(format!("Job {} not found", id)))?;
 
-        Ok(JobWithDetails {
-            job,
-            client_name: client_name.0,
-            agent_name,
-            bid_count: bid_count.0,
-        })
+        Ok(row.into())
     }
 
-    pub async fn list(&self, query: JobListQuery) -> Result<JobListResponse> {
+    /// List jobs for PUBLIC endpoint - excludes drafts and internal statuses
+    /// SECURITY: Does not allow filtering by client_id to prevent data leakage
+    /// OPTIMIZED: Uses JOINs to avoid N+1 queries
+    pub async fn list_public(&self, query: JobListQuery) -> Result<JobListResponse> {
         let page = query.page.unwrap_or(1).max(1);
         let limit = query.limit.unwrap_or(20).min(100);
         let offset = ((page - 1) * limit) as i64;
         let limit_i64 = limit as i64;
 
-        // Simplified query - fetch jobs with basic filters
-        let jobs: Vec<Job> = if let Some(status) = &query.status {
-            sqlx::query_as::<_, Job>(
+        // Public statuses only - no draft, publishing, approving, etc.
+        let public_statuses = vec!["open", "bidding", "assigned", "in_progress", "delivered", "completed"];
+
+        // Single optimized query with JOINs (avoids N+1)
+        let rows: Vec<JobWithDetailsRow> = if let Some(status) = &query.status {
+            // Only allow filtering to public statuses
+            if !public_statuses.contains(&status.as_str()) {
+                return Ok(JobListResponse { jobs: vec![], total: 0, page, limit });
+            }
+            sqlx::query_as::<_, JobWithDetailsRow>(
                 r#"
-                SELECT * FROM jobs
-                WHERE status = $1
-                ORDER BY created_at DESC
+                SELECT
+                    j.*,
+                    u.display_name as client_name,
+                    a.display_name as agent_name,
+                    COALESCE(b.bid_count, 0) as bid_count
+                FROM jobs j
+                INNER JOIN users u ON u.id = j.client_id
+                LEFT JOIN agents a ON a.id = j.agent_id
+                LEFT JOIN (
+                    SELECT job_id, COUNT(*) as bid_count
+                    FROM bids
+                    WHERE status != 'withdrawn'
+                    GROUP BY job_id
+                ) b ON b.job_id = j.id
+                WHERE j.status = $1
+                ORDER BY j.created_at DESC
                 LIMIT $2 OFFSET $3
                 "#
             )
@@ -119,10 +134,25 @@ impl JobService {
             .fetch_all(&self.db)
             .await?
         } else {
-            sqlx::query_as::<_, Job>(
+            // Default: show all public jobs
+            sqlx::query_as::<_, JobWithDetailsRow>(
                 r#"
-                SELECT * FROM jobs
-                ORDER BY created_at DESC
+                SELECT
+                    j.*,
+                    u.display_name as client_name,
+                    a.display_name as agent_name,
+                    COALESCE(b.bid_count, 0) as bid_count
+                FROM jobs j
+                INNER JOIN users u ON u.id = j.client_id
+                LEFT JOIN agents a ON a.id = j.agent_id
+                LEFT JOIN (
+                    SELECT job_id, COUNT(*) as bid_count
+                    FROM bids
+                    WHERE status != 'withdrawn'
+                    GROUP BY job_id
+                ) b ON b.job_id = j.id
+                WHERE j.status IN ('open', 'bidding', 'assigned', 'in_progress', 'delivered', 'completed')
+                ORDER BY j.created_at DESC
                 LIMIT $1 OFFSET $2
                 "#
             )
@@ -133,52 +163,133 @@ impl JobService {
         };
 
         let total: (i64,) = if let Some(status) = &query.status {
+            if !public_statuses.contains(&status.as_str()) {
+                return Ok(JobListResponse { jobs: vec![], total: 0, page, limit });
+            }
             sqlx::query_as("SELECT COUNT(*) FROM jobs WHERE status = $1")
                 .bind(status)
                 .fetch_one(&self.db)
                 .await?
         } else {
-            sqlx::query_as("SELECT COUNT(*) FROM jobs")
+            sqlx::query_as("SELECT COUNT(*) FROM jobs WHERE status IN ('open', 'bidding', 'assigned', 'in_progress', 'delivered', 'completed')")
                 .fetch_one(&self.db)
                 .await?
         };
 
-        // Fetch details for each job
-        let mut jobs_with_details = Vec::new();
-        for job in jobs {
-            let client_name: (String,) = sqlx::query_as(
-                "SELECT display_name FROM users WHERE id = $1"
-            )
-            .bind(job.client_id)
-            .fetch_one(&self.db)
-            .await?;
+        // Convert rows to JobWithDetails
+        let jobs_with_details: Vec<JobWithDetails> = rows.into_iter().map(|r| r.into()).collect();
 
-            let agent_name: Option<String> = if let Some(agent_id) = job.agent_id {
-                let result: Option<(String,)> = sqlx::query_as(
-                    "SELECT display_name FROM agents WHERE id = $1"
-                )
-                .bind(agent_id)
-                .fetch_optional(&self.db)
-                .await?;
-                result.map(|r| r.0)
-            } else {
-                None
-            };
+        Ok(JobListResponse {
+            jobs: jobs_with_details,
+            total: total.0,
+            page,
+            limit,
+        })
+    }
 
-            let bid_count: (i64,) = sqlx::query_as(
-                "SELECT COUNT(*) FROM bids WHERE job_id = $1 AND status != 'withdrawn'"
-            )
-            .bind(job.id)
-            .fetch_one(&self.db)
-            .await?;
+    /// List jobs for AUTHENTICATED users - allows filtering by client_id
+    /// OPTIMIZED: Uses JOINs to avoid N+1 queries
+    pub async fn list(&self, query: JobListQuery) -> Result<JobListResponse> {
+        let page = query.page.unwrap_or(1).max(1);
+        let limit = query.limit.unwrap_or(20).min(100);
+        let offset = ((page - 1) * limit) as i64;
+        let limit_i64 = limit as i64;
 
-            jobs_with_details.push(JobWithDetails {
-                job,
-                client_name: client_name.0,
-                agent_name,
-                bid_count: bid_count.0,
-            });
-        }
+        // Base query with JOINs for all related data
+        let base_select = r#"
+            SELECT
+                j.*,
+                u.display_name as client_name,
+                a.display_name as agent_name,
+                COALESCE(b.bid_count, 0) as bid_count
+            FROM jobs j
+            INNER JOIN users u ON u.id = j.client_id
+            LEFT JOIN agents a ON a.id = j.agent_id
+            LEFT JOIN (
+                SELECT job_id, COUNT(*) as bid_count
+                FROM bids
+                WHERE status != 'withdrawn'
+                GROUP BY job_id
+            ) b ON b.job_id = j.id
+        "#;
+
+        // Build dynamic query based on filters (single optimized query)
+        let rows: Vec<JobWithDetailsRow> = match (&query.status, &query.client_id) {
+            (Some(status), Some(client_id)) => {
+                sqlx::query_as::<_, JobWithDetailsRow>(&format!(
+                    "{} WHERE j.status = $1 AND j.client_id = $2 ORDER BY j.created_at DESC LIMIT $3 OFFSET $4",
+                    base_select
+                ))
+                .bind(status)
+                .bind(client_id)
+                .bind(limit_i64)
+                .bind(offset)
+                .fetch_all(&self.db)
+                .await?
+            }
+            (Some(status), None) => {
+                sqlx::query_as::<_, JobWithDetailsRow>(&format!(
+                    "{} WHERE j.status = $1 ORDER BY j.created_at DESC LIMIT $2 OFFSET $3",
+                    base_select
+                ))
+                .bind(status)
+                .bind(limit_i64)
+                .bind(offset)
+                .fetch_all(&self.db)
+                .await?
+            }
+            (None, Some(client_id)) => {
+                sqlx::query_as::<_, JobWithDetailsRow>(&format!(
+                    "{} WHERE j.client_id = $1 ORDER BY j.created_at DESC LIMIT $2 OFFSET $3",
+                    base_select
+                ))
+                .bind(client_id)
+                .bind(limit_i64)
+                .bind(offset)
+                .fetch_all(&self.db)
+                .await?
+            }
+            (None, None) => {
+                sqlx::query_as::<_, JobWithDetailsRow>(&format!(
+                    "{} ORDER BY j.created_at DESC LIMIT $1 OFFSET $2",
+                    base_select
+                ))
+                .bind(limit_i64)
+                .bind(offset)
+                .fetch_all(&self.db)
+                .await?
+            }
+        };
+
+        let total: (i64,) = match (&query.status, &query.client_id) {
+            (Some(status), Some(client_id)) => {
+                sqlx::query_as("SELECT COUNT(*) FROM jobs WHERE status = $1 AND client_id = $2")
+                    .bind(status)
+                    .bind(client_id)
+                    .fetch_one(&self.db)
+                    .await?
+            }
+            (Some(status), None) => {
+                sqlx::query_as("SELECT COUNT(*) FROM jobs WHERE status = $1")
+                    .bind(status)
+                    .fetch_one(&self.db)
+                    .await?
+            }
+            (None, Some(client_id)) => {
+                sqlx::query_as("SELECT COUNT(*) FROM jobs WHERE client_id = $1")
+                    .bind(client_id)
+                    .fetch_one(&self.db)
+                    .await?
+            }
+            (None, None) => {
+                sqlx::query_as("SELECT COUNT(*) FROM jobs")
+                    .fetch_one(&self.db)
+                    .await?
+            }
+        };
+
+        // Convert rows to JobWithDetails
+        let jobs_with_details: Vec<JobWithDetails> = rows.into_iter().map(|r| r.into()).collect();
 
         Ok(JobListResponse {
             jobs: jobs_with_details,
@@ -204,7 +315,7 @@ impl JobService {
         }
 
         let updated = sqlx::query_as::<_, Job>(
-            r#"
+            &format!(r#"
             UPDATE jobs SET
                 title = COALESCE($2, title),
                 description = COALESCE($3, description),
@@ -215,11 +326,10 @@ impl JobService {
                 budget_max = COALESCE($8, budget_max),
                 deadline = COALESCE($9, deadline),
                 bid_deadline = COALESCE($10, bid_deadline),
-                urgency = COALESCE($11, urgency),
-                updated_at = NOW()
+                urgency = COALESCE($11, urgency)
             WHERE id = $1
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, JOB_COLUMNS),
         )
         .bind(id)
         .bind(&input.title)
@@ -265,11 +375,11 @@ impl JobService {
 
         let query = if !timestamp_column.is_empty() {
             format!(
-                "UPDATE jobs SET status = $2, {} = NOW(), updated_at = NOW() WHERE id = $1 AND status = $3 RETURNING *",
-                timestamp_column
+                "UPDATE jobs SET status = $2, {} = NOW() WHERE id = $1 AND status = $3 RETURNING {}",
+                timestamp_column, JOB_COLUMNS
             )
         } else {
-            "UPDATE jobs SET status = $2, updated_at = NOW() WHERE id = $1 AND status = $3 RETURNING *".to_string()
+            format!("UPDATE jobs SET status = $2 WHERE id = $1 AND status = $3 RETURNING {}", JOB_COLUMNS)
         };
 
         let job = sqlx::query_as::<_, Job>(&query)
@@ -287,15 +397,15 @@ impl JobService {
 
     pub async fn assign_agent(&self, job_id: Uuid, agent_id: Uuid, price: f64) -> Result<Job> {
         let job = sqlx::query_as::<_, Job>(
-            r#"
+            &format!(r#"
             UPDATE jobs SET
                 agent_id = $2,
                 final_price = $3,
                 status = 'assigned',
-                updated_at = NOW()
+                started_at = NOW()
             WHERE id = $1 AND status = 'bidding'
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, JOB_COLUMNS),
         )
         .bind(job_id)
         .bind(agent_id)

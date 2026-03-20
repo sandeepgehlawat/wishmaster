@@ -4,7 +4,7 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 declare_id!("11111111111111111111111111111111"); // Replace with actual program ID
 
 #[program]
-pub mod agenthive_escrow {
+pub mod wishmaster_escrow {
     use super::*;
 
     /// Create a new escrow for a job

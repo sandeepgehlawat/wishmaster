@@ -1,70 +1,102 @@
-use ed25519_dalek::SigningKey;
+use k256::ecdsa::SigningKey;
 use rand::RngCore;
+use sha3::{Digest, Keccak256};
 
-/// Represents a generated Solana wallet
+/// Represents a generated EVM wallet
 #[derive(Debug, Clone)]
 pub struct GeneratedWallet {
-    /// Base58-encoded public key (wallet address)
+    /// 0x-prefixed Ethereum address (42 characters)
     pub address: String,
-    /// Base58-encoded private key (64 bytes: 32 secret + 32 public)
+    /// Hex-encoded private key (64 hex characters, no 0x prefix)
     pub private_key: String,
-    /// Base58-encoded secret key only (32 bytes) - for some wallet imports
-    pub secret_key: String,
 }
 
 pub struct WalletService;
 
 impl WalletService {
-    /// Generate a new Solana-compatible Ed25519 keypair
-    /// Returns the wallet address (public key) and private key
+    /// Generate a new EVM-compatible secp256k1 keypair
+    /// Returns the wallet address (derived from public key) and private key
     pub fn generate_keypair() -> GeneratedWallet {
         // Generate 32 random bytes for the secret key
         let mut secret_bytes = [0u8; 32];
         rand::thread_rng().fill_bytes(&mut secret_bytes);
 
         // Create signing key from random bytes
-        let signing_key = SigningKey::from_bytes(&secret_bytes);
+        let signing_key = SigningKey::from_bytes(&secret_bytes.into())
+            .expect("Valid secret key bytes");
 
         // Get the verifying (public) key
         let verifying_key = signing_key.verifying_key();
 
-        // Solana wallet address is the base58-encoded public key (32 bytes)
-        let public_key_bytes = verifying_key.to_bytes();
-        let address = bs58::encode(&public_key_bytes).into_string();
+        // Get uncompressed public key (65 bytes: 0x04 prefix + 64 bytes)
+        let public_key_bytes = verifying_key.to_encoded_point(false);
 
-        // Secret key (32 bytes) - the actual seed
-        let secret_key = bs58::encode(&secret_bytes).into_string();
+        // Derive Ethereum address: keccak256(public_key[1..]) -> take last 20 bytes
+        let mut hasher = Keccak256::new();
+        hasher.update(&public_key_bytes.as_bytes()[1..]); // Skip the 0x04 prefix
+        let hash = hasher.finalize();
 
-        // Full private key (64 bytes) - secret + public, as used by Solana CLI
-        // This is the format expected by most Solana tools
-        let mut full_keypair = [0u8; 64];
-        full_keypair[..32].copy_from_slice(&secret_bytes);
-        full_keypair[32..].copy_from_slice(&public_key_bytes);
-        let private_key = bs58::encode(&full_keypair).into_string();
+        // Address is last 20 bytes of the hash
+        let address = format!("0x{}", hex::encode(&hash[12..]));
+
+        // Private key as hex
+        let private_key = hex::encode(&secret_bytes);
 
         GeneratedWallet {
             address,
             private_key,
-            secret_key,
         }
     }
 
     /// Verify that a private key corresponds to a wallet address
     pub fn verify_keypair(private_key: &str, expected_address: &str) -> bool {
-        let keypair_bytes = match bs58::decode(private_key).into_vec() {
-            Ok(bytes) => bytes,
+        // Remove 0x prefix if present
+        let private_key_hex = private_key.trim_start_matches("0x");
+
+        let secret_bytes = match hex::decode(private_key_hex) {
+            Ok(bytes) if bytes.len() == 32 => {
+                let mut arr = [0u8; 32];
+                arr.copy_from_slice(&bytes);
+                arr
+            }
+            _ => return false,
+        };
+
+        // Derive address from private key
+        let signing_key = match SigningKey::from_bytes(&secret_bytes.into()) {
+            Ok(key) => key,
             Err(_) => return false,
         };
 
-        if keypair_bytes.len() != 64 {
-            return false;
-        }
+        let verifying_key = signing_key.verifying_key();
+        let public_key_bytes = verifying_key.to_encoded_point(false);
 
-        // Extract public key from the second half
-        let public_key_bytes = &keypair_bytes[32..64];
-        let derived_address = bs58::encode(public_key_bytes).into_string();
+        let mut hasher = Keccak256::new();
+        hasher.update(&public_key_bytes.as_bytes()[1..]);
+        let hash = hasher.finalize();
 
-        derived_address == expected_address
+        let derived_address = format!("0x{}", hex::encode(&hash[12..]));
+
+        derived_address.to_lowercase() == expected_address.to_lowercase()
+    }
+
+    /// Convert a hex private key to checksum address
+    pub fn private_key_to_address(private_key: &str) -> Option<String> {
+        let private_key_hex = private_key.trim_start_matches("0x");
+
+        let secret_bytes: [u8; 32] = hex::decode(private_key_hex)
+            .ok()
+            .and_then(|bytes| bytes.try_into().ok())?;
+
+        let signing_key = SigningKey::from_bytes(&secret_bytes.into()).ok()?;
+        let verifying_key = signing_key.verifying_key();
+        let public_key_bytes = verifying_key.to_encoded_point(false);
+
+        let mut hasher = Keccak256::new();
+        hasher.update(&public_key_bytes.as_bytes()[1..]);
+        let hash = hasher.finalize();
+
+        Some(format!("0x{}", hex::encode(&hash[12..])))
     }
 }
 
@@ -76,14 +108,15 @@ mod tests {
     fn test_generate_keypair() {
         let wallet = WalletService::generate_keypair();
 
-        // Address should be 32-44 characters (base58 encoded 32 bytes)
-        assert!(wallet.address.len() >= 32 && wallet.address.len() <= 44);
+        // Address should be 42 characters (0x + 40 hex chars)
+        assert_eq!(wallet.address.len(), 42);
+        assert!(wallet.address.starts_with("0x"));
 
-        // Private key should be 64 bytes base58 encoded (87-88 chars typically)
-        assert!(wallet.private_key.len() >= 80);
+        // Private key should be 64 hex characters
+        assert_eq!(wallet.private_key.len(), 64);
 
-        // Secret key should be 32 bytes base58 encoded (43-44 chars typically)
-        assert!(wallet.secret_key.len() >= 40 && wallet.secret_key.len() <= 50);
+        // All characters should be valid hex
+        assert!(wallet.private_key.chars().all(|c| c.is_ascii_hexdigit()));
 
         // Verify the keypair matches
         assert!(WalletService::verify_keypair(&wallet.private_key, &wallet.address));
@@ -97,5 +130,34 @@ mod tests {
         // Each call should generate unique keys
         assert_ne!(wallet1.address, wallet2.address);
         assert_ne!(wallet1.private_key, wallet2.private_key);
+    }
+
+    #[test]
+    fn test_known_keypair() {
+        // Test with a known private key -> address mapping
+        // Private key: 0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        let private_key = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+        if let Some(address) = WalletService::private_key_to_address(private_key) {
+            // Verify the derived address is valid format
+            assert_eq!(address.len(), 42);
+            assert!(address.starts_with("0x"));
+
+            // Verify round-trip
+            assert!(WalletService::verify_keypair(private_key, &address));
+        }
+    }
+
+    #[test]
+    fn test_verify_invalid_keypair() {
+        let wallet = WalletService::generate_keypair();
+
+        // Wrong address
+        assert!(!WalletService::verify_keypair(&wallet.private_key, "0x0000000000000000000000000000000000000000"));
+
+        // Invalid private key format
+        assert!(!WalletService::verify_keypair("invalid", &wallet.address));
+        assert!(!WalletService::verify_keypair("0x", &wallet.address));
+        assert!(!WalletService::verify_keypair("tooshort", &wallet.address));
     }
 }

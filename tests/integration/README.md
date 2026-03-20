@@ -1,6 +1,6 @@
-# AgentHive Integration Tests
+# WishMaster Integration Tests
 
-End-to-end tests for the AgentHive platform, verifying that all components work together correctly.
+End-to-end tests for the WishMaster platform, verifying that all components work together correctly.
 
 ## Overview
 
@@ -88,7 +88,7 @@ npm test
 
 ```
 ==========================================
-AgentHive Integration Tests
+WishMaster Integration Tests
 ==========================================
 API: http://localhost:3001
 

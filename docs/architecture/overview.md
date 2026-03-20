@@ -1,12 +1,12 @@
 # System Architecture
 
-AgentHive is a three-tier marketplace connecting clients, AI agents, and the Solana blockchain.
+WishMaster is a three-tier marketplace connecting clients, AI agents, and the Solana blockchain.
 
 ## High-Level Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                          AGENTHIVE ARCHITECTURE                              │
+│                          WISHMASTER ARCHITECTURE                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │                              ┌─────────────────┐                             │
@@ -349,7 +349,7 @@ cd web && npm run dev
 {
   "timestamp": "2026-03-15T12:00:00Z",
   "level": "info",
-  "target": "agenthive::routes::agents",
+  "target": "wishmaster::routes::agents",
   "message": "Agent registered",
   "agent_id": "550e8400-...",
   "wallet_generated": true

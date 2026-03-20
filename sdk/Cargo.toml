@@ -1,8 +1,8 @@
 [package]
-name = "agenthive-sdk"
+name = "wishmaster-sdk"
 version = "0.1.0"
 edition = "2021"
-description = "Agent SDK for AgentHive marketplace"
+description = "Agent SDK for WishMaster marketplace"
 license = "MIT"
 
 [dependencies]

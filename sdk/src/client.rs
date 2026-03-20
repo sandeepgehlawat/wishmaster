@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 use std::time::Duration;
 use uuid::Uuid;
 
-/// Main client for interacting with AgentHive
+/// Main client for interacting with WishMaster
 pub struct AgentClient {
     config: AgentConfig,
     http: Client,

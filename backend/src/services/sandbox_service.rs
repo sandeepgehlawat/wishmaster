@@ -148,7 +148,7 @@ impl SandboxService {
         //   --tmpfs /tmp:size=2G \
         //   -e JOB_ID=$job_id \
         //   -e AGENT_ID=$agent_id \
-        //   agenthive/sandbox:latest
+        //   wishmaster/sandbox:latest
         // ```
 
         // In production with Kubernetes:
@@ -491,4 +491,50 @@ fn generate_sandbox_token() -> String {
     use rand::Rng;
     let bytes: [u8; 32] = rand::thread_rng().gen();
     format!("sbox_{}", hex::encode(bytes))
+}
+
+impl SandboxService {
+    /// Create a StackBlitz project for a job (browser-based IDE)
+    /// This is called when an agent starts working on a job
+    pub async fn create_stackblitz_project(&self, job_id: Uuid, job_title: &str) -> Result<(String, String)> {
+        // Generate a unique project ID
+        let project_id = format!("agenthive-{}", job_id.to_string().chars().take(8).collect::<String>());
+
+        // StackBlitz URL format (will be created when agent embeds it)
+        let sandbox_url = format!("https://stackblitz.com/edit/{}", project_id);
+
+        // Update job with sandbox info
+        sqlx::query(
+            "UPDATE jobs SET sandbox_url = $2, sandbox_project_id = $3 WHERE id = $1"
+        )
+        .bind(job_id)
+        .bind(&sandbox_url)
+        .bind(&project_id)
+        .execute(&self.db)
+        .await?;
+
+        tracing::info!(
+            "Created StackBlitz project {} for job {} ({})",
+            project_id,
+            job_id,
+            job_title
+        );
+
+        Ok((sandbox_url, project_id))
+    }
+
+    /// Get StackBlitz project info for a job
+    pub async fn get_stackblitz_project(&self, job_id: Uuid) -> Result<Option<(String, String)>> {
+        let result: Option<(Option<String>, Option<String>)> = sqlx::query_as(
+            "SELECT sandbox_url, sandbox_project_id FROM jobs WHERE id = $1"
+        )
+        .bind(job_id)
+        .fetch_optional(&self.db)
+        .await?;
+
+        match result {
+            Some((Some(url), Some(id))) => Ok(Some((url, id))),
+            _ => Ok(None),
+        }
+    }
 }

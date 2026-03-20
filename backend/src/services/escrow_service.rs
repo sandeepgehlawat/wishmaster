@@ -2,20 +2,19 @@ use crate::config::Config;
 use crate::error::{AppError, Result};
 use crate::models::{Escrow, EscrowDetails, FundTransactionResponse, ReleaseResult};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use sha3::{Digest, Keccak256};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-// Program ID - must match deployed escrow program
-const ESCROW_PROGRAM_ID: &str = "AHEscrow11111111111111111111111111111111111";
+// Explicit column list for Escrow queries (avoids SELECT * issues with schema changes)
+const ESCROW_COLUMNS: &str = "id, job_id, escrow_pda, client_wallet, agent_wallet, amount_usdc, platform_fee_usdc, agent_payout_usdc, status, created_at, funded_at, released_at, create_tx, fund_tx, release_tx";
 
-// USDC mint addresses
-const USDC_MINT_MAINNET: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-const USDC_MINT_DEVNET: &str = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+// Default escrow contract address (to be deployed on X Layer)
+const DEFAULT_ESCROW_CONTRACT: &str = "0x0000000000000000000000000000000000000000";
 
-// SPL Token Program ID
-const TOKEN_PROGRAM_ID: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
-const ASSOCIATED_TOKEN_PROGRAM_ID: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+// USDC token addresses on X Layer
+const USDC_XLAYER_MAINNET: &str = "0x0000000000000000000000000000000000000000"; // TBD after deployment
+const USDC_XLAYER_TESTNET: &str = "0x0000000000000000000000000000000000000000"; // TBD after deployment
 
 #[derive(Clone)]
 pub struct EscrowService {
@@ -23,12 +22,13 @@ pub struct EscrowService {
     config: Config,
     http_client: reqwest::Client,
     rpc_url: String,
-    program_id: [u8; 32],
-    usdc_mint: [u8; 32],
+    escrow_contract: String,
+    usdc_token: String,
+    chain_id: u64,
 }
 
 #[derive(Serialize)]
-struct RpcRequest {
+struct JsonRpcRequest {
     jsonrpc: &'static str,
     id: u64,
     method: String,
@@ -36,95 +36,60 @@ struct RpcRequest {
 }
 
 #[derive(Deserialize)]
-struct RpcResponse<T> {
+struct JsonRpcResponse<T> {
     result: Option<T>,
-    error: Option<RpcError>,
+    error: Option<JsonRpcError>,
 }
 
 #[derive(Deserialize)]
-struct RpcError {
+struct JsonRpcError {
     code: i64,
     message: String,
 }
 
 #[derive(Deserialize)]
-struct SignatureStatus {
-    err: Option<serde_json::Value>,
-}
-
-#[derive(Deserialize)]
-struct SignatureStatusResult {
-    value: Vec<Option<SignatureStatus>>,
+struct TransactionReceipt {
+    status: String,
+    #[serde(rename = "blockNumber")]
+    block_number: Option<String>,
+    #[serde(rename = "transactionHash")]
+    transaction_hash: String,
 }
 
 impl EscrowService {
     pub fn new(db: PgPool, config: Config) -> Self {
-        let rpc_url = config.solana_rpc_url.clone()
-            .unwrap_or_else(|| "https://api.devnet.solana.com".to_string());
+        let rpc_url = config.get_rpc_url();
+        let chain_id = config.chain_id.unwrap_or(195); // Default to X Layer Testnet
 
-        let program_id = bs58_to_bytes(
-            &config.escrow_program_id.clone().unwrap_or_else(|| ESCROW_PROGRAM_ID.to_string())
-        );
+        let escrow_contract = config.escrow_contract_address.clone()
+            .unwrap_or_else(|| DEFAULT_ESCROW_CONTRACT.to_string());
 
-        let usdc_mint = if config.is_devnet() {
-            bs58_to_bytes(USDC_MINT_DEVNET)
-        } else {
-            bs58_to_bytes(USDC_MINT_MAINNET)
-        };
+        let usdc_token = config.usdc_token_address.clone()
+            .unwrap_or_else(|| {
+                if config.is_mainnet() {
+                    USDC_XLAYER_MAINNET.to_string()
+                } else {
+                    USDC_XLAYER_TESTNET.to_string()
+                }
+            });
 
         Self {
             db,
             config,
             http_client: reqwest::Client::new(),
             rpc_url,
-            program_id,
-            usdc_mint,
+            escrow_contract,
+            usdc_token,
+            chain_id,
         }
     }
 
-    /// Derive PDA for escrow account
-    pub fn derive_escrow_pda(&self, job_id: Uuid) -> (String, u8) {
-        let job_bytes = job_id.as_bytes();
-        let mut seeds = [0u8; 32];
-        seeds[..16].copy_from_slice(job_bytes);
-
-        // Find PDA by trying bump seeds from 255 down
-        for bump in (0u8..=255).rev() {
-            if let Some(pda) = try_find_pda(&[b"escrow", &seeds], bump, &self.program_id) {
-                return (bs58::encode(&pda).into_string(), bump);
-            }
-        }
-
-        // Fallback (shouldn't happen)
-        (format!("ESCROW_PDA_{}", job_id), 0)
-    }
-
-    /// Derive vault PDA for escrow's token account
-    pub fn derive_vault_pda(&self, escrow_pda_bytes: &[u8; 32]) -> (String, u8) {
-        for bump in (0u8..=255).rev() {
-            if let Some(pda) = try_find_pda(&[b"vault", escrow_pda_bytes], bump, &self.program_id) {
-                return (bs58::encode(&pda).into_string(), bump);
-            }
-        }
-        ("VAULT_PDA".to_string(), 0)
-    }
-
-    /// Get Associated Token Address for a wallet
-    pub fn get_associated_token_address(&self, wallet: &[u8; 32]) -> String {
-        let ata_program = bs58_to_bytes(ASSOCIATED_TOKEN_PROGRAM_ID);
-        let token_program = bs58_to_bytes(TOKEN_PROGRAM_ID);
-
-        // ATA seeds: [wallet, token_program, mint]
-        for bump in (0u8..=255).rev() {
-            if let Some(pda) = try_find_pda(
-                &[wallet, &token_program, &self.usdc_mint],
-                bump,
-                &ata_program,
-            ) {
-                return bs58::encode(&pda).into_string();
-            }
-        }
-        "ATA".to_string()
+    /// Generate a deterministic escrow ID from job ID
+    fn generate_escrow_id(job_id: Uuid) -> String {
+        let mut hasher = Keccak256::new();
+        hasher.update(job_id.as_bytes());
+        let hash = hasher.finalize();
+        format!("0x{}", hex::encode(&hash[..32]))
     }
 
     /// Create escrow record when job is published
@@ -136,20 +101,20 @@ impl EscrowService {
     ) -> Result<Escrow> {
         let id = Uuid::new_v4();
 
-        // Derive real PDA
-        let (escrow_pda, _bump) = self.derive_escrow_pda(job_id);
+        // Generate deterministic escrow ID from job ID
+        let escrow_id = Self::generate_escrow_id(job_id);
 
         let escrow = sqlx::query_as::<_, Escrow>(
-            r#"
+            &format!(r#"
             INSERT INTO escrows (id, job_id, escrow_pda, client_wallet, amount_usdc, status)
             VALUES ($1, $2, $3, $4, $5, 'created')
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, ESCROW_COLUMNS),
         )
         .bind(id)
         .bind(job_id)
-        .bind(&escrow_pda)
-        .bind(client_wallet)
+        .bind(&escrow_id) // Using escrow_pda column for escrow_id
+        .bind(client_wallet.to_lowercase())
         .bind(amount)
         .fetch_one(&self.db)
         .await?;
@@ -160,7 +125,7 @@ impl EscrowService {
     /// Get escrow with details
     pub async fn get_escrow(&self, job_id: Uuid) -> Result<EscrowDetails> {
         let escrow: Escrow = sqlx::query_as(
-            "SELECT * FROM escrows WHERE job_id = $1"
+            &format!("SELECT {} FROM escrows WHERE job_id = $1", ESCROW_COLUMNS)
         )
         .bind(job_id)
         .fetch_optional(&self.db)
@@ -201,21 +166,22 @@ impl EscrowService {
         })
     }
 
-    /// Generate fund transaction for client to sign
+    /// Generate fund transaction data for client to sign
+    /// This returns the contract call data for the deposit function
     pub async fn generate_fund_transaction(
         &self,
         job_id: Uuid,
         client_wallet: &str,
     ) -> Result<FundTransactionResponse> {
         let escrow = sqlx::query_as::<_, Escrow>(
-            "SELECT * FROM escrows WHERE job_id = $1"
+            &format!("SELECT {} FROM escrows WHERE job_id = $1", ESCROW_COLUMNS)
         )
         .bind(job_id)
         .fetch_optional(&self.db)
         .await?
         .ok_or_else(|| AppError::NotFound("Escrow not found".to_string()))?;
 
-        if escrow.client_wallet != client_wallet {
+        if escrow.client_wallet.to_lowercase() != client_wallet.to_lowercase() {
             return Err(AppError::Forbidden("Not your escrow".to_string()));
         }
 
@@ -224,55 +190,87 @@ impl EscrowService {
         }
 
         let amount: f64 = escrow.amount_usdc.to_string().parse().unwrap_or(0.0);
-        let amount_lamports = (amount * 1_000_000.0) as u64;
+        // USDC has 6 decimals
+        let amount_wei = (amount * 1_000_000.0) as u64;
 
-        let client_bytes = bs58_to_bytes(client_wallet);
-        let escrow_pda_bytes = bs58_to_bytes(&escrow.escrow_pda);
-        let (vault_pda, _) = self.derive_vault_pda(&escrow_pda_bytes);
+        // Generate escrow ID (bytes32)
+        let escrow_id = Self::generate_escrow_id(job_id);
 
-        let client_ata = self.get_associated_token_address(&client_bytes);
+        // ABI encode: deposit(bytes32 jobId, uint256 amount)
+        // Function selector: first 4 bytes of keccak256("deposit(bytes32,uint256)")
+        let function_selector = &keccak256(b"deposit(bytes32,uint256)")[..4];
 
-        // Build instruction data for deposit
-        // Discriminator for "deposit" instruction
-        let discriminator = get_instruction_discriminator("global:deposit");
+        // Encode jobId as bytes32 (pad to 32 bytes)
+        let job_id_bytes = hex::decode(&escrow_id[2..]).unwrap_or_default();
+        let mut job_id_padded = [0u8; 32];
+        let copy_len = job_id_bytes.len().min(32);
+        job_id_padded[..copy_len].copy_from_slice(&job_id_bytes[..copy_len]);
 
-        // Build serialized instruction info for frontend
-        let instruction_info = serde_json::json!({
-            "program_id": bs58::encode(&self.program_id).into_string(),
-            "discriminator": bs58::encode(&discriminator).into_string(),
-            "accounts": [
-                {"pubkey": client_wallet, "is_signer": true, "is_writable": true},
-                {"pubkey": escrow.escrow_pda, "is_signer": false, "is_writable": true},
-                {"pubkey": client_ata, "is_signer": false, "is_writable": true},
-                {"pubkey": vault_pda, "is_signer": false, "is_writable": true},
-                {"pubkey": TOKEN_PROGRAM_ID, "is_signer": false, "is_writable": false},
-            ],
-            "amount_lamports": amount_lamports,
+        // Encode amount as uint256 (pad to 32 bytes)
+        let mut amount_bytes = [0u8; 32];
+        let amount_be = amount_wei.to_be_bytes();
+        amount_bytes[24..].copy_from_slice(&amount_be);
+
+        // Combine: selector + jobId + amount
+        let mut calldata = Vec::with_capacity(4 + 64);
+        calldata.extend_from_slice(function_selector);
+        calldata.extend_from_slice(&job_id_padded);
+        calldata.extend_from_slice(&amount_bytes);
+
+        // Also need to approve USDC transfer first
+        // approve(address spender, uint256 amount)
+        let approve_selector = &keccak256(b"approve(address,uint256)")[..4];
+        let mut spender_padded = [0u8; 32];
+        let contract_bytes = hex::decode(&self.escrow_contract[2..]).unwrap_or_default();
+        spender_padded[12..].copy_from_slice(&contract_bytes[..20.min(contract_bytes.len())]);
+
+        let mut approve_calldata = Vec::with_capacity(4 + 64);
+        approve_calldata.extend_from_slice(approve_selector);
+        approve_calldata.extend_from_slice(&spender_padded);
+        approve_calldata.extend_from_slice(&amount_bytes);
+
+        // Return transaction info for frontend
+        let tx_info = serde_json::json!({
+            "escrow_contract": self.escrow_contract,
+            "usdc_token": self.usdc_token,
+            "chain_id": self.chain_id,
+            "approve": {
+                "to": self.usdc_token,
+                "data": format!("0x{}", hex::encode(&approve_calldata)),
+                "value": "0x0",
+            },
+            "deposit": {
+                "to": self.escrow_contract,
+                "data": format!("0x{}", hex::encode(&calldata)),
+                "value": "0x0",
+            },
+            "amount_usdc": amount,
+            "amount_wei": amount_wei,
         });
 
         let tx_base64 = base64::Engine::encode(
             &base64::engine::general_purpose::STANDARD,
-            serde_json::to_string(&instruction_info)?.as_bytes(),
+            serde_json::to_string(&tx_info)?.as_bytes(),
         );
 
         Ok(FundTransactionResponse {
             transaction: tx_base64,
-            escrow_pda: escrow.escrow_pda,
+            escrow_pda: escrow_id, // Using escrow_id instead of PDA
             amount_usdc: amount,
         })
     }
 
-    /// Confirm escrow funding by verifying signature on-chain
-    pub async fn confirm_funding(&self, job_id: Uuid, signature: &str) -> Result<Escrow> {
+    /// Confirm escrow funding by verifying transaction receipt on-chain
+    pub async fn confirm_funding(&self, job_id: Uuid, tx_hash: &str) -> Result<Escrow> {
         // Verify transaction exists and succeeded via RPC
-        let request = RpcRequest {
+        let request = JsonRpcRequest {
             jsonrpc: "2.0",
             id: 1,
-            method: "getSignatureStatuses".to_string(),
-            params: serde_json::json!([[signature]]),
+            method: "eth_getTransactionReceipt".to_string(),
+            params: serde_json::json!([tx_hash]),
         };
 
-        let response: RpcResponse<SignatureStatusResult> = self.http_client
+        let response: JsonRpcResponse<TransactionReceipt> = self.http_client
             .post(&self.rpc_url)
             .json(&request)
             .send()
@@ -286,29 +284,28 @@ impl EscrowService {
             return Err(AppError::Internal(format!("RPC error: {}", error.message)));
         }
 
-        if let Some(result) = response.result {
-            if let Some(Some(status)) = result.value.first() {
-                if status.err.is_some() {
-                    return Err(AppError::BadRequest("Transaction failed on-chain".to_string()));
-                }
-            } else {
-                return Err(AppError::BadRequest("Transaction not found".to_string()));
+        if let Some(receipt) = response.result {
+            // Check status: "0x1" = success, "0x0" = failure
+            if receipt.status != "0x1" {
+                return Err(AppError::BadRequest("Transaction failed on-chain".to_string()));
             }
+        } else {
+            return Err(AppError::BadRequest("Transaction not found or pending".to_string()));
         }
 
         // Update escrow status
         let escrow = sqlx::query_as::<_, Escrow>(
-            r#"
+            &format!(r#"
             UPDATE escrows SET
                 status = 'funded',
                 funded_at = NOW(),
                 fund_tx = $2
             WHERE job_id = $1 AND status = 'created'
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, ESCROW_COLUMNS),
         )
         .bind(job_id)
-        .bind(signature)
+        .bind(tx_hash)
         .fetch_optional(&self.db)
         .await?
         .ok_or_else(|| AppError::Conflict("Escrow not in created state".to_string()))?;
@@ -325,16 +322,16 @@ impl EscrowService {
     /// Lock escrow to agent when bid is accepted
     pub async fn lock_to_agent(&self, job_id: Uuid, agent_wallet: &str) -> Result<Escrow> {
         let escrow = sqlx::query_as::<_, Escrow>(
-            r#"
+            &format!(r#"
             UPDATE escrows SET
                 status = 'locked',
                 agent_wallet = $2
             WHERE job_id = $1 AND status = 'funded'
-            RETURNING *
-            "#,
+            RETURNING {}
+            "#, ESCROW_COLUMNS),
         )
         .bind(job_id)
-        .bind(agent_wallet)
+        .bind(agent_wallet.to_lowercase())
         .fetch_optional(&self.db)
         .await?
         .ok_or_else(|| AppError::Conflict("Escrow not in funded state".to_string()))?;
@@ -343,18 +340,21 @@ impl EscrowService {
     }
 
     /// Release escrow to agent (on job approval)
+    /// Uses atomic UPDATE to prevent double-release race condition
     pub async fn release(&self, job_id: Uuid, trust_tier: &str) -> Result<ReleaseResult> {
+        // ATOMIC: Single query that selects AND updates only if status is 'locked'
         let escrow = sqlx::query_as::<_, Escrow>(
-            "SELECT * FROM escrows WHERE job_id = $1"
+            &format!(r#"
+            UPDATE escrows SET
+                status = 'releasing'
+            WHERE job_id = $1 AND status = 'locked'
+            RETURNING {}
+            "#, ESCROW_COLUMNS)
         )
         .bind(job_id)
         .fetch_optional(&self.db)
         .await?
-        .ok_or_else(|| AppError::NotFound("Escrow not found".to_string()))?;
-
-        if escrow.status != "locked" {
-            return Err(AppError::BadRequest("Escrow not locked".to_string()));
-        }
+        .ok_or_else(|| AppError::Conflict("Escrow not in locked state or already being released".to_string()))?;
 
         let agent_wallet = escrow.agent_wallet.as_ref()
             .ok_or_else(|| AppError::Internal("No agent wallet".to_string()))?;
@@ -365,42 +365,36 @@ impl EscrowService {
         let platform_fee = total * (fee_bps as f64) / 10000.0;
         let agent_payout = total - platform_fee;
 
-        // Build release instruction info for client to sign
-        let escrow_pda_bytes = bs58_to_bytes(&escrow.escrow_pda);
-        let (vault_pda, _) = self.derive_vault_pda(&escrow_pda_bytes);
+        // Generate release transaction data
+        // release(bytes32 jobId)
+        let escrow_id = Self::generate_escrow_id(job_id);
+        let function_selector = &keccak256(b"release(bytes32)")[..4];
 
-        let agent_bytes = bs58_to_bytes(agent_wallet);
-        let agent_ata = self.get_associated_token_address(&agent_bytes);
+        let job_id_bytes = hex::decode(&escrow_id[2..]).unwrap_or_default();
+        let mut job_id_padded = [0u8; 32];
+        let copy_len = job_id_bytes.len().min(32);
+        job_id_padded[..copy_len].copy_from_slice(&job_id_bytes[..copy_len]);
 
-        let platform_wallet = self.config.platform_wallet.clone()
-            .unwrap_or_else(|| escrow.client_wallet.clone());
-        let platform_bytes = bs58_to_bytes(&platform_wallet);
-        let platform_ata = self.get_associated_token_address(&platform_bytes);
+        let mut calldata = Vec::with_capacity(4 + 32);
+        calldata.extend_from_slice(function_selector);
+        calldata.extend_from_slice(&job_id_padded);
 
-        // Discriminator for "release"
-        let discriminator = get_instruction_discriminator("global:release");
-
-        let instruction_info = serde_json::json!({
-            "program_id": bs58::encode(&self.program_id).into_string(),
-            "discriminator": bs58::encode(&discriminator).into_string(),
-            "accounts": [
-                {"pubkey": escrow.client_wallet, "is_signer": true, "is_writable": false},
-                {"pubkey": escrow.escrow_pda, "is_signer": false, "is_writable": true},
-                {"pubkey": vault_pda, "is_signer": false, "is_writable": true},
-                {"pubkey": agent_ata, "is_signer": false, "is_writable": true},
-                {"pubkey": platform_ata, "is_signer": false, "is_writable": true},
-                {"pubkey": TOKEN_PROGRAM_ID, "is_signer": false, "is_writable": false},
-            ],
-            "platform_fee_bps": fee_bps,
+        let release_tx_info = serde_json::json!({
+            "to": self.escrow_contract,
+            "data": format!("0x{}", hex::encode(&calldata)),
+            "chain_id": self.chain_id,
+            "agent_payout": agent_payout,
+            "platform_fee": platform_fee,
+            "agent_wallet": agent_wallet,
         });
 
         let signature = base64::Engine::encode(
             &base64::engine::general_purpose::STANDARD,
-            serde_json::to_string(&instruction_info)?.as_bytes(),
+            serde_json::to_string(&release_tx_info)?.as_bytes(),
         );
 
-        // Update escrow
-        sqlx::query(
+        // ATOMIC: Final update to 'released' status with all details
+        let updated = sqlx::query(
             r#"
             UPDATE escrows SET
                 status = 'released',
@@ -408,7 +402,7 @@ impl EscrowService {
                 agent_payout_usdc = $3,
                 release_tx = $4,
                 released_at = NOW()
-            WHERE job_id = $1
+            WHERE job_id = $1 AND status = 'releasing'
             "#,
         )
         .bind(job_id)
@@ -418,6 +412,10 @@ impl EscrowService {
         .execute(&self.db)
         .await?;
 
+        if updated.rows_affected() == 0 {
+            return Err(AppError::Conflict("Escrow release was interrupted".to_string()));
+        }
+
         Ok(ReleaseResult {
             signature,
             agent_payout,
@@ -426,66 +424,74 @@ impl EscrowService {
     }
 
     /// Refund escrow to client (on cancellation)
+    /// Uses atomic UPDATE to prevent double-refund race condition
     pub async fn refund(&self, job_id: Uuid) -> Result<String> {
+        // ATOMIC: Single query that selects AND updates only if status is 'funded'
         let escrow = sqlx::query_as::<_, Escrow>(
-            "SELECT * FROM escrows WHERE job_id = $1"
+            &format!(r#"
+            UPDATE escrows SET status = 'refunding'
+            WHERE job_id = $1 AND status = 'funded'
+            RETURNING {}
+            "#, ESCROW_COLUMNS)
         )
         .bind(job_id)
         .fetch_optional(&self.db)
         .await?
-        .ok_or_else(|| AppError::NotFound("Escrow not found".to_string()))?;
+        .ok_or_else(|| AppError::Conflict("Escrow not in refundable state or already being refunded".to_string()))?;
 
-        if escrow.status != "funded" {
-            return Err(AppError::BadRequest("Escrow not in refundable state".to_string()));
-        }
+        // Generate refund transaction data
+        // refund(bytes32 jobId)
+        let escrow_id = Self::generate_escrow_id(job_id);
+        let function_selector = &keccak256(b"refund(bytes32)")[..4];
 
-        let escrow_pda_bytes = bs58_to_bytes(&escrow.escrow_pda);
-        let (vault_pda, _) = self.derive_vault_pda(&escrow_pda_bytes);
+        let job_id_bytes = hex::decode(&escrow_id[2..]).unwrap_or_default();
+        let mut job_id_padded = [0u8; 32];
+        let copy_len = job_id_bytes.len().min(32);
+        job_id_padded[..copy_len].copy_from_slice(&job_id_bytes[..copy_len]);
 
-        let client_bytes = bs58_to_bytes(&escrow.client_wallet);
-        let client_ata = self.get_associated_token_address(&client_bytes);
+        let mut calldata = Vec::with_capacity(4 + 32);
+        calldata.extend_from_slice(function_selector);
+        calldata.extend_from_slice(&job_id_padded);
 
-        // Discriminator for "refund"
-        let discriminator = get_instruction_discriminator("global:refund");
-
-        let instruction_info = serde_json::json!({
-            "program_id": bs58::encode(&self.program_id).into_string(),
-            "discriminator": bs58::encode(&discriminator).into_string(),
-            "accounts": [
-                {"pubkey": escrow.client_wallet, "is_signer": true, "is_writable": false},
-                {"pubkey": escrow.escrow_pda, "is_signer": false, "is_writable": true},
-                {"pubkey": vault_pda, "is_signer": false, "is_writable": true},
-                {"pubkey": client_ata, "is_signer": false, "is_writable": true},
-                {"pubkey": TOKEN_PROGRAM_ID, "is_signer": false, "is_writable": false},
-            ],
+        let refund_tx_info = serde_json::json!({
+            "to": self.escrow_contract,
+            "data": format!("0x{}", hex::encode(&calldata)),
+            "chain_id": self.chain_id,
+            "client_wallet": escrow.client_wallet,
+            "amount": escrow.amount_usdc,
         });
 
         let signature = base64::Engine::encode(
             &base64::engine::general_purpose::STANDARD,
-            serde_json::to_string(&instruction_info)?.as_bytes(),
+            serde_json::to_string(&refund_tx_info)?.as_bytes(),
         );
 
-        sqlx::query(
-            "UPDATE escrows SET status = 'refunded', release_tx = $2 WHERE job_id = $1"
+        // ATOMIC: Final update only if still in 'refunding' state
+        let updated = sqlx::query(
+            "UPDATE escrows SET status = 'refunded', release_tx = $2, released_at = NOW() WHERE job_id = $1 AND status = 'refunding'"
         )
         .bind(job_id)
         .bind(&signature)
         .execute(&self.db)
         .await?;
 
+        if updated.rows_affected() == 0 {
+            return Err(AppError::Conflict("Escrow refund was interrupted".to_string()));
+        }
+
         Ok(signature)
     }
 
-    /// Verify signature exists on-chain
-    pub async fn verify_signature(&self, signature: &str) -> Result<bool> {
-        let request = RpcRequest {
+    /// Verify transaction exists on-chain
+    pub async fn verify_transaction(&self, tx_hash: &str) -> Result<bool> {
+        let request = JsonRpcRequest {
             jsonrpc: "2.0",
             id: 1,
-            method: "getSignatureStatuses".to_string(),
-            params: serde_json::json!([[signature]]),
+            method: "eth_getTransactionReceipt".to_string(),
+            params: serde_json::json!([tx_hash]),
         };
 
-        let response: RpcResponse<SignatureStatusResult> = self.http_client
+        let response: JsonRpcResponse<TransactionReceipt> = self.http_client
             .post(&self.rpc_url)
             .json(&request)
             .send()
@@ -495,55 +501,20 @@ impl EscrowService {
             .await
             .map_err(|e| AppError::Internal(format!("Parse error: {}", e)))?;
 
-        if let Some(result) = response.result {
-            if let Some(Some(status)) = result.value.first() {
-                return Ok(status.err.is_none());
-            }
+        if let Some(receipt) = response.result {
+            return Ok(receipt.status == "0x1");
         }
 
         Ok(false)
     }
 }
 
-// Helper functions
-
-fn bs58_to_bytes(s: &str) -> [u8; 32] {
-    let mut bytes = [0u8; 32];
-    if let Ok(decoded) = bs58::decode(s).into_vec() {
-        let len = decoded.len().min(32);
-        bytes[..len].copy_from_slice(&decoded[..len]);
-    }
-    bytes
-}
-
-fn try_find_pda(seeds: &[&[u8]], bump: u8, program_id: &[u8; 32]) -> Option<[u8; 32]> {
-    let mut hasher = Sha256::new();
-
-    for seed in seeds {
-        hasher.update(seed);
-    }
-    hasher.update([bump]);
-    hasher.update(program_id);
-    hasher.update(b"ProgramDerivedAddress");
-
-    let hash = hasher.finalize();
-    let mut result = [0u8; 32];
-    result.copy_from_slice(&hash);
-
-    // Check if it's off the ed25519 curve (valid PDA)
-    // Simplified check - in production use ed25519 curve check
-    if result[31] & 0x80 != 0 {
-        return None; // On curve, invalid PDA
-    }
-
-    Some(result)
-}
-
-fn get_instruction_discriminator(name: &str) -> [u8; 8] {
-    let mut hasher = Sha256::new();
-    hasher.update(name.as_bytes());
-    let hash = hasher.finalize();
-    let mut discriminator = [0u8; 8];
-    discriminator.copy_from_slice(&hash[..8]);
-    discriminator
+/// Keccak-256 hash function (Ethereum's hash function)
+fn keccak256(data: &[u8]) -> [u8; 32] {
+    let mut hasher = Keccak256::new();
+    hasher.update(data);
+    let result = hasher.finalize();
+    let mut output = [0u8; 32];
+    output.copy_from_slice(&result);
+    output
 }

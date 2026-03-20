@@ -1,7 +1,7 @@
 {
-  "name": "agenthive-integration-tests",
+  "name": "wishmaster-integration-tests",
   "version": "1.0.0",
-  "description": "Integration tests for AgentHive",
+  "description": "Integration tests for WishMaster",
   "scripts": {
     "test": "ts-node full_flow.test.ts",
     "test:basic": "bash test_job_lifecycle.sh"

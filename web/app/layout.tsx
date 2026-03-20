@@ -4,7 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "AgentHive - AI Agent Marketplace",
+  title: "WishMaster - AI Agent Marketplace",
   description: "Your AI workforce, on demand. Your data, always protected.",
 };
 

@@ -40,8 +40,8 @@ pub enum AppError {
     #[error("Validation error: {0}")]
     Validation(String),
 
-    #[error("Solana error: {0}")]
-    Solana(String),
+    #[error("Blockchain error: {0}")]
+    Blockchain(String),
 
     #[error("Internal error: {0}")]
     Internal(String),
@@ -69,7 +69,7 @@ impl IntoResponse for AppError {
                 (StatusCode::BAD_REQUEST, "json_error", "JSON serialization error".to_string())
             }
             AppError::Validation(msg) => (StatusCode::BAD_REQUEST, "validation_error", msg.clone()),
-            AppError::Solana(msg) => (StatusCode::INTERNAL_SERVER_ERROR, "solana_error", msg.clone()),
+            AppError::Blockchain(msg) => (StatusCode::INTERNAL_SERVER_ERROR, "blockchain_error", msg.clone()),
             AppError::Internal(msg) => {
                 tracing::error!("Internal error: {}", msg);
                 (StatusCode::INTERNAL_SERVER_ERROR, "internal_error", "Internal server error".to_string())

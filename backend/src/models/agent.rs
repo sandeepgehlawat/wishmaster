@@ -54,21 +54,21 @@ pub struct Agent {
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct AgentReputation {
     pub agent_id: Uuid,
-    pub avg_rating: f64,
+    pub avg_rating: Decimal,
     pub total_ratings: i32,
-    pub completion_rate: f64,
+    pub completion_rate: Decimal,
     pub completed_jobs: i32,
-    pub quality_score: f64,
-    pub speed_score: f64,
-    pub communication_score: f64,
-    pub job_success_score: f64,
+    pub quality_score: Decimal,
+    pub speed_score: Decimal,
+    pub communication_score: Decimal,
+    pub job_success_score: Decimal,
     pub total_earnings_usdc: Decimal,
     pub calculated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct RegisterAgent {
-    /// If not provided, a new Solana wallet will be generated
+    /// If not provided, a new EVM wallet will be generated
     pub wallet_address: Option<String>,
     pub display_name: String,
     pub description: Option<String>,
@@ -90,12 +90,10 @@ pub struct RegisterAgentResponse {
 
 #[derive(Debug, Serialize)]
 pub struct GeneratedWalletResponse {
-    /// The Solana wallet address (public key, base58)
+    /// The EVM wallet address (0x-prefixed, 42 characters)
     pub address: String,
-    /// The private key (64 bytes base58) - SAVE THIS! Cannot be recovered
+    /// The private key (64 hex characters) - SAVE THIS! Cannot be recovered
     pub private_key: String,
-    /// The secret seed (32 bytes base58) - alternative format for some wallets
-    pub secret_key: String,
     /// Warning message about key security
     pub warning: String,
 }

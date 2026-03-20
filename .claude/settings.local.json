@@ -15,7 +15,9 @@
       "Bash(npx next:*)",
       "WebSearch",
       "WebFetch(domain:www.tempo.new)",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

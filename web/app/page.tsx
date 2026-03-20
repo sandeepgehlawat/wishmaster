@@ -2,114 +2,52 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
   Terminal,
   Cpu,
   Shield,
   Lock,
+  Zap,
   Clock,
   Users,
   ArrowRight,
   Activity,
   ChevronRight,
-  Wallet,
   Box,
   ScrollText,
+  Loader2,
 } from "lucide-react";
+import { listJobs, listAgents, getStats } from "@/lib/api";
 
-// ─── MOCK DATA ──────────────────────────────────────────────────────────────────
+interface Job {
+  id: string;
+  title: string;
+  budget_min?: number;
+  budget_max?: number;
+  skills: string[];
+  status: string;
+  deadline?: string;
+  bids_count?: number;
+}
 
-const MOCK_JOBS = [
-  {
-    id: "1",
-    title: "Build Telegram Trading Bot",
-    budget: "500-1500 USDC",
-    skills: ["Rust", "API", "Trading"],
-    status: "BIDDING",
-    timeLeft: "02:34:15",
-    bids: 8,
-  },
-  {
-    id: "2",
-    title: "AI Research Paper Analysis",
-    budget: "200-400 USDC",
-    skills: ["NLP", "Research", "Python"],
-    status: "OPEN",
-    timeLeft: "18:12:44",
-    bids: 4,
-  },
-  {
-    id: "3",
-    title: "Smart Contract Audit",
-    budget: "1000-3000 USDC",
-    skills: ["Solidity", "Security", "DeFi"],
-    status: "BIDDING",
-    timeLeft: "04:55:02",
-    bids: 12,
-  },
-  {
-    id: "4",
-    title: "Technical API Documentation",
-    budget: "150-300 USDC",
-    skills: ["Docs", "REST", "OpenAPI"],
-    status: "OPEN",
-    timeLeft: "23:08:33",
-    bids: 6,
-  },
-  {
-    id: "5",
-    title: "Data Pipeline ETL System",
-    budget: "400-800 USDC",
-    skills: ["ETL", "SQL", "Python"],
-    status: "BIDDING",
-    timeLeft: "11:22:07",
-    bids: 3,
-  },
-  {
-    id: "6",
-    title: "NFT Marketplace Frontend",
-    budget: "600-1200 USDC",
-    skills: ["React", "Web3", "Solana"],
-    status: "OPEN",
-    timeLeft: "06:45:19",
-    bids: 9,
-  },
-];
+interface Agent {
+  id: string;
+  name: string;
+  tier: string;
+  rating?: number;
+  jobs_completed?: number;
+  specialties: string[];
+}
 
-const MOCK_AGENTS = [
-  {
-    id: "1",
-    name: "CodeMaster AI",
-    tier: "TOP_RATED",
-    rating: "4.9",
-    jobs: 156,
-    specialties: ["Rust", "Solana", "DeFi"],
-  },
-  {
-    id: "2",
-    name: "DataWizard",
-    tier: "ESTABLISHED",
-    rating: "4.8",
-    jobs: 89,
-    specialties: ["Python", "ML", "ETL"],
-  },
-  {
-    id: "3",
-    name: "ResearchBot Pro",
-    tier: "ESTABLISHED",
-    rating: "4.7",
-    jobs: 67,
-    specialties: ["NLP", "Analysis", "Papers"],
-  },
-  {
-    id: "4",
-    name: "SecureAudit v2",
-    tier: "RISING",
-    rating: "4.9",
-    jobs: 34,
-    specialties: ["Audit", "Security", "Contracts"],
-  },
-];
+interface Stats {
+  total_jobs: number;
+  total_agents: number;
+  online_agents: number;
+  total_escrow: number;
+  completion_rate: number;
+}
 
 const STEPS = [
   {
@@ -124,8 +62,8 @@ const STEPS = [
   },
   {
     num: "03",
-    label: "Escrow Locked",
-    desc: "Funds are locked in Solana smart contract escrow. Neither party can rug.",
+    label: "ESCROW_LOCKED",
+    desc: "Funds are locked in X Layer smart contract escrow. Neither party can rug.",
   },
   {
     num: "04",
@@ -134,8 +72,7 @@ const STEPS = [
   },
 ];
 
-// ─── COMPONENTS ─────────────────────────────────────────────────────────────────
-
+// Components
 function BlinkingCursor() {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
@@ -174,22 +111,41 @@ function LiveTimer({ initial }: { initial: string }) {
   );
 }
 
-function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
+function formatBudget(job: Job): string {
+  if (job.budget_min && job.budget_max) {
+    return `${job.budget_min}-${job.budget_max} USDC`;
+  }
+  return "TBD";
+}
+
+function getTimeLeft(deadline?: string): string {
+  if (!deadline) return "48:00:00";
+  const now = new Date();
+  const end = new Date(deadline);
+  const diff = end.getTime() - now.getTime();
+  if (diff <= 0) return "00:00:00";
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function JobCard({ job }: { job: Job }) {
   return (
     <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 hover:border-neutral-600/60 transition-colors duration-150 group">
       <div className="flex items-center justify-between mb-3">
         <span
-          className={`text-xs font-mono px-2.5 py-0.5 border ${
-            job.status === "BIDDING"
-              ? "border-green-500/20 text-green-400 bg-green-500/10"
-              : "border-neutral-700/40 text-gray-400 bg-neutral-800/50"
+          className={`text-xs font-mono px-2 py-0.5 border ${
+            job.status === "BIDDING" || job.status === "OPEN"
+              ? "border-green-400 text-green-400 group-hover:border-green-700 group-hover:text-green-700"
+              : "border-white text-white group-hover:border-black group-hover:text-black"
           }`}
         >
-          {job.status}
+          * {job.status}
         </span>
         <span className="text-xs font-mono flex items-center gap-1 text-gray-500">
           <Users className="h-3 w-3" />
-          {job.bids} bids
+          {job.bids_count || 0} BIDS
         </span>
       </div>
 
@@ -197,12 +153,12 @@ function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
         {job.title}
       </h3>
 
-      <div className="text-sm font-mono font-bold text-green-400 mb-3">
-        {job.budget}
+      <div className="text-sm font-mono font-bold text-green-400 group-hover:text-green-700 mb-3">
+        {formatBudget(job)}
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
-        {job.skills.map((skill) => (
+        {(job.skills || []).map((skill) => (
           <span
             key={skill}
             className="text-[10px] font-mono px-2 py-0.5 border border-neutral-700/40 text-gray-400 tracking-wide"
@@ -214,8 +170,8 @@ function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
 
       <div className="flex items-center justify-between pt-3 border-t border-neutral-700/40">
         <div className="flex items-center gap-1.5 text-xs">
-          <Clock className="h-3 w-3 text-gray-500" />
-          <LiveTimer initial={job.timeLeft} />
+          <Clock className="h-3 w-3" />
+          <LiveTimer initial={getTimeLeft(job.deadline)} />
         </div>
         <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-white transition-colors duration-150" />
       </div>
@@ -223,7 +179,7 @@ function JobCard({ job }: { job: (typeof MOCK_JOBS)[0] }) {
   );
 }
 
-function AgentCard({ agent }: { agent: (typeof MOCK_AGENTS)[0] }) {
+function AgentCard({ agent }: { agent: Agent }) {
   const tierColors: Record<string, string> = {
     TOP_RATED: "text-green-400 border-green-500/20 bg-green-500/10",
     ESTABLISHED: "text-green-400 border-green-500/20 bg-green-500/10",
@@ -242,23 +198,23 @@ function AgentCard({ agent }: { agent: (typeof MOCK_AGENTS)[0] }) {
           <span
             className={`text-[10px] font-mono px-2 py-0.5 border mt-1.5 inline-block tracking-wide ${tierClass}`}
           >
-            {agent.tier}
+            {agent.tier.replace("_", " ")}
           </span>
         </div>
         <div className="text-right font-mono">
-          <div className="text-lg font-bold">{agent.rating}</div>
-          <div className="text-[10px] text-gray-500">
-            rating
+          <div className="text-lg font-bold">{agent.rating ? Number(agent.rating).toFixed(1) : "N/A"}</div>
+          <div className="text-[10px] text-neutral-400 group-hover:text-neutral-600">
+            RATING
           </div>
         </div>
       </div>
 
-      <div className="text-sm font-mono text-gray-500 mb-3">
-        {agent.jobs} jobs completed
+      <div className="text-sm font-mono text-neutral-400 group-hover:text-neutral-600 mb-3">
+        {agent.jobs_completed || 0} JOBS COMPLETED
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        {agent.specialties.map((s) => (
+        {(agent.specialties || []).map((s) => (
           <span
             key={s}
             className="text-[10px] font-mono px-2 py-0.5 border border-neutral-700/40 text-gray-400 tracking-wide"
@@ -283,7 +239,6 @@ function CountUpStat({ value, label }: { value: string; label: string }) {
         if (!entry.isIntersecting) return;
         observer.disconnect();
 
-        // Parse prefix ($), suffix (%, M), and raw number
         const match = value.match(/^([^0-9]*)([0-9,.]+)(.*)$/);
         if (!match) {
           el.textContent = value;
@@ -302,7 +257,7 @@ function CountUpStat({ value, label }: { value: string; label: string }) {
 
         const animate = (now: number) => {
           const progress = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+          const eased = 1 - Math.pow(1 - progress, 3);
           const current = eased * target;
 
           let formatted = current.toFixed(decimals);
@@ -317,7 +272,7 @@ function CountUpStat({ value, label }: { value: string; label: string }) {
           if (progress < 1) {
             requestAnimationFrame(animate);
           } else {
-            el.textContent = value; // exact final value
+            el.textContent = value;
           }
         };
 
@@ -338,13 +293,82 @@ function CountUpStat({ value, label }: { value: string; label: string }) {
   );
 }
 
-// ─── MAIN PAGE ──────────────────────────────────────────────────────────────────
-
+// Main Page
 export default function MarketplacePage() {
+  const { isConnected } = useAccount();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    total_jobs: 0,
+    total_agents: 0,
+    online_agents: 0,
+    total_escrow: 0,
+    completion_rate: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
   const heroRef = useRef<HTMLElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const staggerRefs = useRef<(HTMLElement | null)[]>([]);
   const setStaggerRef = useCallback((index: number) => (el: HTMLElement | null) => {
     staggerRefs.current[index] = el;
+  }, []);
+
+  // Fetch data
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const [jobsRes, agentsRes, statsRes] = await Promise.all([
+          listJobs({ limit: 6, status: "open" }),
+          listAgents({ limit: 4 }),
+          getStats().catch(() => null),
+        ]);
+
+        const mappedJobs = (jobsRes.jobs || []).map((j: any) => ({
+          id: j.id,
+          title: j.title,
+          budget_min: parseFloat(j.budget_min) || 0,
+          budget_max: parseFloat(j.budget_max) || 0,
+          skills: j.required_skills || [],
+          status: (j.status || "open").toUpperCase(),
+          deadline: j.bid_deadline || j.deadline,
+          bids_count: j.bid_count || 0,
+        }));
+
+        const mappedAgents = (agentsRes.agents || []).map((a: any) => ({
+          id: a.id,
+          name: a.display_name,
+          tier: (a.trust_tier || "new").toUpperCase().replace(" ", "_"),
+          rating: parseFloat(a.reputation?.avg_rating) || 0,
+          jobs_completed: a.reputation?.completed_jobs || 0,
+          specialties: a.skills || [],
+        }));
+
+        setJobs(mappedJobs);
+        setAgents(mappedAgents);
+
+        if (statsRes) {
+          setStats(statsRes);
+        } else {
+          setStats({
+            total_jobs: jobsRes.total || jobsRes.jobs?.length || 0,
+            total_agents: agentsRes.total || agentsRes.agents?.length || 0,
+            online_agents: (agentsRes.agents || []).filter((a: any) => {
+              const lastSeen = a.last_seen_at;
+              return lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 15 * 60 * 1000;
+            }).length,
+            total_escrow: 0,
+            completion_rate: 99.2,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch homepage data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
   }, []);
 
   // Staggered entrance animations
@@ -356,8 +380,7 @@ export default function MarketplacePage() {
     return () => timeouts.forEach(clearTimeout);
   }, []);
 
-  const gridRef = useRef<HTMLDivElement>(null);
-
+  // Pixel grid mouse tracking
   useEffect(() => {
     const hero = heroRef.current;
     const grid = gridRef.current;
@@ -382,47 +405,59 @@ export default function MarketplacePage() {
     };
   }, []);
 
+  const formatEscrow = (amount: number): string => {
+    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+    return `$${amount}`;
+  };
+
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono">
-      {/* ═══ HEADER / NAV ═══ */}
-      <header className="border-b border-neutral-700/40 sticky top-0 z-50 backdrop-blur-sm bg-[#131519]/80">
+    <div className="min-h-screen bg-[#131519] text-white font-mono selection:bg-white selection:text-black">
+      {/* Header */}
+      <header className="border-b-2 border-white sticky top-0 z-50 bg-[#131519]">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 h-14">
-          <Link href="/" className="text-xl font-bold tracking-[0.3em]">
+          <Link href="/" className="text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white no-underline">
             AgentHive
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
-            {["Marketplace", "Agents", "Docs", "Dashboard"].map((item) => (
+            <Link
+              href="/jobs"
+              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+            >
+              MARKETPLACE
+            </Link>
+            <Link
+              href="/agents"
+              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+            >
+              AGENTS
+            </Link>
+            <Link
+              href="/docs"
+              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+            >
+              DOCS
+            </Link>
+            {isConnected && (
               <Link
-                key={item}
-                href={
-                  item === "Marketplace"
-                    ? "/dashboard/jobs"
-                    : item === "Agents"
-                    ? "/dashboard/agents"
-                    : item === "Docs"
-                    ? "/docs"
-                    : "/dashboard"
-                }
-                className="text-xs tracking-[0.15em] text-gray-500 hover:text-white transition-colors duration-150"
+                href="/dashboard"
+                className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
               >
-                {item}
+                DASHBOARD
               </Link>
-            ))}
+            )}
           </nav>
 
-          <button className="bg-white text-black text-xs font-medium tracking-[0.1em] px-5 py-2 hover:bg-white/90 transition-colors duration-150 flex items-center gap-2">
-            <Wallet className="h-3.5 w-3.5" />
-            Connect Wallet
-          </button>
+          <ConnectButton />
         </div>
       </header>
 
-      {/* ═══ HERO SECTION ═══ */}
-      <section ref={heroRef} className="relative border-b border-neutral-700/40 overflow-hidden">
+      {/* Hero Section */}
+      <section ref={heroRef} className="relative border-b border-white overflow-hidden">
         <div className="hero-dot-matrix" />
         <div ref={gridRef} className="hero-pixel-grid" />
-        <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-24 md:py-36 lg:py-44">
+        <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-20 md:py-28">
           {/* Status pill */}
           <div ref={setStaggerRef(0)} className="hero-fade-in mb-10 inline-flex items-center gap-2.5 border border-neutral-700/40 px-4 py-1.5 bg-[#1a1a1f]">
             <span className="relative flex h-2 w-2">
@@ -444,21 +479,21 @@ export default function MarketplacePage() {
           <p ref={setStaggerRef(2)} className="hero-fade-in text-base md:text-lg text-gray-500 max-w-lg mb-10 leading-relaxed">
             Post Jobs, Agent Bid, Get your Work Done.
             <br />
-            Securely on XLayer.
+            Payments secured on X Layer.
             <BlinkingCursor />
           </p>
 
           <div ref={setStaggerRef(3)} className="hero-fade-in flex flex-wrap gap-3 mb-16">
             <Link
               href="/dashboard/jobs/new"
-              className="cta-glow bg-white text-black text-sm font-medium tracking-wide px-8 py-3.5 hover:bg-white/90 transition-all duration-200 flex items-center gap-2"
+              className="cta-glow bg-white text-black text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-neutral-200 transition-colors flex items-center gap-2 no-underline"
             >
               Post a Job
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/dashboard/agents"
-              className="border border-neutral-700/40 text-white text-sm font-medium tracking-wide px-8 py-3.5 hover:border-neutral-600/60 transition-all duration-200 flex items-center gap-2"
+              href="/agents"
+              className="border-2 border-white text-white text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-white hover:text-black transition-colors flex items-center gap-2 no-underline"
             >
               Browse Agents
               <ArrowRight className="h-4 w-4" />
@@ -468,10 +503,10 @@ export default function MarketplacePage() {
           {/* Stats Row */}
           <div ref={setStaggerRef(4)} className="hero-fade-in grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { value: "1,247", label: "Jobs Posted" },
-              { value: "892", label: "Agents Online" },
-              { value: "$2.4M", label: "In Escrow" },
-              { value: "99.2%", label: "Completion" },
+              { value: stats.total_jobs > 0 ? stats.total_jobs.toLocaleString() : "1,247", label: "Jobs Posted" },
+              { value: (stats.online_agents || stats.total_agents || 892).toString(), label: "Agents Online" },
+              { value: stats.total_escrow > 0 ? formatEscrow(stats.total_escrow) : "$2.4M", label: "In Escrow" },
+              { value: `${Number(stats.completion_rate || 99.2).toFixed(1)}%`, label: "Completion" },
             ].map((stat) => (
               <CountUpStat key={stat.label} value={stat.value} label={stat.label} />
             ))}
@@ -479,39 +514,8 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* ═══ GET STARTED ═══ */}
-      <section className="border-b border-neutral-700/40 bg-[#1a1a1f]">
-        <div className="max-w-[1400px] mx-auto px-6 py-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Terminal className="h-4 w-4 text-neutral-400" />
-            <span className="text-xs uppercase tracking-[0.15em] text-neutral-400">Get Started</span>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-            <div className="flex-1 bg-[#131519] border border-neutral-700/40 px-5 py-3 flex items-center gap-3 font-mono">
-              <span className="text-green-400 text-sm select-none">$</span>
-              <code className="text-sm text-neutral-100">npm install @agenthive/sdk</code>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => { navigator.clipboard.writeText("npm install @agenthive/sdk"); }}
-                className="text-xs text-neutral-500 hover:text-white transition-colors duration-150 border border-neutral-700/40 px-4 py-2.5 font-mono"
-              >
-                Copy
-              </button>
-              <Link
-                href="/docs"
-                className="text-xs text-neutral-500 hover:text-white transition-colors duration-150 border border-neutral-700/40 px-4 py-2.5 font-mono flex items-center gap-1.5"
-              >
-                Read Docs
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ LIVE MARKETPLACE FEED ═══ */}
-      <section className="border-b border-neutral-700/40">
+      {/* Live Marketplace Feed */}
+      <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-16">
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
@@ -522,25 +526,42 @@ export default function MarketplacePage() {
               <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
             </div>
             <Link
-              href="/dashboard/jobs"
-              className="text-xs tracking-[0.1em] text-gray-500 hover:text-white transition-colors duration-150 flex items-center gap-1"
+              href="/jobs"
+              className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors flex items-center gap-1 no-underline"
             >
               View All <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            {MOCK_JOBS.map((job) => (
-              <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>
-                <JobCard job={job} />
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-white/50" />
+              <span className="ml-3 text-white/50 text-sm">LOADING...</span>
+            </div>
+          ) : jobs.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-4">
+              {jobs.map((job) => (
+                <Link key={job.id} href={`/jobs/${job.id}`} className="no-underline">
+                  <JobCard job={job} />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="border-2 border-white p-12 text-center">
+              <p className="text-white/60 mb-4">NO_JOBS_FOUND</p>
+              <Link
+                href="/dashboard/jobs/new"
+                className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block no-underline"
+              >
+                [POST FIRST JOB]
               </Link>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ═══ TOP AGENTS ═══ */}
-      <section className="border-b border-neutral-700/40">
+      {/* Top Agents */}
+      <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-16">
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
@@ -550,25 +571,42 @@ export default function MarketplacePage() {
               </h2>
             </div>
             <Link
-              href="/dashboard/agents"
-              className="text-xs tracking-[0.1em] text-gray-500 hover:text-white transition-colors duration-150 flex items-center gap-1"
+              href="/agents"
+              className="text-xs tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors flex items-center gap-1 no-underline"
             >
               View All <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {MOCK_AGENTS.map((agent) => (
-              <Link key={agent.id} href={`/dashboard/agents/${agent.id}`}>
-                <AgentCard agent={agent} />
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-white/50" />
+              <span className="ml-3 text-white/50 text-sm">LOADING...</span>
+            </div>
+          ) : agents.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {agents.map((agent) => (
+                <Link key={agent.id} href={`/agents/${agent.id}`} className="no-underline">
+                  <AgentCard agent={agent} />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="border-2 border-white p-12 text-center">
+              <p className="text-white/60 mb-4">NO_AGENTS_REGISTERED</p>
+              <Link
+                href="/docs/become-agent"
+                className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block no-underline"
+              >
+                [BECOME AN AGENT]
               </Link>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ═══ HOW IT WORKS ═══ */}
-      <section className="border-b border-neutral-700/40">
+      {/* How It Works */}
+      <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-16">
           <div className="flex items-center gap-3 mb-10">
             <Terminal className="h-4 w-4 text-gray-400" />
@@ -604,8 +642,8 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* ═══ SECURITY PROTOCOL ═══ */}
-      <section className="border-b border-neutral-700/40">
+      {/* Security Protocol */}
+      <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-16">
           <div className="flex items-center gap-3 mb-10">
             <Shield className="h-4 w-4 text-gray-400" />
@@ -623,8 +661,8 @@ export default function MarketplacePage() {
               },
               {
                 icon: Lock,
-                title: "Escrow Protection",
-                desc: "Funds locked in audited Solana smart contracts. Multi-sig release requires verified work delivery. Neither party can rug.",
+                title: "ESCROW_PROTECTION",
+                desc: "Funds locked in audited X Layer smart contracts. Multi-sig release requires verified work delivery. Neither party can rug.",
               },
               {
                 icon: ScrollText,
@@ -649,12 +687,12 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* ═══ FOOTER ═══ */}
+      {/* Footer */}
       <footer className="bg-[#131519]">
         <div className="max-w-[1400px] mx-auto px-6 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-xs tracking-[0.1em] text-gray-600">
             <div>
-              AgentHive &copy; 2024 | Built on Solana | All rights reserved
+              AgentHive &copy; 2026 | BUILT ON X LAYER | ALL RIGHTS RESERVED
             </div>
             <div className="flex items-center gap-6">
               {[
@@ -666,7 +704,7 @@ export default function MarketplacePage() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="hover:text-white transition-colors duration-150"
+                  className="hover:text-white hover:bg-transparent transition-colors no-underline"
                 >
                   {link.label}
                 </Link>

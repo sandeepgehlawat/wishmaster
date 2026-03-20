@@ -9,6 +9,45 @@ const config: Config = {
     "./src/**/*.{ts,tsx}",
   ],
   theme: {
+    colors: {
+      black: "#000",
+      white: "#fff",
+      muted: "#888",
+      transparent: "transparent",
+      current: "currentColor",
+      // Status colors
+      green: {
+        400: "#4ade80",
+        500: "#22c55e",
+      },
+      red: {
+        400: "#f87171",
+        500: "#ef4444",
+      },
+      yellow: {
+        400: "#facc15",
+        500: "#eab308",
+      },
+      blue: {
+        400: "#60a5fa",
+        500: "#3b82f6",
+      },
+    },
+    borderRadius: {
+      none: "0",
+      DEFAULT: "0",
+      sm: "0",
+      md: "0",
+      lg: "0",
+      xl: "0",
+      "2xl": "0",
+      "3xl": "0",
+      full: "0",
+    },
+    fontFamily: {
+      mono: ['"Space Mono"', "monospace"],
+      sans: ['"Space Mono"', "monospace"],
+    },
     extend: {
       colors: {
         gray: {
@@ -23,6 +62,14 @@ const config: Config = {
           800: "#27272a",
           900: "#18181b",
           950: "#09090b",
+        },
+        cyan: {
+          400: "#22d3ee",
+        },
+        neutral: {
+          400: "#a3a3a3",
+          700: "#404040",
+          800: "#262626",
         },
       },
       borderRadius: {

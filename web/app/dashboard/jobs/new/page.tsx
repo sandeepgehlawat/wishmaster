@@ -1,9 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { createJob } from "@/lib/api";
+import { useAuthStore } from "@/lib/store";
+import type { TaskType, Complexity, Urgency } from "@/lib/types";
 
-const JOB_TYPES = ["Data Analysis", "Code Review", "Content", "Research", "Custom"];
+// Map to backend TaskType enum values: coding, research, content, data, other
+const JOB_TYPES = [
+  { label: "CODING", value: "coding" },
+  { label: "RESEARCH", value: "research" },
+  { label: "CONTENT", value: "content" },
+  { label: "DATA ANALYSIS", value: "data" },
+  { label: "OTHER", value: "other" },
+];
 
 const AVAILABLE_SKILLS = [
   "Rust", "Python", "TypeScript", "JavaScript", "Go", "SQL",
@@ -13,7 +24,11 @@ const AVAILABLE_SKILLS = [
 ];
 
 export default function NewJobPage() {
+  const router = useRouter();
+  const { token } = useAuthStore();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     type: "",
     title: "",
@@ -39,14 +54,71 @@ export default function NewJobPage() {
     }));
   };
 
-  const handleSubmit = () => {
-    alert("Job submitted (mock)");
+  const handleSubmit = async () => {
+    if (!token) {
+      setError("Please connect your wallet first. Click 'SELECT WALLET' in the header.");
+      return;
+    }
+
+    // Validate required fields
+    if (!form.title.trim()) {
+      setError("Please enter a job title");
+      return;
+    }
+    if (!form.description.trim()) {
+      setError("Please enter a job description");
+      return;
+    }
+    if (!form.type) {
+      setError("Please select a job type");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const jobData = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        task_type: form.type as TaskType, // Cast to TaskType
+        required_skills: form.skills.length > 0 ? form.skills : ["general"],
+        complexity: (form.complexity ? form.complexity.toLowerCase() : "moderate") as Complexity,
+        budget_min: Number(form.budgetMin) || 100,
+        budget_max: Number(form.budgetMax) || 500,
+        deadline: form.deadline ? new Date(form.deadline).toISOString() : undefined,
+        urgency: "standard" as Urgency,
+      };
+
+      const result = await createJob(jobData, token);
+
+      // Redirect to job page or dashboard
+      // Handle both flat (serde flatten) and nested (legacy) formats
+      const jobId = result.id || (result as any).job?.id;
+      if (jobId) {
+        router.push(`/dashboard/jobs/${jobId}`);
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to create job. Please try again.";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="max-w-2xl font-mono space-y-8">
       {/* Header */}
       <h1 className="text-2xl font-bold tracking-wide">Create Job</h1>
+
+      {/* Error Message */}
+      {error && (
+        <div className="border-2 border-red-500 bg-red-500/10 p-4 text-red-500 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Step Indicator */}
       <div className="flex items-center gap-0">
@@ -73,15 +145,15 @@ export default function NewJobPage() {
           <div className="space-y-2">
             {JOB_TYPES.map((type) => (
               <button
-                key={type}
-                onClick={() => updateForm({ type })}
-                className={`block w-full text-left px-4 py-3 border text-sm tracking-wide transition-colors duration-150 ${
-                  form.type === type
-                    ? "bg-[#1a1a1f] text-white border-neutral-500/50"
-                    : "border-neutral-700/40 hover:border-neutral-600/60"
+                key={type.value}
+                onClick={() => updateForm({ type: type.value })}
+                className={`block w-full text-left px-4 py-3 border-2 border-white -mt-[2px] first:mt-0 text-sm tracking-wider transition-colors ${
+                  form.type === type.value
+                    ? "bg-white text-black"
+                    : "hover:bg-white/5"
                 }`}
               >
-                {type}
+                {type.label}
               </button>
             ))}
           </div>
@@ -257,28 +329,31 @@ export default function NewJobPage() {
           </div>
 
           {/* Summary */}
-          <div className="bg-[#1a1a1f] border border-neutral-700/40 p-4 space-y-2 text-sm">
-            <p className="text-xs text-gray-500 tracking-wide mb-3">Summary</p>
-            <p><span className="text-gray-500">Type:</span> {form.type}</p>
-            <p><span className="text-gray-500">Title:</span> {form.title}</p>
-            <p><span className="text-gray-500">Skills:</span> {form.skills.join(", ") || "None"}</p>
-            <p><span className="text-gray-500">Complexity:</span> {form.complexity || "Unset"}</p>
-            <p><span className="text-gray-500">Budget:</span> {form.budgetMin || "?"} - {form.budgetMax || "?"} USDC ({form.pricingModel})</p>
-            <p><span className="text-gray-500">Deadline:</span> {form.deadline || "None"}</p>
+          <div className="border-2 border-white p-4 space-y-2 text-sm">
+            <p className="text-xs text-white/60 tracking-wider mb-3">SUMMARY</p>
+            <p><span className="text-white/50">TYPE:</span> {form.type.toUpperCase()}</p>
+            <p><span className="text-white/50">TITLE:</span> {form.title}</p>
+            <p><span className="text-white/50">SKILLS:</span> {form.skills.join(", ") || "NONE"}</p>
+            <p><span className="text-white/50">COMPLEXITY:</span> {form.complexity || "UNSET"}</p>
+            <p><span className="text-white/50">BUDGET:</span> {form.budgetMin || "?"} - {form.budgetMax || "?"} USDC ({form.pricingModel})</p>
+            <p><span className="text-white/50">DEADLINE:</span> {form.deadline || "NONE"}</p>
           </div>
 
           <div className="flex gap-3">
             <button
               onClick={() => setStep(3)}
-              className="border border-neutral-700/40 px-6 py-2 text-sm font-medium tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150"
+              disabled={loading}
+              className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors disabled:opacity-50"
             >
               Back
             </button>
             <button
               onClick={handleSubmit}
-              className="bg-white text-black px-6 py-2 text-sm font-medium tracking-wide hover:bg-white/90 transition-colors duration-150"
+              disabled={loading}
+              className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors disabled:opacity-50 flex items-center gap-2"
             >
-              Submit
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {loading ? "[SUBMITTING...]" : "[SUBMIT]"}
             </button>
           </div>
         </div>

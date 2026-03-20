@@ -12,12 +12,30 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
-/// List jobs
+// Explicit column list for Job queries (avoids SELECT * issues with schema changes)
+// Note: sandbox_url and sandbox_project_id are optional - use COALESCE for backward compat
+const JOB_COLUMNS: &str = "id, client_id, agent_id, title, description, task_type, required_skills, complexity, budget_min, budget_max, final_price, pricing_model, deadline, bid_deadline, urgency, status, created_at, published_at, started_at, delivered_at, completed_at, sandbox_url, sandbox_project_id";
+
+/// List jobs (PUBLIC endpoint - excludes drafts and ignores client_id filter)
 pub async fn list_jobs(
     Extension(services): Extension<Arc<Services>>,
     Query(query): Query<JobListQuery>,
 ) -> Result<Json<JobListResponse>> {
-    let response = services.jobs.list(query).await?;
+    // SECURITY: Use list_public to prevent data leakage of draft jobs
+    let response = services.jobs.list_public(query).await?;
+    Ok(Json(response))
+}
+
+/// List my jobs (for authenticated user)
+pub async fn list_my_jobs(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Query(query): Query<JobListQuery>,
+) -> Result<Json<JobListResponse>> {
+    // Override client_id with authenticated user's ID
+    let mut my_query = query;
+    my_query.client_id = Some(auth.id);
+    let response = services.jobs.list(my_query).await?;
     Ok(Json(response))
 }
 
@@ -54,36 +72,62 @@ pub async fn update_job(
 }
 
 /// Publish job and create escrow
+/// Uses atomic status transition to prevent race conditions
 pub async fn publish_job(
     Extension(services): Extension<Arc<Services>>,
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
-    let job = services.jobs.get(id).await?;
-
-    // Verify ownership
-    if job.client_id != auth.id {
-        return Err(AppError::Forbidden("Not your job".to_string()));
-    }
-
-    if job.status != "draft" {
-        return Err(AppError::BadRequest("Job already published".to_string()));
-    }
+    // ATOMIC: Claim the job for publishing by transitioning from 'draft' to 'open'
+    // This prevents race conditions where two requests could both see 'draft' status
+    let job = sqlx::query_as::<_, crate::models::Job>(
+        &format!(r#"
+        UPDATE jobs SET status = 'open', published_at = NOW()
+        WHERE id = $1 AND client_id = $2 AND status = 'draft'
+        RETURNING {}
+        "#, JOB_COLUMNS)
+    )
+    .bind(id)
+    .bind(auth.id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::Conflict("Job not found, not yours, or already published".to_string()))?;
 
     // Create escrow
     let amount: f64 = job.budget_max.to_string().parse().unwrap_or(0.0);
-    let escrow = services.escrow.create_escrow(
+    let escrow = match services.escrow.create_escrow(
         id,
         &auth.wallet_address,
         amount,
-    ).await?;
+    ).await {
+        Ok(e) => e,
+        Err(err) => {
+            // Rollback: set status back to draft if escrow creation fails
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1 AND status = 'open'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
 
     // Generate fund transaction
-    let tx_response = services.escrow.generate_fund_transaction(
+    let tx_response = match services.escrow.generate_fund_transaction(
         id,
         &auth.wallet_address,
-    ).await?;
+    ).await {
+        Ok(t) => t,
+        Err(err) => {
+            // Rollback: set status back to draft if transaction generation fails
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1 AND status = 'open'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
 
+    // Job is already 'open' status from the first atomic update
     Ok(Json(serde_json::json!({
         "job_id": id,
         "escrow_pda": escrow.escrow_pda,
@@ -126,6 +170,8 @@ pub async fn cancel_job(
 }
 
 /// Select winning bid
+/// Uses atomic approach: if bid is already accepted (from failed prior attempt),
+/// just complete the remaining steps (lock escrow + assign agent)
 pub async fn select_bid(
     Extension(services): Extension<Arc<Services>>,
     Extension(auth): Extension<AuthUser>,
@@ -138,8 +184,14 @@ pub async fn select_bid(
         return Err(AppError::Forbidden("Not your job".to_string()));
     }
 
-    if job.status != "bidding" {
-        return Err(AppError::BadRequest("Job not in bidding status".to_string()));
+    // Allow selection from 'bidding' status, or if already partially processed
+    // (bid accepted but job not assigned due to prior failure)
+    if job.status != "bidding" && job.status != "open" {
+        // Check if this is a retry of a partially completed selection
+        if job.agent_id.is_some() {
+            return Err(AppError::BadRequest("Job already has an assigned agent".to_string()));
+        }
+        return Err(AppError::BadRequest(format!("Job not in bidding status (current: {})", job.status)));
     }
 
     // Get the selected bid
@@ -149,8 +201,13 @@ pub async fn select_bid(
         return Err(AppError::BadRequest("Bid does not belong to this job".to_string()));
     }
 
-    // Accept bid and reject others
-    services.bids.accept(input.bid_id).await?;
+    // Accept bid if not already accepted (idempotent - handles retry case)
+    if bid.status == "pending" {
+        services.bids.accept(input.bid_id).await?;
+    } else if bid.status != "accepted" {
+        return Err(AppError::BadRequest(format!("Bid is not selectable (status: {})", bid.status)));
+    }
+    // If bid.status == "accepted", it was accepted in a prior failed attempt - continue
 
     // Get agent wallet for escrow lock
     let agent_wallet: String = sqlx::query_scalar(
@@ -167,44 +224,74 @@ pub async fn select_bid(
     let price: f64 = bid.bid_amount.to_string().parse().unwrap_or(0.0);
     services.jobs.assign_agent(id, bid.agent_id, price).await?;
 
+    // Create StackBlitz sandbox for the job
+    if let Err(e) = services.sandbox.create_stackblitz_project(id, &job.title).await {
+        tracing::warn!("Failed to create sandbox for job {}: {:?}", id, e);
+        // Non-fatal: sandbox creation failure shouldn't block bid selection
+    }
+
     let details = services.jobs.get_with_details(id).await?;
     Ok(Json(details))
 }
 
 /// Approve job delivery
+/// Uses atomic status transition to prevent race conditions and ensure consistency
 pub async fn approve_job(
     Extension(services): Extension<Arc<Services>>,
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
-    let job = services.jobs.get(id).await?;
+    // ATOMIC: Transition from 'delivered' to 'completed' in one step
+    // This prevents race conditions and ensures only one approval process runs
+    let job = sqlx::query_as::<_, crate::models::Job>(
+        &format!(r#"
+        UPDATE jobs SET status = 'completed', completed_at = NOW()
+        WHERE id = $1 AND client_id = $2 AND status = 'delivered'
+        RETURNING {}
+        "#, JOB_COLUMNS)
+    )
+    .bind(id)
+    .bind(auth.id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::Conflict("Job not found, not yours, or not in delivered status".to_string()))?;
 
-    if job.client_id != auth.id {
-        return Err(AppError::Forbidden("Not your job".to_string()));
-    }
-
-    if job.status != "delivered" {
-        return Err(AppError::BadRequest("Job not in delivered status".to_string()));
-    }
-
-    // Transition to completed
-    services.jobs.transition_status(id, "delivered", JobStatus::Completed).await?;
+    let agent_id = job.agent_id
+        .ok_or_else(|| AppError::Internal("Job has no assigned agent".to_string()))?;
 
     // Get agent trust tier for fee calculation
-    let trust_tier: String = sqlx::query_scalar(
+    let trust_tier: String = match sqlx::query_scalar(
         "SELECT trust_tier FROM agents WHERE id = $1"
     )
-    .bind(job.agent_id.unwrap())
+    .bind(agent_id)
     .fetch_one(&services.db)
-    .await?;
+    .await {
+        Ok(tier) => tier,
+        Err(err) => {
+            // Rollback: set status back to delivered
+            let _ = sqlx::query("UPDATE jobs SET status = 'delivered', completed_at = NULL WHERE id = $1 AND status = 'completed'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err.into());
+        }
+    };
 
     // Release escrow
-    let release_result = services.escrow.release(id, &trust_tier).await?;
+    let release_result = match services.escrow.release(id, &trust_tier).await {
+        Ok(r) => r,
+        Err(err) => {
+            // Rollback: set status back to delivered
+            let _ = sqlx::query("UPDATE jobs SET status = 'delivered', completed_at = NULL WHERE id = $1 AND status = 'completed'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
 
-    // Update agent reputation
-    if let Some(agent_id) = job.agent_id {
-        services.reputation.calculate_agent_reputation(agent_id).await?;
-    }
+    // Update agent reputation (non-critical, don't fail if this errors)
+    let _ = services.reputation.calculate_agent_reputation(agent_id).await;
 
     Ok(Json(serde_json::json!({
         "completed": true,
@@ -317,5 +404,131 @@ pub async fn dispute_job(
     Ok(Json(serde_json::json!({
         "disputed": true,
         "message": "Dispute filed. An arbitrator will review your case."
+    })))
+}
+
+/// DEV ONLY: Publish job (for testing - bypasses auth)
+pub async fn dev_publish_job(
+    Extension(services): Extension<Arc<Services>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Get job details
+    let job = services.jobs.get(id).await?;
+
+    if job.status != "draft" {
+        return Err(AppError::BadRequest(format!("Job not in draft status (current: {})", job.status)));
+    }
+
+    // Get client wallet
+    let client_wallet: String = sqlx::query_scalar(
+        "SELECT wallet_address FROM users WHERE id = $1"
+    )
+    .bind(job.client_id)
+    .fetch_one(&services.db)
+    .await?;
+
+    // ATOMIC: Update job status to open
+    sqlx::query(
+        "UPDATE jobs SET status = 'open', published_at = NOW() WHERE id = $1 AND status = 'draft'"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    // Create escrow
+    let amount: f64 = job.budget_max.to_string().parse().unwrap_or(0.0);
+    let escrow = match services.escrow.create_escrow(id, &client_wallet, amount).await {
+        Ok(e) => e,
+        Err(err) => {
+            // Rollback
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
+
+    // Generate fund transaction
+    let tx_response = match services.escrow.generate_fund_transaction(id, &client_wallet).await {
+        Ok(t) => t,
+        Err(err) => {
+            // Rollback
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
+
+    Ok(Json(serde_json::json!({
+        "dev_mode": true,
+        "job_id": id,
+        "escrow_pda": escrow.escrow_pda,
+        "transaction": tx_response.transaction,
+        "amount_usdc": tx_response.amount_usdc
+    })))
+}
+
+/// DEV ONLY: Mark job as delivered (for testing)
+pub async fn dev_deliver_job(
+    Extension(services): Extension<Arc<Services>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Transition: assigned/in_progress -> delivered
+    sqlx::query(
+        "UPDATE jobs SET status = 'delivered', delivered_at = NOW() WHERE id = $1 AND status IN ('assigned', 'in_progress')"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    Ok(Json(serde_json::json!({
+        "delivered": true,
+        "message": "Job marked as delivered. Client can now approve."
+    })))
+}
+
+/// DEV ONLY: Approve job and complete (bypasses escrow for testing)
+pub async fn dev_approve_job(
+    Extension(services): Extension<Arc<Services>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Get job details
+    let job = services.jobs.get(id).await?;
+
+    if job.status != "delivered" {
+        return Err(AppError::BadRequest(format!("Job not in delivered status (current: {})", job.status)));
+    }
+
+    // Force escrow to completed status (dev mode bypass)
+    sqlx::query(
+        "UPDATE escrows SET status = 'released', released_at = NOW() WHERE job_id = $1"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    // Mark job as completed
+    sqlx::query(
+        "UPDATE jobs SET status = 'completed', completed_at = NOW() WHERE id = $1"
+    )
+    .bind(id)
+    .execute(&services.db)
+    .await?;
+
+    // Calculate simulated payout
+    let final_price: f64 = job.final_price.map(|p| p.to_string().parse().unwrap_or(0.0)).unwrap_or(0.0);
+    let platform_fee = final_price * 0.05; // 5% fee
+    let agent_payout = final_price - platform_fee;
+
+    Ok(Json(serde_json::json!({
+        "completed": true,
+        "dev_mode": true,
+        "signature": "DEV_MODE_SIMULATED_TX",
+        "agent_payout": agent_payout,
+        "platform_fee": platform_fee,
+        "message": "Job completed (dev mode - no real payment)"
     })))
 }

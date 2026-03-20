@@ -4,11 +4,11 @@ use crate::models::{
     RegisterAgentResponse, GeneratedWalletResponse,
 };
 use crate::services::{AuthService, Services, WalletService};
+use crate::validation::validate_wallet_address;
 use axum::{
     extract::{Path, Query},
     Extension, Json,
 };
-use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -57,7 +57,7 @@ pub async fn list_agents(
 }
 
 /// Register a new agent (via SDK)
-/// If no wallet_address is provided, a new Solana wallet will be generated
+/// If no wallet_address is provided, a new EVM wallet will be generated
 pub async fn register_agent(
     Extension(services): Extension<Arc<Services>>,
     Json(input): Json<RegisterAgent>,
@@ -67,25 +67,18 @@ pub async fn register_agent(
 
     // Generate or use provided wallet
     let (wallet_address, generated_wallet) = if should_generate && input.wallet_address.is_none() {
-        // Generate a new Solana wallet
+        // Generate a new EVM wallet
         let wallet = WalletService::generate_keypair();
         let address = wallet.address.clone();
         let response = GeneratedWalletResponse {
             address: wallet.address,
             private_key: wallet.private_key,
-            secret_key: wallet.secret_key,
             warning: "IMPORTANT: Save your private key securely! It cannot be recovered. Never share it with anyone.".to_string(),
         };
         (address, Some(response))
     } else if let Some(addr) = &input.wallet_address {
-        // Validate provided wallet address (should be 32-44 chars base58)
-        if addr.len() < 32 || addr.len() > 44 {
-            return Err(AppError::Validation("Invalid wallet address format".to_string()));
-        }
-        // Verify it's valid base58
-        if bs58::decode(addr).into_vec().is_err() {
-            return Err(AppError::Validation("Invalid wallet address: not valid base58".to_string()));
-        }
+        // Validate provided wallet address using centralized validation
+        validate_wallet_address(addr)?;
         (addr.clone(), None)
     } else {
         return Err(AppError::Validation("Either wallet_address must be provided or generate_wallet must be true".to_string()));
@@ -190,37 +183,12 @@ pub async fn get_agent_reputation(
     }
 }
 
-/// Get agent's portfolio (past completed jobs)
+/// Get agent's portfolio items
 pub async fn get_portfolio(
     Extension(services): Extension<Arc<Services>>,
     Path(id): Path<Uuid>,
-) -> Result<Json<Vec<serde_json::Value>>> {
-    let jobs: Vec<(Uuid, String, String, Decimal, chrono::DateTime<chrono::Utc>)> =
-        sqlx::query_as(
-            r#"
-            SELECT j.id, j.title, j.task_type, j.final_price, j.completed_at
-            FROM jobs j
-            WHERE j.agent_id = $1 AND j.status = 'completed'
-            ORDER BY j.completed_at DESC
-            LIMIT 20
-            "#,
-        )
-        .bind(id)
-        .fetch_all(&services.db)
-        .await?;
-
-    let portfolio: Vec<serde_json::Value> = jobs
-        .into_iter()
-        .map(|(id, title, task_type, price, completed_at)| {
-            serde_json::json!({
-                "job_id": id,
-                "title": title,
-                "task_type": task_type,
-                "price": price.to_string(),
-                "completed_at": completed_at
-            })
-        })
-        .collect();
-
-    Ok(Json(portfolio))
+    Query(params): Query<crate::models::PortfolioListParams>,
+) -> Result<Json<crate::models::PortfolioListResponse>> {
+    let response = services.portfolio.list_for_agent(id, params).await?;
+    Ok(Json(response))
 }

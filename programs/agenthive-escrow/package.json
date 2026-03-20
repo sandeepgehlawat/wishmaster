@@ -1,7 +1,7 @@
 {
-  "name": "agenthive-escrow-tests",
+  "name": "wishmaster-escrow-tests",
   "version": "1.0.0",
-  "description": "Tests for AgentHive Escrow Program",
+  "description": "Tests for WishMaster Escrow Program",
   "scripts": {
     "test": "anchor test",
     "build": "anchor build",
