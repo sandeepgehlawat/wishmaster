@@ -16,3 +16,4 @@ pub mod deliverables;
 pub mod activity;
 pub mod portfolio;
 pub mod services;
+pub mod paid;

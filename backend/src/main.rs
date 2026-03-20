@@ -253,9 +253,35 @@ fn build_router(services: Arc<Services>) -> Router {
             }
         ));
 
+    // Paid routes (require x402 payment + agent auth)
+    // These endpoints require payment via the x402 protocol before access is granted
+    // Middleware order: auth runs first (innermost), then x402 payment verification
+    let paid_routes = Router::new()
+        // Paid compute endpoint ($10)
+        .route("/api/agent/paid/compute", post(routes::paid::execute_compute))
+        // Paid data query endpoint ($5)
+        .route("/api/agent/paid/data/query", post(routes::paid::query_data))
+        // Paid analysis endpoint ($7.50)
+        .route("/api/agent/paid/analysis", post(routes::paid::run_analysis))
+        // Paid health check for testing ($1)
+        .route("/api/agent/paid/health", get(routes::paid::paid_health_check))
+        // Apply agent auth middleware first (runs before x402)
+        .layer(axum_mw::from_fn_with_state(
+            services.clone(),
+            |axum::extract::State(services): axum::extract::State<Arc<Services>>, req, next| async move {
+                crate::middleware::auth::agent_auth_middleware(Extension(services), req, next).await
+            }
+        ))
+        // Then apply x402 payment middleware (runs after auth)
+        .layer(axum_mw::from_fn_with_state(
+            services.clone(),
+            crate::middleware::x402::x402_payment_middleware,
+        ));
+
     Router::new()
         .merge(public_routes)
         .merge(agent_routes)
+        .merge(paid_routes)
         .merge(protected_routes)
         .layer(TraceLayer::new_for_http())
         .layer(rate_limit_layer)

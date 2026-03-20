@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Request},
+    extract::{Extension, Request, State},
     http::{StatusCode, HeaderMap, HeaderValue},
     middleware::Next,
     response::{IntoResponse, Response},
@@ -15,9 +15,10 @@ use std::sync::Arc;
 /// This middleware intercepts requests to paid endpoints and:
 /// 1. If no payment proof is present, returns 402 Payment Required with payment details
 /// 2. If payment proof is present, verifies it and allows the request to proceed
+///
+/// Compatible with axum's from_fn_with_state pattern
 pub async fn x402_payment_middleware(
-    Extension(services): Extension<Arc<Services>>,
-    headers: HeaderMap,
+    State(services): State<Arc<Services>>,
     request: Request<Body>,
     next: Next,
 ) -> Response {
@@ -27,6 +28,9 @@ pub async fn x402_payment_middleware(
     if !requires_payment {
         return next.run(request).await;
     }
+
+    // Extract headers from request
+    let headers = request.headers().clone();
 
     // Check for payment proof in headers
     let payment_proof = headers.get("X-Payment-Proof");
@@ -126,11 +130,11 @@ pub async fn x402_payment_middleware(
 /// Get required payment amount based on endpoint (configure per endpoint)
 fn get_required_amount(path: &str) -> f64 {
     // Default pricing - can be made configurable via database or config
-    if path.contains("/compute/") {
+    if path.contains("/compute") {
         10.0  // $10 for compute-intensive tasks
-    } else if path.contains("/data/") {
+    } else if path.contains("/data") {
         5.0   // $5 for data tasks
-    } else if path.contains("/analysis/") {
+    } else if path.contains("/analysis") {
         7.5   // $7.50 for analysis tasks
     } else {
         1.0   // $1 default
