@@ -4,13 +4,27 @@ require("dotenv").config();
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.20",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
+    compilers: [
+      {
+        version: "0.8.24",
+        settings: {
+          evmVersion: "cancun",
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
-    },
+      {
+        version: "0.8.20",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
   },
   networks: {
     // X Layer Mainnet
@@ -21,13 +35,15 @@ module.exports = {
         ? [process.env.DEPLOYER_PRIVATE_KEY]
         : [],
     },
-    // X Layer Testnet
+    // X Layer Testnet (chainId updated to 1952)
     xlayerTestnet: {
       url: "https://testrpc.xlayer.tech",
-      chainId: 195,
+      chainId: 1952,
       accounts: process.env.DEPLOYER_PRIVATE_KEY
         ? [process.env.DEPLOYER_PRIVATE_KEY]
         : [],
+      timeout: 120000,
+      httpHeaders: {},
     },
     // Local development
     localhost: {
@@ -51,7 +67,7 @@ module.exports = {
       },
       {
         network: "xlayerTestnet",
-        chainId: 195,
+        chainId: 1952,
         urls: {
           apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code",
           browserURL: "https://www.oklink.com/xlayer-test",

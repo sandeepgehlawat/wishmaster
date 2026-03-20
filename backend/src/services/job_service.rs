@@ -6,8 +6,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 // Explicit column list for Job queries (avoids SELECT * issues with schema changes)
-// Note: sandbox_url and sandbox_project_id are optional - use COALESCE for backward compat
-const JOB_COLUMNS: &str = "id, client_id, agent_id, title, description, task_type, required_skills, complexity, budget_min, budget_max, final_price, pricing_model, deadline, bid_deadline, urgency, status, created_at, published_at, started_at, delivered_at, completed_at, sandbox_url, sandbox_project_id";
+// Updated for agent-to-agent work: includes creator_type and agent_creator_id
+const JOB_COLUMNS: &str = "id, client_id, agent_id, creator_type, agent_creator_id, title, description, task_type, required_skills, complexity, budget_min, budget_max, final_price, pricing_model, deadline, bid_deadline, urgency, status, created_at, published_at, started_at, delivered_at, completed_at, sandbox_url, sandbox_project_id";
 
 #[derive(Clone)]
 pub struct JobService {
@@ -19,6 +19,7 @@ impl JobService {
         Self { db }
     }
 
+    /// Create a job as a human client
     pub async fn create(&self, client_id: Uuid, input: CreateJob) -> Result<Job> {
         let id = Uuid::new_v4();
         let skills_json = serde_json::to_value(&input.required_skills)
@@ -27,10 +28,10 @@ impl JobService {
         let job = sqlx::query_as::<_, Job>(
             &format!(r#"
             INSERT INTO jobs (
-                id, client_id, title, description, task_type, required_skills,
+                id, client_id, creator_type, title, description, task_type, required_skills,
                 complexity, budget_min, budget_max, deadline, bid_deadline, urgency, status
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'draft')
+            VALUES ($1, $2, 'client', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'draft')
             RETURNING {}
             "#, JOB_COLUMNS),
         )
@@ -52,6 +53,49 @@ impl JobService {
         Ok(job)
     }
 
+    /// Create a job as an agent (agent-to-agent work)
+    pub async fn create_by_agent(&self, agent_creator_id: Uuid, input: CreateJob) -> Result<Job> {
+        let id = Uuid::new_v4();
+        let skills_json = serde_json::to_value(&input.required_skills)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+
+        let job = sqlx::query_as::<_, Job>(
+            &format!(r#"
+            INSERT INTO jobs (
+                id, agent_creator_id, creator_type, title, description, task_type, required_skills,
+                complexity, budget_min, budget_max, deadline, bid_deadline, urgency, status
+            )
+            VALUES ($1, $2, 'agent', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'draft')
+            RETURNING {}
+            "#, JOB_COLUMNS),
+        )
+        .bind(id)
+        .bind(agent_creator_id)
+        .bind(&input.title)
+        .bind(&input.description)
+        .bind(&input.task_type)
+        .bind(&skills_json)
+        .bind(input.complexity.unwrap_or_else(|| "moderate".to_string()))
+        .bind(input.budget_min)
+        .bind(input.budget_max)
+        .bind(input.deadline)
+        .bind(input.bid_deadline)
+        .bind(input.urgency.unwrap_or_else(|| "standard".to_string()))
+        .fetch_one(&self.db)
+        .await?;
+
+        Ok(job)
+    }
+
+    /// Check if caller owns this job (works for both client and agent creators)
+    pub fn is_owner(&self, job: &Job, caller_id: Uuid, caller_type: &str) -> bool {
+        match caller_type {
+            "client" => job.client_id == Some(caller_id),
+            "agent" => job.agent_creator_id == Some(caller_id),
+            _ => false,
+        }
+    }
+
     pub async fn get(&self, id: Uuid) -> Result<Job> {
         sqlx::query_as::<_, Job>(&format!("SELECT {} FROM jobs WHERE id = $1", JOB_COLUMNS))
             .bind(id)
@@ -62,15 +106,21 @@ impl JobService {
 
     pub async fn get_with_details(&self, id: Uuid) -> Result<JobWithDetails> {
         // Single optimized query with JOINs (avoids N+1)
+        // Handles both client-created and agent-created jobs
         let row = sqlx::query_as::<_, JobWithDetailsRow>(
             r#"
             SELECT
                 j.*,
                 u.display_name as client_name,
+                ac.display_name as agent_creator_name,
+                COALESCE(u.display_name, ac.display_name, 'Unknown') as creator_name,
                 a.display_name as agent_name,
-                COALESCE(b.bid_count, 0) as bid_count
+                COALESCE(b.bid_count, 0) as bid_count,
+                e.status as escrow_status,
+                e.amount_usdc as escrow_amount
             FROM jobs j
-            INNER JOIN users u ON u.id = j.client_id
+            LEFT JOIN users u ON u.id = j.client_id
+            LEFT JOIN agents ac ON ac.id = j.agent_creator_id
             LEFT JOIN agents a ON a.id = j.agent_id
             LEFT JOIN (
                 SELECT job_id, COUNT(*) as bid_count
@@ -78,6 +128,7 @@ impl JobService {
                 WHERE status != 'withdrawn'
                 GROUP BY job_id
             ) b ON b.job_id = j.id
+            LEFT JOIN escrows e ON e.job_id = j.id
             WHERE j.id = $1
             "#
         )
@@ -89,9 +140,86 @@ impl JobService {
         Ok(row.into())
     }
 
+    /// List jobs created by a specific agent
+    pub async fn list_by_agent_creator(&self, agent_creator_id: Uuid, query: JobListQuery) -> Result<JobListResponse> {
+        let page = query.page.unwrap_or(1).max(1);
+        let limit = query.limit.unwrap_or(20).min(100);
+        let offset = ((page - 1) * limit) as i64;
+        let limit_i64 = limit as i64;
+
+        let base_select = r#"
+            SELECT
+                j.*,
+                u.display_name as client_name,
+                ac.display_name as agent_creator_name,
+                COALESCE(u.display_name, ac.display_name, 'Unknown') as creator_name,
+                a.display_name as agent_name,
+                COALESCE(b.bid_count, 0) as bid_count,
+                e.status as escrow_status,
+                e.amount_usdc as escrow_amount
+            FROM jobs j
+            LEFT JOIN users u ON u.id = j.client_id
+            LEFT JOIN agents ac ON ac.id = j.agent_creator_id
+            LEFT JOIN agents a ON a.id = j.agent_id
+            LEFT JOIN (
+                SELECT job_id, COUNT(*) as bid_count
+                FROM bids
+                WHERE status != 'withdrawn'
+                GROUP BY job_id
+            ) b ON b.job_id = j.id
+            LEFT JOIN escrows e ON e.job_id = j.id
+        "#;
+
+        let rows: Vec<JobWithDetailsRow> = if let Some(status) = &query.status {
+            sqlx::query_as::<_, JobWithDetailsRow>(&format!(
+                "{} WHERE j.agent_creator_id = $1 AND j.status = $2 ORDER BY j.created_at DESC LIMIT $3 OFFSET $4",
+                base_select
+            ))
+            .bind(agent_creator_id)
+            .bind(status)
+            .bind(limit_i64)
+            .bind(offset)
+            .fetch_all(&self.db)
+            .await?
+        } else {
+            sqlx::query_as::<_, JobWithDetailsRow>(&format!(
+                "{} WHERE j.agent_creator_id = $1 ORDER BY j.created_at DESC LIMIT $2 OFFSET $3",
+                base_select
+            ))
+            .bind(agent_creator_id)
+            .bind(limit_i64)
+            .bind(offset)
+            .fetch_all(&self.db)
+            .await?
+        };
+
+        let total: (i64,) = if let Some(status) = &query.status {
+            sqlx::query_as("SELECT COUNT(*) FROM jobs WHERE agent_creator_id = $1 AND status = $2")
+                .bind(agent_creator_id)
+                .bind(status)
+                .fetch_one(&self.db)
+                .await?
+        } else {
+            sqlx::query_as("SELECT COUNT(*) FROM jobs WHERE agent_creator_id = $1")
+                .bind(agent_creator_id)
+                .fetch_one(&self.db)
+                .await?
+        };
+
+        let jobs_with_details: Vec<JobWithDetails> = rows.into_iter().map(|r| r.into()).collect();
+
+        Ok(JobListResponse {
+            jobs: jobs_with_details,
+            total: total.0,
+            page,
+            limit,
+        })
+    }
+
     /// List jobs for PUBLIC endpoint - excludes drafts and internal statuses
     /// SECURITY: Does not allow filtering by client_id to prevent data leakage
     /// OPTIMIZED: Uses JOINs to avoid N+1 queries
+    /// UPDATED: Supports both client-created and agent-created jobs
     pub async fn list_public(&self, query: JobListQuery) -> Result<JobListResponse> {
         let page = query.page.unwrap_or(1).max(1);
         let limit = query.limit.unwrap_or(20).min(100);
@@ -102,6 +230,7 @@ impl JobService {
         let public_statuses = vec!["open", "bidding", "assigned", "in_progress", "delivered", "completed"];
 
         // Single optimized query with JOINs (avoids N+1)
+        // Updated to handle both client and agent creators
         let rows: Vec<JobWithDetailsRow> = if let Some(status) = &query.status {
             // Only allow filtering to public statuses
             if !public_statuses.contains(&status.as_str()) {
@@ -112,10 +241,15 @@ impl JobService {
                 SELECT
                     j.*,
                     u.display_name as client_name,
+                    ac.display_name as agent_creator_name,
+                    COALESCE(u.display_name, ac.display_name, 'Unknown') as creator_name,
                     a.display_name as agent_name,
-                    COALESCE(b.bid_count, 0) as bid_count
+                    COALESCE(b.bid_count, 0) as bid_count,
+                    e.status as escrow_status,
+                    e.amount_usdc as escrow_amount
                 FROM jobs j
-                INNER JOIN users u ON u.id = j.client_id
+                LEFT JOIN users u ON u.id = j.client_id
+                LEFT JOIN agents ac ON ac.id = j.agent_creator_id
                 LEFT JOIN agents a ON a.id = j.agent_id
                 LEFT JOIN (
                     SELECT job_id, COUNT(*) as bid_count
@@ -123,6 +257,7 @@ impl JobService {
                     WHERE status != 'withdrawn'
                     GROUP BY job_id
                 ) b ON b.job_id = j.id
+                LEFT JOIN escrows e ON e.job_id = j.id
                 WHERE j.status = $1
                 ORDER BY j.created_at DESC
                 LIMIT $2 OFFSET $3
@@ -140,10 +275,15 @@ impl JobService {
                 SELECT
                     j.*,
                     u.display_name as client_name,
+                    ac.display_name as agent_creator_name,
+                    COALESCE(u.display_name, ac.display_name, 'Unknown') as creator_name,
                     a.display_name as agent_name,
-                    COALESCE(b.bid_count, 0) as bid_count
+                    COALESCE(b.bid_count, 0) as bid_count,
+                    e.status as escrow_status,
+                    e.amount_usdc as escrow_amount
                 FROM jobs j
-                INNER JOIN users u ON u.id = j.client_id
+                LEFT JOIN users u ON u.id = j.client_id
+                LEFT JOIN agents ac ON ac.id = j.agent_creator_id
                 LEFT JOIN agents a ON a.id = j.agent_id
                 LEFT JOIN (
                     SELECT job_id, COUNT(*) as bid_count
@@ -151,6 +291,7 @@ impl JobService {
                     WHERE status != 'withdrawn'
                     GROUP BY job_id
                 ) b ON b.job_id = j.id
+                LEFT JOIN escrows e ON e.job_id = j.id
                 WHERE j.status IN ('open', 'bidding', 'assigned', 'in_progress', 'delivered', 'completed')
                 ORDER BY j.created_at DESC
                 LIMIT $1 OFFSET $2
@@ -189,6 +330,7 @@ impl JobService {
 
     /// List jobs for AUTHENTICATED users - allows filtering by client_id
     /// OPTIMIZED: Uses JOINs to avoid N+1 queries
+    /// UPDATED: Supports both client-created and agent-created jobs
     pub async fn list(&self, query: JobListQuery) -> Result<JobListResponse> {
         let page = query.page.unwrap_or(1).max(1);
         let limit = query.limit.unwrap_or(20).min(100);
@@ -196,14 +338,20 @@ impl JobService {
         let limit_i64 = limit as i64;
 
         // Base query with JOINs for all related data
+        // Updated to handle both client and agent creators
         let base_select = r#"
             SELECT
                 j.*,
                 u.display_name as client_name,
+                ac.display_name as agent_creator_name,
+                COALESCE(u.display_name, ac.display_name, 'Unknown') as creator_name,
                 a.display_name as agent_name,
-                COALESCE(b.bid_count, 0) as bid_count
+                COALESCE(b.bid_count, 0) as bid_count,
+                e.status as escrow_status,
+                e.amount_usdc as escrow_amount
             FROM jobs j
-            INNER JOIN users u ON u.id = j.client_id
+            LEFT JOIN users u ON u.id = j.client_id
+            LEFT JOIN agents ac ON ac.id = j.agent_creator_id
             LEFT JOIN agents a ON a.id = j.agent_id
             LEFT JOIN (
                 SELECT job_id, COUNT(*) as bid_count
@@ -211,6 +359,7 @@ impl JobService {
                 WHERE status != 'withdrawn'
                 GROUP BY job_id
             ) b ON b.job_id = j.id
+            LEFT JOIN escrows e ON e.job_id = j.id
         "#;
 
         // Build dynamic query based on filters (single optimized query)
@@ -310,7 +459,7 @@ impl JobService {
         }
 
         // Verify ownership
-        if job.client_id != client_id {
+        if job.client_id != Some(client_id) {
             return Err(AppError::Forbidden("Not authorized to update this job".to_string()));
         }
 

@@ -31,11 +31,21 @@ pub struct Config {
     pub jwt_expiry_hours: i64,
 
     // EVM / X Layer
-    pub evm_rpc_url: Option<String>,
+    pub evm_rpc_url: String,
     pub chain_id: Option<u64>,
     pub escrow_contract_address: Option<String>,
-    pub usdc_token_address: Option<String>,
-    pub platform_wallet: Option<String>,
+    pub usdc_token_address: String,
+    pub platform_wallet: String,
+
+    // ERC-8004 Contract Addresses
+    pub identity_registry_address: Option<String>,
+    pub reputation_registry_address: Option<String>,
+    pub validation_registry_address: Option<String>,
+
+    // OKX OnchainOS (x402)
+    pub okx_api_key: Option<String>,
+    pub okx_api_secret: Option<String>,
+    pub okx_passphrase: Option<String>,
 
     // Platform fees (basis points)
     pub fee_new_agent_bps: u16,
@@ -109,13 +119,26 @@ impl Config {
                 .parse()?,
 
             // EVM / X Layer (testnet defaults)
-            evm_rpc_url: env::var("EVM_RPC_URL").ok(),
+            evm_rpc_url: env::var("EVM_RPC_URL")
+                .unwrap_or_else(|_| "https://testrpc.xlayer.tech".to_string()),
             chain_id: env::var("CHAIN_ID")
                 .ok()
                 .and_then(|s| s.parse().ok()),
             escrow_contract_address: env::var("ESCROW_CONTRACT_ADDRESS").ok(),
-            usdc_token_address: env::var("USDC_TOKEN_ADDRESS").ok(),
-            platform_wallet: env::var("PLATFORM_WALLET").ok(),
+            usdc_token_address: env::var("USDC_TOKEN_ADDRESS")
+                .unwrap_or_else(|_| "0x".to_string()),
+            platform_wallet: env::var("PLATFORM_WALLET")
+                .unwrap_or_else(|_| "0x".to_string()),
+
+            // ERC-8004 Contract Addresses
+            identity_registry_address: env::var("IDENTITY_REGISTRY_ADDRESS").ok(),
+            reputation_registry_address: env::var("REPUTATION_REGISTRY_ADDRESS").ok(),
+            validation_registry_address: env::var("VALIDATION_REGISTRY_ADDRESS").ok(),
+
+            // OKX OnchainOS (x402)
+            okx_api_key: env::var("OKX_API_KEY").ok(),
+            okx_api_secret: env::var("OKX_API_SECRET").ok(),
+            okx_passphrase: env::var("OKX_PASSPHRASE").ok(),
 
             // Fees (basis points: 100 = 1%)
             fee_new_agent_bps: env::var("FEE_NEW_AGENT_BPS")
@@ -160,7 +183,7 @@ impl Config {
 
     pub fn is_testnet(&self) -> bool {
         self.chain_id
-            .map(|id| id == 195) // X Layer Testnet
+            .map(|id| id == 1952 || id == 195) // X Layer Testnet (1952 is current, 195 is legacy)
             .unwrap_or(true)
     }
 
@@ -170,16 +193,13 @@ impl Config {
             .unwrap_or(false)
     }
 
-    /// Get the RPC URL, defaulting to X Layer testnet
+    /// Get the RPC URL
     pub fn get_rpc_url(&self) -> String {
-        self.evm_rpc_url
-            .clone()
-            .unwrap_or_else(|| {
-                if self.is_mainnet() {
-                    "https://rpc.xlayer.tech".to_string()
-                } else {
-                    "https://testrpc.xlayer.tech".to_string()
-                }
-            })
+        self.evm_rpc_url.clone()
+    }
+
+    /// Check if x402 payments are configured
+    pub fn is_x402_configured(&self) -> bool {
+        self.okx_api_key.is_some() && self.okx_api_secret.is_some()
     }
 }

@@ -17,6 +17,7 @@ pub mod deliverable_service;
 pub mod activity_service;
 pub mod portfolio_service;
 pub mod managed_service_service;
+pub mod x402_service;
 
 use sqlx::PgPool;
 use crate::config::Config;
@@ -38,6 +39,7 @@ pub use deliverable_service::DeliverableService;
 pub use activity_service::ActivityService;
 pub use portfolio_service::PortfolioService;
 pub use managed_service_service::ManagedServiceService;
+pub use x402_service::X402Service;
 
 pub struct Services {
     pub db: PgPool,
@@ -59,10 +61,21 @@ pub struct Services {
     pub activity: ActivityService,
     pub portfolio: PortfolioService,
     pub managed_services: ManagedServiceService,
+    pub x402: X402Service,
 }
 
 impl Services {
     pub fn new(db: PgPool, redis: Option<redis::Client>, config: Config) -> Self {
+        // Create x402 service from config
+        let x402 = X402Service::new(
+            config.okx_api_key.clone().unwrap_or_default(),
+            config.okx_api_secret.clone().unwrap_or_default(),
+            config.okx_passphrase.clone().unwrap_or_default(),
+            config.evm_rpc_url.clone(),
+            config.usdc_token_address.clone(),
+            config.platform_wallet.clone(),
+        );
+
         Self {
             auth: AuthService::new(config.clone()),
             jobs: JobService::new(db.clone()),
@@ -80,6 +93,7 @@ impl Services {
             activity: ActivityService::new(db.clone()),
             portfolio: PortfolioService::new(db.clone()),
             managed_services: ManagedServiceService::new(db.clone()),
+            x402,
             db,
             redis,
             config,

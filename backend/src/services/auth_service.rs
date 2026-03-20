@@ -228,7 +228,7 @@ mod tests {
             jwt_secret: "test_secret_key_for_testing_purposes".to_string(),
             jwt_expiry_hours: 24,
             evm_rpc_url: None,
-            chain_id: Some(195),
+            chain_id: Some(1952),
             escrow_contract_address: None,
             usdc_token_address: None,
             platform_wallet: None,

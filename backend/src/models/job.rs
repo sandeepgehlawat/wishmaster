@@ -100,11 +100,39 @@ pub enum Urgency {
     Critical,
 }
 
+/// Creator type for jobs - either a human client or an AI agent
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CreatorType {
+    Client,
+    Agent,
+}
+
+impl CreatorType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CreatorType::Client => "client",
+            CreatorType::Agent => "agent",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Self {
+        match s {
+            "agent" => CreatorType::Agent,
+            _ => CreatorType::Client,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Job {
     pub id: Uuid,
-    pub client_id: Uuid,
+    pub client_id: Option<Uuid>,  // Now optional for agent-created jobs
     pub agent_id: Option<Uuid>,
+
+    // Creator tracking for agent-to-agent work
+    pub creator_type: String,              // "client" or "agent"
+    pub agent_creator_id: Option<Uuid>,    // If created by agent
 
     pub title: String,
     pub description: String,
@@ -172,6 +200,8 @@ pub struct JobListQuery {
     pub search: Option<String>,
     pub client_id: Option<Uuid>,
     pub agent_id: Option<Uuid>,
+    pub agent_creator_id: Option<Uuid>,  // For agent-created jobs
+    pub creator_type: Option<String>,     // Filter by "client" or "agent"
     pub page: Option<i64>,
     pub limit: Option<i64>,
 }
@@ -185,12 +215,21 @@ pub struct JobListResponse {
 }
 
 #[derive(Debug, Serialize)]
+pub struct JobEscrowInfo {
+    pub status: String,
+    pub amount_usdc: rust_decimal::Decimal,
+}
+
+#[derive(Debug, Serialize)]
 pub struct JobWithDetails {
     #[serde(flatten)]
     pub job: Job,
-    pub client_name: String,
+    pub client_name: Option<String>,      // Optional for agent-created jobs
+    pub agent_creator_name: Option<String>, // Name of creating agent
+    pub creator_name: String,             // Either client_name or agent_creator_name
     pub agent_name: Option<String>,
     pub bid_count: i64,
+    pub escrow: Option<JobEscrowInfo>,
 }
 
 /// Flat row struct for efficient JOIN queries (avoids N+1)
@@ -198,8 +237,12 @@ pub struct JobWithDetails {
 pub struct JobWithDetailsRow {
     // Job fields
     pub id: Uuid,
-    pub client_id: Uuid,
+    pub client_id: Option<Uuid>,           // Now optional
     pub agent_id: Option<Uuid>,
+    // Creator tracking
+    pub creator_type: String,
+    pub agent_creator_id: Option<Uuid>,
+    // Job details
     pub title: String,
     pub description: String,
     pub task_type: String,
@@ -222,9 +265,14 @@ pub struct JobWithDetailsRow {
     pub sandbox_url: Option<String>,
     pub sandbox_project_id: Option<String>,
     // Joined fields
-    pub client_name: String,
+    pub client_name: Option<String>,       // Optional for agent-created jobs
+    pub agent_creator_name: Option<String>, // Name of creating agent
+    pub creator_name: String,              // Either client_name or agent_creator_name
     pub agent_name: Option<String>,
     pub bid_count: i64,
+    // Escrow fields (from LEFT JOIN)
+    pub escrow_status: Option<String>,
+    pub escrow_amount: Option<Decimal>,
 }
 
 impl From<JobWithDetailsRow> for JobWithDetails {
@@ -234,6 +282,8 @@ impl From<JobWithDetailsRow> for JobWithDetails {
                 id: row.id,
                 client_id: row.client_id,
                 agent_id: row.agent_id,
+                creator_type: row.creator_type.clone(),
+                agent_creator_id: row.agent_creator_id,
                 title: row.title,
                 description: row.description,
                 task_type: row.task_type,
@@ -256,8 +306,14 @@ impl From<JobWithDetailsRow> for JobWithDetails {
                 sandbox_project_id: row.sandbox_project_id,
             },
             client_name: row.client_name,
+            agent_creator_name: row.agent_creator_name,
+            creator_name: row.creator_name,
             agent_name: row.agent_name,
             bid_count: row.bid_count,
+            escrow: row.escrow_status.map(|status| JobEscrowInfo {
+                status,
+                amount_usdc: row.escrow_amount.unwrap_or_default(),
+            }),
         }
     }
 }

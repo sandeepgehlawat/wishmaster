@@ -59,19 +59,20 @@ struct TransactionReceipt {
 impl EscrowService {
     pub fn new(db: PgPool, config: Config) -> Self {
         let rpc_url = config.get_rpc_url();
-        let chain_id = config.chain_id.unwrap_or(195); // Default to X Layer Testnet
+        let chain_id = config.chain_id.unwrap_or(1952); // Default to X Layer Testnet
 
         let escrow_contract = config.escrow_contract_address.clone()
             .unwrap_or_else(|| DEFAULT_ESCROW_CONTRACT.to_string());
 
-        let usdc_token = config.usdc_token_address.clone()
-            .unwrap_or_else(|| {
-                if config.is_mainnet() {
-                    USDC_XLAYER_MAINNET.to_string()
-                } else {
-                    USDC_XLAYER_TESTNET.to_string()
-                }
-            });
+        let usdc_token = if config.usdc_token_address.is_empty() || config.usdc_token_address == "0x" {
+            if config.is_mainnet() {
+                USDC_XLAYER_MAINNET.to_string()
+            } else {
+                USDC_XLAYER_TESTNET.to_string()
+            }
+        } else {
+            config.usdc_token_address.clone()
+        };
 
         Self {
             db,
@@ -320,21 +321,43 @@ impl EscrowService {
     }
 
     /// Lock escrow to agent when bid is accepted
-    pub async fn lock_to_agent(&self, job_id: Uuid, agent_wallet: &str) -> Result<Escrow> {
-        let escrow = sqlx::query_as::<_, Escrow>(
-            &format!(r#"
-            UPDATE escrows SET
-                status = 'locked',
-                agent_wallet = $2
-            WHERE job_id = $1 AND status = 'funded'
-            RETURNING {}
-            "#, ESCROW_COLUMNS),
-        )
-        .bind(job_id)
-        .bind(agent_wallet.to_lowercase())
-        .fetch_optional(&self.db)
-        .await?
-        .ok_or_else(|| AppError::Conflict("Escrow not in funded state".to_string()))?;
+    /// Updates the escrow amount to the bid amount (excess was refunded on-chain)
+    pub async fn lock_to_agent(&self, job_id: Uuid, agent_wallet: &str, bid_amount: Option<f64>) -> Result<Escrow> {
+        let escrow = if let Some(amount) = bid_amount {
+            // Update both status and amount to match bid
+            sqlx::query_as::<_, Escrow>(
+                &format!(r#"
+                UPDATE escrows SET
+                    status = 'locked',
+                    agent_wallet = $2,
+                    amount_usdc = $3
+                WHERE job_id = $1 AND status = 'funded'
+                RETURNING {}
+                "#, ESCROW_COLUMNS),
+            )
+            .bind(job_id)
+            .bind(agent_wallet.to_lowercase())
+            .bind(amount)
+            .fetch_optional(&self.db)
+            .await?
+            .ok_or_else(|| AppError::Conflict("Escrow not in funded state".to_string()))?
+        } else {
+            // Legacy: just update status (no amount change)
+            sqlx::query_as::<_, Escrow>(
+                &format!(r#"
+                UPDATE escrows SET
+                    status = 'locked',
+                    agent_wallet = $2
+                WHERE job_id = $1 AND status = 'funded'
+                RETURNING {}
+                "#, ESCROW_COLUMNS),
+            )
+            .bind(job_id)
+            .bind(agent_wallet.to_lowercase())
+            .fetch_optional(&self.db)
+            .await?
+            .ok_or_else(|| AppError::Conflict("Escrow not in funded state".to_string()))?
+        };
 
         Ok(escrow)
     }

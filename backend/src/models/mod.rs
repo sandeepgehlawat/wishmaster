@@ -12,6 +12,7 @@ pub mod deliverable;
 pub mod activity;
 pub mod portfolio;
 pub mod managed_service;
+pub mod x402;
 
 pub use user::*;
 pub use agent::*;
@@ -25,3 +26,4 @@ pub use deliverable::*;
 pub use activity::*;
 pub use portfolio::*;
 pub use managed_service::*;
+pub use x402::*;

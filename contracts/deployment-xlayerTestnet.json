@@ -1,0 +1,10 @@
+{
+  "network": "xlayerTestnet",
+  "chainId": 1952,
+  "escrowContract": "0x94a46C5e5fEa0c91bE698A33B3b43d376C9E7E69",
+  "usdcToken": "0x070143E1f101bF90d9422241b22F7eB1efCC2A83",
+  "owner": "0xEC163877d3fD79A0Af33D229B11460e67b334E5d",
+  "deployedAt": "2026-03-20T05:10:20.522Z",
+  "oldEscrowContract": "0xdd8e3b706a92D0D255a1F2Eb1d040d22aCe94F5b",
+  "upgradedAt": "2026-03-20T05:10:20.522Z"
+}

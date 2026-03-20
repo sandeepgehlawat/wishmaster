@@ -14,14 +14,21 @@ async function main() {
 
   let usdcAddress;
 
-  // Deploy MockUSDC on localhost, use real USDC on other networks
-  if (network.name === "localhost" || network.name === "hardhat") {
-    console.log("\nDeploying MockUSDC for local testing...");
+  // Deploy MockUSDC on localhost and testnet, use real USDC on mainnet
+  if (network.name === "localhost" || network.name === "hardhat" || network.name === "xlayerTestnet") {
+    console.log("\nDeploying MockUSDC for testing...");
     const MockUSDC = await ethers.getContractFactory("MockUSDC");
     const mockUSDC = await MockUSDC.deploy();
     await mockUSDC.waitForDeployment();
     usdcAddress = await mockUSDC.getAddress();
     console.log("MockUSDC deployed to:", usdcAddress);
+
+    // On testnet, mint some tokens to deployer for testing
+    if (network.name === "xlayerTestnet") {
+      const mintAmount = ethers.parseUnits("10000", 6); // 10,000 USDC
+      await mockUSDC.mint(deployer.address, mintAmount);
+      console.log("Minted 10,000 MockUSDC to deployer");
+    }
   } else {
     // USDC addresses for X Layer (update these after USDC is available)
     const USDC_ADDRESSES = {

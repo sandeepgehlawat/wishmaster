@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X, Briefcase } from "lucide-react";
-import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devFundEscrow, devDeliverJob, devApproveJob, getRequirements, getDeliverables, getActivities } from "@/lib/api";
+import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devDeliverJob, devApproveJob, getRequirements, getDeliverables, getActivities } from "@/lib/api";
+import { FundEscrowModal } from "@/components/fund-escrow-modal";
+import { LockEscrowModal } from "@/components/lock-escrow-modal";
 import { useAuthStore } from "@/lib/store";
 import Chat from "@/components/chat";
 import RequirementsChecklist from "@/components/requirements-checklist";
@@ -222,7 +224,9 @@ export default function JobDetailPage() {
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
   const [showSelectBidModal, setShowSelectBidModal] = useState(false);
-  const [fundingEscrow, setFundingEscrow] = useState(false);
+  const [showFundEscrowModal, setShowFundEscrowModal] = useState(false);
+  const [showLockEscrowModal, setShowLockEscrowModal] = useState(false);
+  const [selectedBidData, setSelectedBidData] = useState<{ agentWallet: string; agentName: string; bidAmount: number } | null>(null);
 
   // Requirements, deliverables, and service conversion states
   const [requirements, setRequirements] = useState<Requirement[]>([]);
@@ -418,45 +422,90 @@ export default function JobDetailPage() {
     }
   };
 
-  // Handle select bid
+  // Handle select bid - initiate on-chain lock escrow flow
   const handleSelectBid = async () => {
     if (!token || !selectedBidId) return;
+
+    // Find the selected bid to get agent wallet and bid amount
+    const selectedBid = bids.find(b => b.id === selectedBidId);
+    if (!selectedBid) {
+      alert("Bid not found");
+      return;
+    }
+
+    // Check if we have agent wallet - if not, skip on-chain and go direct
+    const agentWallet = selectedBid.agent_wallet;
+    if (!agentWallet || agentWallet.startsWith("So1") || !agentWallet.startsWith("0x")) {
+      // Non-EVM wallet or missing - use backend-only flow
+      try {
+        setActionLoading(true);
+        await selectBid(jobId, selectedBidId, token);
+        setShowSelectBidModal(false);
+        setSelectedBidId(null);
+        const updatedJob = await getJob(jobId, token);
+        setJob(updatedJob);
+        setSuccessModalData({
+          title: "BID_SELECTED",
+          message: "Agent has been assigned to your job. Work will begin shortly.",
+        });
+        setShowSuccessModal(true);
+      } catch (err: any) {
+        alert(err.message || "Failed to select bid");
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
+    // EVM wallet - show lock escrow modal for on-chain transaction
+    setSelectedBidData({
+      agentWallet,
+      agentName: selectedBid.agent_name || "Agent",
+      bidAmount: parseFloat(selectedBid.bid_amount),
+    });
+    setShowSelectBidModal(false);
+    setShowLockEscrowModal(true);
+  };
+
+  // Handle lock escrow success - call backend to finalize bid selection
+  const handleLockEscrowSuccess = async () => {
+    setShowLockEscrowModal(false);
+    if (!token || !selectedBidId) return;
+
     try {
       setActionLoading(true);
       await selectBid(jobId, selectedBidId, token);
-      setShowSelectBidModal(false);
       setSelectedBidId(null);
+      setSelectedBidData(null);
       const updatedJob = await getJob(jobId, token);
       setJob(updatedJob);
       setSuccessModalData({
         title: "BID_SELECTED",
-        message: "Agent has been assigned to your job. Work will begin shortly.",
+        message: `Agent has been assigned. ${job?.escrow?.amount_usdc && selectedBidData?.bidAmount ?
+          `Excess ${(parseFloat(job.escrow.amount_usdc) - selectedBidData.bidAmount).toFixed(2)} USDC refunded to your wallet.` :
+          "Work will begin shortly."}`,
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      alert(err.message || "Failed to select bid");
+      alert(err.message || "Failed to finalize bid selection");
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Handle dev fund escrow (testing only)
-  const handleDevFundEscrow = async () => {
-    if (!token) return;
+  // Handle escrow funding success
+  const handleEscrowFundingSuccess = async () => {
+    setShowFundEscrowModal(false);
     try {
-      setFundingEscrow(true);
-      await devFundEscrow(jobId, token);
-      const updatedJob = await getJob(jobId, token);
+      const updatedJob = await getJob(jobId, token || undefined);
       setJob(updatedJob);
       setSuccessModalData({
         title: "ESCROW_FUNDED",
-        message: "Escrow has been funded (dev mode). You can now select a bid.",
+        message: "Escrow has been funded. You can now select a bid.",
       });
       setShowSuccessModal(true);
-    } catch (err: any) {
-      alert(err.message || "Failed to fund escrow");
-    } finally {
-      setFundingEscrow(false);
+    } catch (err) {
+      // Job data will refresh on next load
     }
   };
 
@@ -561,15 +610,13 @@ export default function JobDetailPage() {
           >
             [VIEW IN MARKETPLACE]
           </Link>
-          {/* Dev mode: Fund escrow button */}
+          {/* Fund escrow button */}
           {jobData.escrowStatus !== "FUNDED" && (
             <button
-              onClick={handleDevFundEscrow}
-              disabled={fundingEscrow}
-              className="border-2 border-yellow-400 text-yellow-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-yellow-400 hover:text-black transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              onClick={() => setShowFundEscrowModal(true)}
+              className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-green-400 hover:text-black transition-colors flex items-center justify-center gap-2"
             >
-              {fundingEscrow && <Loader2 className="h-4 w-4 animate-spin" />}
-              {fundingEscrow ? "[FUNDING...]" : "[FUND ESCROW (DEV)]"}
+              [FUND ESCROW]
             </button>
           )}
           <button
@@ -736,6 +783,35 @@ export default function JobDetailPage() {
         submitLabel="FILE DISPUTE"
         isLoading={actionLoading}
       />
+
+      {/* Fund Escrow Modal */}
+      {token && (
+        <FundEscrowModal
+          isOpen={showFundEscrowModal}
+          onClose={() => setShowFundEscrowModal(false)}
+          onSuccess={handleEscrowFundingSuccess}
+          jobId={jobId}
+          amountUsdc={jobData.budgetMax}
+          token={token}
+        />
+      )}
+
+      {/* Lock Escrow Modal (for bid selection) */}
+      {selectedBidData && job?.escrow && (
+        <LockEscrowModal
+          isOpen={showLockEscrowModal}
+          onClose={() => {
+            setShowLockEscrowModal(false);
+            setSelectedBidData(null);
+          }}
+          onSuccess={handleLockEscrowSuccess}
+          jobId={jobId}
+          agentWallet={selectedBidData.agentWallet}
+          agentName={selectedBidData.agentName}
+          bidAmount={selectedBidData.bidAmount}
+          escrowAmount={parseFloat(job.escrow.amount_usdc)}
+        />
+      )}
 
       <div className="space-y-8 font-mono">
       {/* Header */}

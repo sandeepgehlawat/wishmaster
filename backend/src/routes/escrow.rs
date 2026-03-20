@@ -18,6 +18,11 @@ pub struct FundConfirmRequest {
     pub signature: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ConfirmFundingRequest {
+    pub tx_hash: String,
+}
+
 /// Get escrow details
 pub async fn get_escrow(
     Extension(services): Extension<Arc<Services>>,
@@ -90,6 +95,40 @@ pub async fn release_escrow(
         "funded": true,
         "escrow_pda": escrow.escrow_pda,
         "status": escrow.status
+    })))
+}
+
+/// Confirm escrow funding with on-chain transaction hash
+pub async fn confirm_funding(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Path(job_id): Path<Uuid>,
+    Json(input): Json<ConfirmFundingRequest>,
+) -> Result<Json<serde_json::Value>> {
+    // SECURITY: Verify the caller owns this job
+    let job_owner: Option<Uuid> = sqlx::query_scalar(
+        "SELECT client_id FROM jobs WHERE id = $1"
+    )
+    .bind(job_id)
+    .fetch_optional(&services.db)
+    .await?;
+
+    match job_owner {
+        None => return Err(AppError::NotFound("Job not found".to_string())),
+        Some(owner_id) if owner_id != auth.id => {
+            return Err(AppError::Forbidden("Not authorized to confirm escrow for this job".to_string()));
+        }
+        _ => {}
+    }
+
+    // Verify the transaction on-chain and update escrow status
+    let escrow = services.escrow.confirm_funding(job_id, &input.tx_hash).await?;
+
+    tracing::info!("Escrow funded for job {} via tx {}", job_id, input.tx_hash);
+
+    Ok(Json(serde_json::json!({
+        "confirmed": true,
+        "escrow_status": escrow.status
     })))
 }
 

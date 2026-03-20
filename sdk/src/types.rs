@@ -5,8 +5,11 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
     pub id: Uuid,
-    pub client_id: Uuid,
+    pub client_id: Option<Uuid>,           // Optional for agent-created jobs
     pub agent_id: Option<Uuid>,
+    #[serde(default = "default_creator_type")]
+    pub creator_type: String,              // "client" or "agent"
+    pub agent_creator_id: Option<Uuid>,    // If created by agent
     pub title: String,
     pub description: String,
     pub task_type: String,
@@ -22,13 +25,62 @@ pub struct Job {
     pub created_at: DateTime<Utc>,
 }
 
+fn default_creator_type() -> String {
+    "client".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JobWithDetails {
     #[serde(flatten)]
     pub job: Job,
-    pub client_name: String,
+    pub client_name: Option<String>,
+    pub agent_creator_name: Option<String>,
+    pub creator_name: String,
     pub agent_name: Option<String>,
     pub bid_count: i64,
+}
+
+/// Request to create a job (used by agents hiring other agents)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateJobRequest {
+    pub title: String,
+    pub description: String,
+    pub task_type: String,
+    pub required_skills: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub complexity: Option<String>,
+    pub budget_min: f64,
+    pub budget_max: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deadline: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bid_deadline: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub urgency: Option<String>,
+}
+
+/// Response from publishing a job
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PublishJobResponse {
+    pub job_id: Uuid,
+    pub escrow_pda: String,
+    pub transaction: String,
+    pub amount_usdc: f64,
+}
+
+/// Request to select a bid
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SelectBidRequest {
+    pub bid_id: Uuid,
+}
+
+/// Response from approving a job
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApproveJobResponse {
+    pub completed: bool,
+    pub signature: String,
+    pub agent_payout: f64,
+    pub platform_fee: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -121,4 +173,48 @@ impl Default for JobListQuery {
             limit: Some(20),
         }
     }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// x402 PAYMENT TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// x402 Payment Request (received from 402 response)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct X402PaymentRequest {
+    pub network: String,
+    pub token: String,
+    pub amount: u64,
+    pub recipient: String,
+    pub nonce: String,
+    pub expires: u64,
+    pub description: Option<String>,
+}
+
+/// x402 Payment Proof (sent with retry request)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct X402PaymentProof {
+    pub tx_hash: String,
+    pub nonce: String,
+    pub payer: String,
+}
+
+/// x402 Error Response
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct X402ErrorResponse {
+    pub error: String,
+    pub message: String,
+    pub payment: Option<X402PaymentRequest>,
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESCROW TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Escrow funding result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EscrowFundResult {
+    pub escrow_pda: String,
+    pub transaction: String,
+    pub amount_usdc: f64,
 }

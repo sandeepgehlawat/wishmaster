@@ -15,9 +15,9 @@ export const xlayer = defineChain({
   },
 });
 
-// X Layer Testnet
+// X Layer Testnet (chainId updated to 1952)
 export const xlayerTestnet = defineChain({
-  id: 195,
+  id: 1952,
   name: 'X Layer Testnet',
   nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
   rpcUrls: {
@@ -44,12 +44,12 @@ export const localhost = defineChain({
 });
 
 // Determine which chain to use based on environment
-const chainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '195');
+const chainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '1952');
 
 function getChain(id: number) {
   switch (id) {
     case 196: return xlayer;
-    case 195: return xlayerTestnet;
+    case 1952: return xlayerTestnet;
     case 31337: return localhost;
     default: return xlayerTestnet;
   }

@@ -12,9 +12,294 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENT-TO-AGENT JOB ROUTES
+// These routes allow agents to create jobs and hire other agents
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Create job as an agent (agent-to-agent work)
+/// POST /api/agent/jobs
+pub async fn create_job_as_agent(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Json(input): Json<CreateJob>,
+) -> Result<Json<JobWithDetails>> {
+    // Verify this is an agent
+    if auth.user_type != "agent" {
+        return Err(AppError::Forbidden("Only agents can use this endpoint".to_string()));
+    }
+
+    // Validate input
+    if input.title.len() < 10 {
+        return Err(AppError::BadRequest("Title must be at least 10 characters".to_string()));
+    }
+    if input.budget_min > input.budget_max {
+        return Err(AppError::BadRequest("Min budget cannot exceed max budget".to_string()));
+    }
+
+    // Create job with agent as creator
+    let job = services.jobs.create_by_agent(auth.id, input).await?;
+    let details = services.jobs.get_with_details(job.id).await?;
+
+    Ok(Json(details))
+}
+
+/// List jobs created by this agent
+/// GET /api/agent/jobs
+pub async fn list_agent_jobs(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Query(query): Query<JobListQuery>,
+) -> Result<Json<JobListResponse>> {
+    // Verify this is an agent
+    if auth.user_type != "agent" {
+        return Err(AppError::Forbidden("Only agents can use this endpoint".to_string()));
+    }
+
+    let jobs = services.jobs.list_by_agent_creator(auth.id, query).await?;
+    Ok(Json(jobs))
+}
+
+/// Get a specific job created by this agent
+/// GET /api/agent/jobs/:id
+pub async fn get_agent_job(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<JobWithDetails>> {
+    // Verify this is an agent
+    if auth.user_type != "agent" {
+        return Err(AppError::Forbidden("Only agents can use this endpoint".to_string()));
+    }
+
+    let job = services.jobs.get_with_details(id).await?;
+
+    // Verify ownership
+    if job.job.agent_creator_id != Some(auth.id) {
+        return Err(AppError::Forbidden("Not your job".to_string()));
+    }
+
+    Ok(Json(job))
+}
+
+/// Publish an agent-created job
+/// POST /api/agent/jobs/:id/publish
+pub async fn publish_agent_job(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Verify this is an agent
+    if auth.user_type != "agent" {
+        return Err(AppError::Forbidden("Only agents can use this endpoint".to_string()));
+    }
+
+    // ATOMIC: Claim the job for publishing by transitioning from 'draft' to 'open'
+    let job = sqlx::query_as::<_, crate::models::Job>(
+        &format!(r#"
+        UPDATE jobs SET status = 'open', published_at = NOW()
+        WHERE id = $1 AND agent_creator_id = $2 AND status = 'draft'
+        RETURNING {}
+        "#, JOB_COLUMNS)
+    )
+    .bind(id)
+    .bind(auth.id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::Conflict("Job not found, not yours, or already published".to_string()))?;
+
+    // Create escrow using agent's wallet
+    let amount: f64 = job.budget_max.to_string().parse().unwrap_or(0.0);
+    let escrow = match services.escrow.create_escrow(
+        id,
+        &auth.wallet_address,
+        amount,
+    ).await {
+        Ok(e) => e,
+        Err(err) => {
+            // Rollback: set status back to draft if escrow creation fails
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1 AND status = 'open'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
+
+    // Generate fund transaction
+    let tx_response = match services.escrow.generate_fund_transaction(
+        id,
+        &auth.wallet_address,
+    ).await {
+        Ok(t) => t,
+        Err(err) => {
+            // Rollback: set status back to draft if transaction generation fails
+            let _ = sqlx::query("UPDATE jobs SET status = 'draft', published_at = NULL WHERE id = $1 AND status = 'open'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
+
+    Ok(Json(serde_json::json!({
+        "job_id": id,
+        "escrow_pda": escrow.escrow_pda,
+        "transaction": tx_response.transaction,
+        "amount_usdc": tx_response.amount_usdc
+    })))
+}
+
+/// Select winning bid for an agent-created job
+/// POST /api/agent/jobs/:id/select-bid
+pub async fn select_bid_as_agent(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Path(id): Path<Uuid>,
+    Json(input): Json<SelectBidRequest>,
+) -> Result<Json<JobWithDetails>> {
+    // Verify this is an agent
+    if auth.user_type != "agent" {
+        return Err(AppError::Forbidden("Only agents can use this endpoint".to_string()));
+    }
+
+    let job = services.jobs.get(id).await?;
+
+    // Verify ownership (agent creator)
+    if job.agent_creator_id != Some(auth.id) {
+        return Err(AppError::Forbidden("Not your job".to_string()));
+    }
+
+    // Allow selection from 'bidding' status, or if already partially processed
+    if job.status != "bidding" && job.status != "open" {
+        if job.agent_id.is_some() {
+            return Err(AppError::BadRequest("Job already has an assigned agent".to_string()));
+        }
+        return Err(AppError::BadRequest(format!("Job not in bidding status (current: {})", job.status)));
+    }
+
+    // Get the selected bid
+    let bid = services.bids.get(input.bid_id).await?;
+
+    if bid.job_id != id {
+        return Err(AppError::BadRequest("Bid does not belong to this job".to_string()));
+    }
+
+    // Cannot hire yourself
+    if bid.agent_id == auth.id {
+        return Err(AppError::BadRequest("Cannot hire yourself".to_string()));
+    }
+
+    // Accept bid if not already accepted
+    if bid.status == "pending" {
+        services.bids.accept(input.bid_id).await?;
+    } else if bid.status != "accepted" {
+        return Err(AppError::BadRequest(format!("Bid is not selectable (status: {})", bid.status)));
+    }
+
+    // Get agent wallet for escrow lock
+    let agent_wallet: String = sqlx::query_scalar(
+        "SELECT wallet_address FROM agents WHERE id = $1"
+    )
+    .bind(bid.agent_id)
+    .fetch_one(&services.db)
+    .await?;
+
+    // Lock escrow to agent with bid amount
+    let bid_amount: f64 = bid.bid_amount.to_string().parse().unwrap_or(0.0);
+    services.escrow.lock_to_agent(id, &agent_wallet, Some(bid_amount)).await?;
+
+    // Assign agent to job
+    let price: f64 = bid.bid_amount.to_string().parse().unwrap_or(0.0);
+    services.jobs.assign_agent(id, bid.agent_id, price).await?;
+
+    // Create StackBlitz sandbox for the job
+    if let Err(e) = services.sandbox.create_stackblitz_project(id, &job.title).await {
+        tracing::warn!("Failed to create sandbox for job {}: {:?}", id, e);
+    }
+
+    let details = services.jobs.get_with_details(id).await?;
+    Ok(Json(details))
+}
+
+/// Approve job delivery (agent as client)
+/// POST /api/agent/jobs/:id/approve
+pub async fn approve_agent_job(
+    Extension(services): Extension<Arc<Services>>,
+    Extension(auth): Extension<AuthUser>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    // Verify this is an agent
+    if auth.user_type != "agent" {
+        return Err(AppError::Forbidden("Only agents can use this endpoint".to_string()));
+    }
+
+    // ATOMIC: Transition from 'delivered' to 'completed'
+    let job = sqlx::query_as::<_, crate::models::Job>(
+        &format!(r#"
+        UPDATE jobs SET status = 'completed', completed_at = NOW()
+        WHERE id = $1 AND agent_creator_id = $2 AND status = 'delivered'
+        RETURNING {}
+        "#, JOB_COLUMNS)
+    )
+    .bind(id)
+    .bind(auth.id)
+    .fetch_optional(&services.db)
+    .await?
+    .ok_or_else(|| AppError::Conflict("Job not found, not yours, or not in delivered status".to_string()))?;
+
+    let agent_id = job.agent_id
+        .ok_or_else(|| AppError::Internal("Job has no assigned agent".to_string()))?;
+
+    // Get agent trust tier for fee calculation
+    let trust_tier: String = match sqlx::query_scalar(
+        "SELECT trust_tier FROM agents WHERE id = $1"
+    )
+    .bind(agent_id)
+    .fetch_one(&services.db)
+    .await {
+        Ok(tier) => tier,
+        Err(err) => {
+            // Rollback
+            let _ = sqlx::query("UPDATE jobs SET status = 'delivered', completed_at = NULL WHERE id = $1 AND status = 'completed'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err.into());
+        }
+    };
+
+    // Release escrow
+    let release_result = match services.escrow.release(id, &trust_tier).await {
+        Ok(r) => r,
+        Err(err) => {
+            // Rollback
+            let _ = sqlx::query("UPDATE jobs SET status = 'delivered', completed_at = NULL WHERE id = $1 AND status = 'completed'")
+                .bind(id)
+                .execute(&services.db)
+                .await;
+            return Err(err);
+        }
+    };
+
+    // Update agent reputation
+    let _ = services.reputation.calculate_agent_reputation(agent_id).await;
+
+    Ok(Json(serde_json::json!({
+        "completed": true,
+        "signature": release_result.signature,
+        "agent_payout": release_result.agent_payout,
+        "platform_fee": release_result.platform_fee
+    })))
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ORIGINAL CLIENT JOB ROUTES (below)
+// ═══════════════════════════════════════════════════════════════════════════
+
 // Explicit column list for Job queries (avoids SELECT * issues with schema changes)
 // Note: sandbox_url and sandbox_project_id are optional - use COALESCE for backward compat
-const JOB_COLUMNS: &str = "id, client_id, agent_id, title, description, task_type, required_skills, complexity, budget_min, budget_max, final_price, pricing_model, deadline, bid_deadline, urgency, status, created_at, published_at, started_at, delivered_at, completed_at, sandbox_url, sandbox_project_id";
+const JOB_COLUMNS: &str = "id, client_id, agent_id, creator_type, agent_creator_id, title, description, task_type, required_skills, complexity, budget_min, budget_max, final_price, pricing_model, deadline, bid_deadline, urgency, status, created_at, published_at, started_at, delivered_at, completed_at, sandbox_url, sandbox_project_id";
 
 /// List jobs (PUBLIC endpoint - excludes drafts and ignores client_id filter)
 pub async fn list_jobs(
@@ -144,7 +429,7 @@ pub async fn cancel_job(
 ) -> Result<Json<serde_json::Value>> {
     let job = services.jobs.get(id).await?;
 
-    if job.client_id != auth.id {
+    if job.client_id != Some(auth.id) {
         return Err(AppError::Forbidden("Not your job".to_string()));
     }
 
@@ -180,7 +465,7 @@ pub async fn select_bid(
 ) -> Result<Json<JobWithDetails>> {
     let job = services.jobs.get(id).await?;
 
-    if job.client_id != auth.id {
+    if job.client_id != Some(auth.id) {
         return Err(AppError::Forbidden("Not your job".to_string()));
     }
 
@@ -217,8 +502,10 @@ pub async fn select_bid(
     .fetch_one(&services.db)
     .await?;
 
-    // Lock escrow to agent
-    services.escrow.lock_to_agent(id, &agent_wallet).await?;
+    // Lock escrow to agent with bid amount
+    // The bid amount is passed to update the escrow record (excess was refunded on-chain)
+    let bid_amount: f64 = bid.bid_amount.to_string().parse().unwrap_or(0.0);
+    services.escrow.lock_to_agent(id, &agent_wallet, Some(bid_amount)).await?;
 
     // Assign agent to job
     let price: f64 = bid.bid_amount.to_string().parse().unwrap_or(0.0);
@@ -310,7 +597,7 @@ pub async fn request_revision(
 ) -> Result<Json<JobWithDetails>> {
     let job = services.jobs.get(id).await?;
 
-    if job.client_id != auth.id {
+    if job.client_id != Some(auth.id) {
         return Err(AppError::Forbidden("Not your job".to_string()));
     }
 
@@ -365,7 +652,7 @@ pub async fn dispute_job(
     let job = services.jobs.get(id).await?;
 
     // Either client or agent can dispute
-    let is_client = job.client_id == auth.id;
+    let is_client = job.client_id == Some(auth.id);
     let is_agent = job.agent_id.map(|a| a == auth.id).unwrap_or(false);
 
     if !is_client && !is_agent {

@@ -168,6 +168,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/escrow/:job_id", get(routes::escrow::get_escrow))
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))
         .route("/api/escrow/:job_id/release", post(routes::escrow::release_escrow))
+        .route("/api/escrow/:job_id/confirm", post(routes::escrow::confirm_funding))
         .route("/api/escrow/:job_id/dev-fund", post(routes::escrow::dev_fund_escrow))
         .route("/api/jobs/:id/rating", post(routes::ratings::submit_rating))
         // messages routes moved to agent_routes for API key support (agent_auth_middleware supports JWT too)
@@ -219,6 +220,13 @@ fn build_router(services: Arc<Services>) -> Router {
 
     // Agent SDK routes (supports both JWT and X-API-Key auth)
     let agent_routes = Router::new()
+        // Agent-to-Agent Job Creation (NEW)
+        .route("/api/agent/jobs", post(routes::jobs::create_job_as_agent))
+        .route("/api/agent/jobs", get(routes::jobs::list_agent_jobs))
+        .route("/api/agent/jobs/:id", get(routes::jobs::get_agent_job))
+        .route("/api/agent/jobs/:id/publish", post(routes::jobs::publish_agent_job))
+        .route("/api/agent/jobs/:id/select-bid", post(routes::jobs::select_bid_as_agent))
+        .route("/api/agent/jobs/:id/approve", post(routes::jobs::approve_agent_job))
         // Bidding
         .route("/api/jobs/:id/bids", post(routes::bids::submit_bid))
         .route("/api/bids/:id", patch(routes::bids::update_bid))

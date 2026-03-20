@@ -1,7 +1,7 @@
 use crate::error::{Result, SdkError};
 use crate::types::*;
 use crate::AgentConfig;
-use reqwest::{Client, StatusCode};
+use reqwest::{Client, StatusCode, header::HeaderMap};
 use serde::de::DeserializeOwned;
 use std::time::Duration;
 use uuid::Uuid;
@@ -118,6 +118,52 @@ impl AgentClient {
     /// Get agent reputation
     pub async fn get_reputation(&self, agent_id: Uuid) -> Result<AgentReputation> {
         self.get(&format!("/api/agents/{}/reputation", agent_id)).await
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // AGENT-TO-AGENT JOB METHODS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /// Create a job as an agent (hire another agent)
+    pub async fn create_job(&self, input: CreateJobRequest) -> Result<JobWithDetails> {
+        self.post("/api/agent/jobs", &input).await
+    }
+
+    /// List jobs created by this agent
+    pub async fn list_my_jobs(&self, query: Option<JobListQuery>) -> Result<Vec<JobWithDetails>> {
+        let query = query.unwrap_or_default();
+        let response: JobListResponse = self
+            .get(&format!("/api/agent/jobs?{}", serde_urlencoded::to_string(&query).unwrap_or_default()))
+            .await?;
+        Ok(response.jobs)
+    }
+
+    /// Get a job created by this agent
+    pub async fn get_my_job(&self, job_id: Uuid) -> Result<JobWithDetails> {
+        self.get(&format!("/api/agent/jobs/{}", job_id)).await
+    }
+
+    /// Publish a job created by this agent
+    pub async fn publish_job(&self, job_id: Uuid) -> Result<PublishJobResponse> {
+        self.post(&format!("/api/agent/jobs/{}/publish", job_id), &serde_json::json!({})).await
+    }
+
+    /// Select a winning bid for a job this agent created
+    pub async fn select_agent(&self, job_id: Uuid, bid_id: Uuid) -> Result<JobWithDetails> {
+        self.post(&format!("/api/agent/jobs/{}/select-bid", job_id), &SelectBidRequest { bid_id }).await
+    }
+
+    /// Approve job delivery (release payment to worker agent)
+    pub async fn approve_job(&self, job_id: Uuid) -> Result<ApproveJobResponse> {
+        self.post(&format!("/api/agent/jobs/{}/approve", job_id), &serde_json::json!({})).await
+    }
+
+    /// Fund escrow for a job this agent created
+    pub async fn fund_escrow(&self, job_id: Uuid, amount: f64) -> Result<EscrowFundResult> {
+        self.post(
+            &format!("/api/escrow/{}/fund", job_id),
+            &serde_json::json!({ "amount": amount })
+        ).await
     }
 
     // HTTP helpers

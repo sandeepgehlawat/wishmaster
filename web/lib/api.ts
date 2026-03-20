@@ -262,6 +262,24 @@ export async function devFundEscrow(jobId: string, token: string): Promise<FundE
   });
 }
 
+// Confirm escrow funding with on-chain transaction hash
+export interface ConfirmFundingResponse {
+  confirmed: boolean;
+  escrow_status: string;
+}
+
+export async function confirmEscrowFunding(
+  jobId: string,
+  txHash: string,
+  token: string
+): Promise<ConfirmFundingResponse> {
+  return api<ConfirmFundingResponse>(`/api/escrow/${jobId}/confirm`, {
+    method: "POST",
+    body: { tx_hash: txHash },
+    token,
+  });
+}
+
 // Dev-only: Mark job as delivered (for testing)
 export interface DevDeliverResponse {
   delivered: boolean;

@@ -6,16 +6,36 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// ERC-8004 Interfaces
+interface IReputationRegistry {
+    function giveFeedback(
+        uint256 agentId,
+        int128 value,
+        string calldata tag1,
+        string calldata tag2,
+        string calldata feedbackURI
+    ) external;
+}
+
+interface IIdentityRegistry {
+    function getAgentByWallet(address wallet) external view returns (uint256);
+}
+
 /**
  * @title AgentHiveEscrow
  * @notice Escrow contract for the AgentHive AI agent marketplace
  * @dev Handles USDC deposits, agent assignment, release, and refunds
+ *      Integrated with ERC-8004 reputation system for automatic feedback
  */
 contract AgentHiveEscrow is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable usdc;
     uint256 public platformFeeBps = 500; // 5% default (500 basis points)
+
+    // ERC-8004 Registries
+    IReputationRegistry public reputationRegistry;
+    IIdentityRegistry public identityRegistry;
 
     enum EscrowStatus { Pending, Funded, Locked, Released, Refunded, Disputed }
 
@@ -33,7 +53,8 @@ contract AgentHiveEscrow is ReentrancyGuard, Ownable {
     // Events
     event EscrowCreated(bytes32 indexed jobId, address indexed client, uint256 amount);
     event EscrowFunded(bytes32 indexed jobId, uint256 amount);
-    event EscrowLocked(bytes32 indexed jobId, address indexed agent);
+    event EscrowLocked(bytes32 indexed jobId, address indexed agent, uint256 lockedAmount);
+    event EscrowExcessRefunded(bytes32 indexed jobId, address indexed client, uint256 excessAmount);
     event EscrowReleased(bytes32 indexed jobId, address indexed agent, uint256 agentAmount, uint256 platformFee);
     event EscrowRefunded(bytes32 indexed jobId, address indexed client, uint256 amount);
     event EscrowDisputed(bytes32 indexed jobId);
@@ -82,11 +103,12 @@ contract AgentHiveEscrow is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Lock escrow to assigned agent (called by client or backend)
+     * @notice Lock escrow to assigned agent with bid amount (refunds excess to client)
      * @param jobId Job identifier
      * @param agent Agent's wallet address
+     * @param bidAmount The winning bid amount (excess is refunded to client)
      */
-    function lockToAgent(bytes32 jobId, address agent) external {
+    function lockToAgent(bytes32 jobId, address agent, uint256 bidAmount) external nonReentrant {
         Escrow storage escrow = escrows[jobId];
 
         if (escrow.status != EscrowStatus.Funded) {
@@ -98,11 +120,25 @@ contract AgentHiveEscrow is ReentrancyGuard, Ownable {
         if (agent == address(0)) {
             revert InvalidAgent();
         }
+        if (bidAmount == 0 || bidAmount > escrow.amount) {
+            revert InvalidAmount();
+        }
 
+        // Calculate excess and refund to client
+        uint256 excess = escrow.amount - bidAmount;
+
+        // Update escrow amount to bid amount
+        escrow.amount = bidAmount;
         escrow.agent = agent;
         escrow.status = EscrowStatus.Locked;
 
-        emit EscrowLocked(jobId, agent);
+        // Refund excess to client
+        if (excess > 0) {
+            usdc.safeTransfer(escrow.client, excess);
+            emit EscrowExcessRefunded(jobId, escrow.client, excess);
+        }
+
+        emit EscrowLocked(jobId, agent, bidAmount);
     }
 
     /**
@@ -128,6 +164,9 @@ contract AgentHiveEscrow is ReentrancyGuard, Ownable {
         if (platformFee > 0) {
             usdc.safeTransfer(owner(), platformFee);
         }
+
+        // Update agent reputation on successful release (ERC-8004)
+        _updateReputation(escrow.agent, 100, "job_completed");
 
         emit EscrowReleased(jobId, escrow.agent, agentAmount, platformFee);
     }
@@ -194,10 +233,16 @@ contract AgentHiveEscrow is ReentrancyGuard, Ownable {
                 usdc.safeTransfer(owner(), platformFee);
             }
 
+            // Positive reputation for agent winning dispute (ERC-8004)
+            _updateReputation(escrow.agent, 50, "dispute_won");
+
             emit EscrowReleased(jobId, escrow.agent, agentAmount, platformFee);
         } else {
             escrow.status = EscrowStatus.Refunded;
             usdc.safeTransfer(escrow.client, escrow.amount);
+
+            // Negative reputation for agent losing dispute (ERC-8004)
+            _updateReputation(escrow.agent, -50, "dispute_lost");
 
             emit EscrowRefunded(jobId, escrow.client, escrow.amount);
         }
@@ -218,6 +263,35 @@ contract AgentHiveEscrow is ReentrancyGuard, Ownable {
         platformFeeBps = newFeeBps;
 
         emit PlatformFeeUpdated(oldFeeBps, newFeeBps);
+    }
+
+    /**
+     * @notice Set ERC-8004 registry addresses (owner only)
+     * @param _identityRegistry Identity registry address
+     * @param _reputationRegistry Reputation registry address
+     */
+    function setRegistries(address _identityRegistry, address _reputationRegistry) external onlyOwner {
+        identityRegistry = IIdentityRegistry(_identityRegistry);
+        reputationRegistry = IReputationRegistry(_reputationRegistry);
+    }
+
+    /**
+     * @notice Internal helper to update agent reputation
+     * @param agentWallet The agent's wallet address
+     * @param value Feedback value (-100 to +100)
+     * @param tag The feedback tag
+     */
+    function _updateReputation(address agentWallet, int128 value, string memory tag) internal {
+        if (address(reputationRegistry) != address(0) && address(identityRegistry) != address(0)) {
+            uint256 agentId = identityRegistry.getAgentByWallet(agentWallet);
+            if (agentId > 0) {
+                try reputationRegistry.giveFeedback(agentId, value, tag, "", "") {
+                    // Feedback recorded successfully
+                } catch {
+                    // Silently fail - reputation update should not block payment
+                }
+            }
+        }
     }
 
     /**

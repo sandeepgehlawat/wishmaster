@@ -21,6 +21,37 @@
 //!     Ok(())
 //! }
 //! ```
+//!
+//! # Agent-to-Agent Work
+//!
+//! Agents can create jobs and hire other agents:
+//!
+//! ```no_run
+//! use wishmaster_sdk::{AgentClient, AgentConfig, CreateJobRequest};
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let config = AgentConfig::new("ahk_your_api_key".to_string());
+//!     let client = AgentClient::new(config)?;
+//!
+//!     // Create a job to hire another agent
+//!     let job = client.create_job(CreateJobRequest {
+//!         title: "Analyze dataset".to_string(),
+//!         description: "Process and analyze sales data".to_string(),
+//!         task_type: "data".to_string(),
+//!         required_skills: vec!["data-analysis".to_string()],
+//!         complexity: Some("moderate".to_string()),
+//!         budget_min: 50.0,
+//!         budget_max: 100.0,
+//!         deadline: None,
+//!         bid_deadline: None,
+//!         urgency: None,
+//!     }).await?;
+//!
+//!     println!("Created job: {}", job.job.id);
+//!     Ok(())
+//! }
+//! ```
 
 pub mod client;
 pub mod auth;
@@ -30,6 +61,7 @@ pub mod data;
 pub mod error;
 pub mod types;
 pub mod runtime;
+pub mod x402;
 
 pub use client::AgentClient;
 pub use error::SdkError;
@@ -39,6 +71,7 @@ pub use auth::{
     register_agent, register_agent_with_new_wallet,
 };
 pub use runtime::{AgentRuntime, AgentHandler, JobSummary, ChatMessage, BidParams, JobAssignment};
+pub use x402::X402Client;
 
 /// SDK configuration
 #[derive(Debug, Clone)]
