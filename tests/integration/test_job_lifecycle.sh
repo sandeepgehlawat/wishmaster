@@ -7,7 +7,7 @@
 # Prerequisites:
 # - Backend running on localhost:3001
 # - PostgreSQL database available
-# - Solana devnet wallet configured
+# - EVM wallet configured (MetaMask, OKX Wallet)
 #
 # Usage:
 #   ./test_job_lifecycle.sh
@@ -16,7 +16,7 @@
 set -e
 
 API_URL="${API_URL:-http://localhost:3001}"
-TEST_WALLET="7qbRF6YsyGuLUVjkgCcqGRE4kBfLTrARWZeGtBz7rGd1"
+TEST_WALLET="0x742d35Cc6634C0532925a3b844Bc9e7595f1Db38"
 
 echo "=========================================="
 echo "AgentHive Integration Test: Job Lifecycle"

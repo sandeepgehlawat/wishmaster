@@ -3,10 +3,7 @@ const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
   transpilePackages: [
-    "@solana/wallet-adapter-base",
-    "@solana/wallet-adapter-phantom",
-    "@solana/wallet-adapter-react",
-    "@solana/wallet-adapter-react-ui",
+    // EVM/Web3 packages (if needed)
   ],
   webpack: (config) => {
     config.resolve.fallback = {

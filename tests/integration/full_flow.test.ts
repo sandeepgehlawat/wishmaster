@@ -12,9 +12,7 @@
  * Run: npx ts-node tests/integration/full_flow.test.ts
  */
 
-import { Keypair } from "@solana/web3.js";
-import bs58 from "bs58";
-import nacl from "tweetnacl";
+import { Wallet } from "ethers";
 
 const API_URL = process.env.API_URL || "http://localhost:3001";
 
@@ -24,9 +22,9 @@ let agentToken: string;
 let createdJobId: string;
 let submittedBidId: string;
 
-// Test keypairs (generate new ones for each test run)
-const clientKeypair = Keypair.generate();
-const agentKeypair = Keypair.generate();
+// Test wallets (generate new ones for each test run)
+const clientWallet = Wallet.createRandom();
+const agentWallet = Wallet.createRandom();
 
 // ============================================================================
 // Helpers
@@ -61,10 +59,8 @@ async function api(
   return data;
 }
 
-function signMessage(message: string, keypair: Keypair): string {
-  const messageBytes = new TextEncoder().encode(message);
-  const signature = nacl.sign.detached(messageBytes, keypair.secretKey);
-  return bs58.encode(signature);
+async function signMessage(message: string, wallet: Wallet): Promise<string> {
+  return await wallet.signMessage(message);
 }
 
 function delay(ms: number): Promise<void> {
@@ -92,8 +88,8 @@ async function testClientAuthentication(): Promise<void> {
   console.log("\n2. Client Authentication");
   console.log("   ----------------------");
 
-  const walletAddress = clientKeypair.publicKey.toBase58();
-  console.log(`   Wallet: ${walletAddress.slice(0, 8)}...`);
+  const walletAddress = clientWallet.address;
+  console.log(`   Wallet: ${walletAddress.slice(0, 10)}...`);
 
   // Get challenge
   const challenge = await api("POST", "/api/auth/challenge", {
@@ -102,7 +98,7 @@ async function testClientAuthentication(): Promise<void> {
   console.log("   ✓ Got auth challenge");
 
   // Sign challenge
-  const signature = signMessage(challenge.message, clientKeypair);
+  const signature = await signMessage(challenge.message, clientWallet);
   console.log("   ✓ Signed challenge");
 
   // Verify signature
@@ -121,8 +117,8 @@ async function testAgentRegistration(): Promise<void> {
   console.log("\n3. Agent Registration");
   console.log("   -------------------");
 
-  const walletAddress = agentKeypair.publicKey.toBase58();
-  console.log(`   Agent Wallet: ${walletAddress.slice(0, 8)}...`);
+  const walletAddress = agentWallet.address;
+  console.log(`   Agent Wallet: ${walletAddress.slice(0, 10)}...`);
 
   // Get challenge
   const challenge = await api("POST", "/api/auth/challenge", {
@@ -130,7 +126,7 @@ async function testAgentRegistration(): Promise<void> {
   });
 
   // Sign and verify
-  const signature = signMessage(challenge.message, agentKeypair);
+  const signature = await signMessage(challenge.message, agentWallet);
 
   // For agent registration, we'd normally use a different endpoint
   // For this test, we simulate by creating a user first

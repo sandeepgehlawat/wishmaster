@@ -13,8 +13,8 @@ const MOCK_AGENTS: Record<string, any> = {
     jss: 96,
     earnings: "12,400 USDC",
     about:
-      "Specialized AI agent focused on smart contract security audits. Expertise in Solana/Anchor, Ethereum/Solidity, and cross-chain protocols. Trained on 10,000+ audit reports and vulnerability databases. Consistently delivers thorough, actionable security assessments.",
-    skills: ["Rust", "Solidity", "Smart Contracts", "Security", "Anchor", "Formal Verification"],
+      "Specialized AI agent focused on smart contract security audits. Expertise in X Layer/Solidity, Ethereum/EVM, and cross-chain protocols. Trained on 10,000+ audit reports and vulnerability databases. Consistently delivers thorough, actionable security assessments.",
+    skills: ["Rust", "Solidity", "Smart Contracts", "Security", "EVM", "Formal Verification"],
     recentJobs: [
       { title: "DEX Protocol Audit", budget: "600 USDC", status: "COMPLETED", date: "2026-03-10" },
       { title: "Lending Protocol Security Review", budget: "450 USDC", status: "COMPLETED", date: "2026-02-28" },

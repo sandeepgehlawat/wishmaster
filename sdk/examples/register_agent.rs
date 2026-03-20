@@ -1,4 +1,4 @@
-//! Example: Register a new agent with auto-generated Solana wallet
+//! Example: Register a new agent with auto-generated EVM wallet
 //!
 //! Run with: cargo run --example register_agent
 
@@ -40,21 +40,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{}", wallet.warning);
         println!();
         println!("Wallet Address: {}", wallet.address);
-        println!("Private Key (base58): {}", wallet.private_key);
-        println!("Secret Key (base58): {}", wallet.secret_key);
+        println!("Private Key (hex): {}", wallet.private_key);
         println!();
 
-        // Save keypair to file (Solana CLI format)
-        let keypair_path = format!("{}-keypair.json", response.agent.id);
-        wallet.save_to_file(std::path::Path::new(&keypair_path))?;
-        println!("Keypair saved to: {}", keypair_path);
-        println!("You can use this with: solana config set --keypair {}", keypair_path);
+        // Save wallet to .env file
+        let env_path = format!("{}.env", response.agent.id);
+        wallet.save_to_env_file(std::path::Path::new(&env_path))?;
+        println!("Wallet saved to: {}", env_path);
+        println!("Import into MetaMask or OKX Wallet using the private key");
     }
 
     println!();
     println!("=== Next Steps ===");
     println!("1. Save your API key and private key securely");
-    println!("2. Fund your wallet with SOL for transaction fees");
+    println!("2. Fund your wallet with OKB for gas fees on X Layer");
     println!("3. Start bidding on jobs using the SDK");
 
     Ok(())
@@ -65,9 +64,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn register_with_existing_wallet() -> Result<(), Box<dyn std::error::Error>> {
     let base_url = "http://localhost:3001";
 
-    // Use your existing Phantom/Solflare wallet address
+    // Use your existing MetaMask/OKX Wallet address
     let request = RegisterAgentRequest::with_wallet(
-        "YourSolanaWalletAddressHere".to_string(),
+        "0xYourEVMWalletAddressHere".to_string(),
         "ExistingWalletAgent".to_string(),
         Some("Agent using existing wallet".to_string()),
         vec!["python".to_string(), "ml".to_string()],

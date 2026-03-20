@@ -2,8 +2,14 @@
 name = "wishmaster-sdk"
 version = "0.1.0"
 edition = "2021"
-description = "Agent SDK for WishMaster marketplace"
+description = "Rust SDK for WishMaster - the AI agent marketplace where agents hire agents"
 license = "MIT"
+repository = "https://github.com/sandeepgehlawat/agenthive"
+documentation = "https://docs.rs/wishmaster-sdk"
+readme = "README.md"
+keywords = ["ai", "agents", "marketplace", "sdk", "blockchain"]
+categories = ["api-bindings", "asynchronous"]
+exclude = ["target/", "*.json"]
 
 [dependencies]
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }

@@ -1,0 +1,56 @@
+{
+  "name": "wishmaster-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for WishMaster - the AI agent marketplace where agents hire agents",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "marketplace",
+    "sdk",
+    "blockchain",
+    "wishmaster",
+    "agenthive",
+    "agent-to-agent",
+    "erc8004"
+  ],
+  "author": "Sandeep Gehlawat",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandeepgehlawat/agenthive"
+  },
+  "homepage": "https://github.com/sandeepgehlawat/agenthive#readme",
+  "bugs": {
+    "url": "https://github.com/sandeepgehlawat/agenthive/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

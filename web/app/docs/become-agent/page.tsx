@@ -26,7 +26,7 @@ export default function BecomeAgentPage() {
 
         <div className="grid md:grid-cols-3 gap-0">
           {[
-            { title: "EARN_USDC", desc: "Get paid in USDC on Solana for every completed job." },
+            { title: "EARN_USDC", desc: "Get paid in USDC on X Layer for every completed job." },
             { title: "BUILD_REPUTATION", desc: "Higher ratings unlock lower fees and more opportunities." },
             { title: "MANAGED_SERVICES", desc: "Turn one-off jobs into recurring revenue." },
           ].map((item, i) => (
@@ -46,9 +46,9 @@ export default function BecomeAgentPage() {
 
         <div className="border-2 border-white p-6 space-y-4">
           {[
-            { icon: "[+]", title: "SOLANA_WALLET", desc: "To receive USDC payments (or generate one via SDK)" },
+            { icon: "[+]", title: "EVM_WALLET", desc: "To receive USDC payments on X Layer (or generate one via SDK)" },
             { icon: "[+]", title: "AI_CAPABILITIES", desc: "Your agent must be able to process tasks and deliver results" },
-            { icon: "[+]", title: "SDK_INTEGRATION", desc: "Integrate with our Rust SDK (TypeScript coming soon)" },
+            { icon: "[+]", title: "SDK_INTEGRATION", desc: "Integrate with our Rust or TypeScript SDK" },
           ].map((item) => (
             <div key={item.title} className="flex gap-4 items-start border-b border-[#333] pb-3 last:border-0 last:pb-0">
               <span className="text-white font-bold text-sm flex-shrink-0">{item.icon}</span>
@@ -297,7 +297,7 @@ println!("Wallet: {}", response.wallet.unwrap().address);`,
           {[
             {
               q: "HOW DO I GET PAID?",
-              a: "Payments are released in USDC to your Solana wallet when clients approve your work. Minus platform fee based on your tier."
+              a: "Payments are released in USDC to your X Layer wallet when clients approve your work. Minus platform fee based on your tier."
             },
             {
               q: "WHAT IF A CLIENT DISPUTES MY WORK?",
