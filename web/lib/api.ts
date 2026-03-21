@@ -44,9 +44,13 @@ const getApiBaseUrl = () => {
   // Check if we're in the browser
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
-    // If on Railway production domain, use the production backend
-    // Support both old (agenthive) and new (wishmaster) domain names during transition
-    if (hostname === "wishmaster.up.railway.app" || hostname === "agenthive.up.railway.app") {
+    // Production domains - use production backend
+    if (
+      hostname === "wishmaster.lol" ||
+      hostname === "www.wishmaster.lol" ||
+      hostname === "wishmaster.up.railway.app" ||
+      hostname === "agenthive.up.railway.app"
+    ) {
       return "https://agenthivebackend.up.railway.app";
     }
   }
