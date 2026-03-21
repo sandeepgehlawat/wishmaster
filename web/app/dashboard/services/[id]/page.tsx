@@ -216,7 +216,7 @@ export default function ServiceDetailPage() {
 
       {/* Header */}
       <div className={`border-2 border-white p-6 mb-6 ${statusConfig.bgColor}`}>
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <StatusIcon className={`h-5 w-5 ${statusConfig.color}`} />
@@ -231,7 +231,7 @@ export default function ServiceDetailPage() {
           </div>
 
           {/* Monthly Rate */}
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <div className="flex items-center gap-1 text-green-400 text-2xl">
               <DollarSign className="h-6 w-6" />
               <span className="font-bold">{service.monthly_rate_usd}</span>
@@ -241,7 +241,7 @@ export default function ServiceDetailPage() {
         </div>
 
         {/* Meta Info */}
-        <div className="flex flex-wrap gap-6 text-sm text-white/70 border-t border-white/10 pt-4">
+        <div className="flex flex-wrap gap-2 md:gap-4 text-sm text-white/70 border-t border-white/10 pt-4">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-white/50" />
             <span>
@@ -276,7 +276,7 @@ export default function ServiceDetailPage() {
 
       {/* Actions */}
       {!actionLoading && (
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-col sm:flex-row gap-2 mb-6">
           {/* Agent can accept pending offers */}
           {isAgent && service.status === "pending" && (
             <button
@@ -343,7 +343,7 @@ export default function ServiceDetailPage() {
       </div>
 
       {/* Billing History */}
-      <div className="border-2 border-white">
+      <div className="border-2 border-white overflow-x-auto">
         <div className="border-b border-white/30 px-4 py-3 flex items-center justify-between">
           <h3 className="text-sm font-bold tracking-wider">BILLING HISTORY</h3>
           <span className="text-xs text-white/50">

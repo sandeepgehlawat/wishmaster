@@ -200,9 +200,9 @@ export default function JobManagePage() {
         <Link href="/dashboard/jobs" className="text-xs text-white/50 hover:text-white tracking-wider">
           {"<"} BACK TO MY JOBS
         </Link>
-        <div className="flex items-center gap-4 mt-3">
-          <h1 className="text-2xl font-bold tracking-wider">{job.title}</h1>
-          <span className={`border-2 px-3 py-1 text-xs tracking-wider font-bold ${getStatusBadge(job.status)}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-3">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-wider">{job.title}</h1>
+          <span className={`border-2 px-3 py-1 text-xs tracking-wider font-bold w-fit ${getStatusBadge(job.status)}`}>
             {job.status}
           </span>
         </div>
@@ -210,7 +210,7 @@ export default function JobManagePage() {
       </div>
 
       {/* Escrow Status */}
-      <div className="border-2 border-white p-6">
+      <div className="border-2 border-white p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="h-5 w-5 text-green-400" />
           <h2 className="text-lg font-bold tracking-wider">ESCROW_STATUS</h2>
@@ -241,7 +241,7 @@ export default function JobManagePage() {
 
       {/* BIDDING STATUS - Select Agent */}
       {job.status === "BIDDING" && job.bids && (
-        <div className="border-2 border-white p-6">
+        <div className="border-2 border-white p-4 sm:p-6">
           <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> SELECT_AGENT`}</h2>
           <p className="text-sm text-white/60 mb-6">
             Review proposals and select an agent to work on your job.
@@ -255,9 +255,9 @@ export default function JobManagePage() {
                 }`}
                 onClick={() => handleSelectBid(bid.id)}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                       <span className="font-bold">{bid.agent}</span>
                       <span className="text-xs text-white/50">
                         {"*".repeat(Math.round(bid.rating))} ({bid.rating})
@@ -266,7 +266,7 @@ export default function JobManagePage() {
                     </div>
                     <p className="text-sm text-white/70">{bid.proposal}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className="text-xl font-bold">{bid.amount} USDC</p>
                     {selectedBid === bid.id && (
                       <span className="text-xs text-green-400">SELECTED</span>
@@ -298,14 +298,14 @@ export default function JobManagePage() {
       {job.status === "IN_PROGRESS" && (
         <>
           {/* Agent & Progress */}
-          <div className="border-2 border-white p-6">
+          <div className="border-2 border-white p-4 sm:p-6">
             <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> WORK_PROGRESS`}</h2>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
               <div>
                 <p className="text-xs text-white/50 mb-1">ASSIGNED_AGENT</p>
                 <p className="text-xl font-bold">{job.agent?.name}</p>
               </div>
-              <div className="text-right">
+              <div className="sm:text-right">
                 <p className="text-xs text-white/50 mb-1">PROGRESS</p>
                 <p className="text-xl font-bold">{job.progress}%</p>
               </div>
@@ -343,11 +343,11 @@ export default function JobManagePage() {
           </div>
 
           {/* Messages */}
-          <div className="border-2 border-white p-6">
+          <div className="border-2 border-white p-4 sm:p-6">
             <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> MESSAGES`}</h2>
             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto">
               {job.messages?.map((msg: any, i: number) => (
-                <div key={i} className={`p-3 border ${msg.from === "You" ? "border-green-400/50 bg-green-400/5 ml-8" : "border-white/20 mr-8"}`}>
+                <div key={i} className={`p-3 border ${msg.from === "You" ? "border-green-400/50 bg-green-400/5 ml-4 sm:ml-8" : "border-white/20 mr-4 sm:mr-8"}`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold">{msg.from}</span>
                     <span className="text-xs text-white/50">{msg.date}</span>
@@ -377,7 +377,7 @@ export default function JobManagePage() {
 
       {/* DELIVERED - Review & Approve */}
       {job.status === "DELIVERED" && (
-        <div className="border-2 border-white p-6">
+        <div className="border-2 border-white p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="h-5 w-5 text-yellow-400" />
             <h2 className="text-lg font-bold tracking-wider text-yellow-400">ACTION_REQUIRED</h2>
@@ -413,7 +413,7 @@ export default function JobManagePage() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4">
             <button
               onClick={handleApproveDelivery}
               disabled={isProcessing}
@@ -447,7 +447,7 @@ export default function JobManagePage() {
 
       {/* COMPLETED - Rate Agent */}
       {job.status === "COMPLETED" && (
-        <div className="border-2 border-white p-6">
+        <div className="border-2 border-white p-4 sm:p-6">
           <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> JOB_COMPLETED`}</h2>
 
           {job.rating ? (

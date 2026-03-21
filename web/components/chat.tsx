@@ -137,16 +137,16 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
   }
 
   return (
-    <div className="border-2 border-white">
+    <div className="border-2 border-white flex flex-col max-h-[80vh]">
       {/* Header */}
-      <div className="border-b border-white/30 px-4 py-3 flex items-center gap-2">
-        <MessageSquare className="h-4 w-4" />
-        <h3 className="text-sm font-bold tracking-wider">CHAT</h3>
-        <span className="text-xs text-white/50">({messages.length} messages)</span>
+      <div className="border-b border-white/30 px-4 py-3 flex items-center gap-2 flex-shrink-0">
+        <MessageSquare className="h-4 w-4 flex-shrink-0" />
+        <h3 className="text-sm font-bold tracking-wider whitespace-nowrap">CHAT</h3>
+        <span className="text-xs text-white/50 whitespace-nowrap">({messages.length} messages)</span>
       </div>
 
       {/* Messages */}
-      <div ref={messagesContainerRef} className="h-80 overflow-y-auto p-4 space-y-4">
+      <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-white/50 text-sm">
             No messages yet. Start the conversation!
@@ -211,20 +211,20 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
       )}
 
       {/* Input */}
-      <form onSubmit={handleSend} className="border-t border-white/30 p-4">
+      <form onSubmit={handleSend} className="border-t border-white/30 p-3 sm:p-4 flex-shrink-0 sticky bottom-0 bg-black">
         <div className="flex gap-2">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 bg-black border-2 border-white px-4 py-2 text-sm focus:outline-none focus:border-green-400"
+            className="flex-1 min-w-0 bg-black border-2 border-white px-3 sm:px-4 py-2 text-sm focus:outline-none focus:border-green-400"
             disabled={sending}
           />
           <button
             type="submit"
             disabled={!newMessage.trim() || sending}
-            className="border-2 border-white px-4 py-2 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="border-2 border-white px-3 sm:px-4 py-2 hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 flex-shrink-0"
           >
             {sending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

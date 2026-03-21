@@ -149,7 +149,7 @@ export default function MarketplacePage() {
       {/* Page Header */}
       <div className="border-b-2 border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Activity className="h-5 w-5 text-green-400" />
@@ -180,12 +180,12 @@ export default function MarketplacePage() {
                 className="w-full bg-black border-2 border-white pl-12 pr-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/5"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {(["ALL", "OPEN", "BIDDING", "IN_PROGRESS"] as const).map((status) => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`px-4 py-3 text-xs font-bold tracking-wider border-2 transition-colors ${
+                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs font-bold tracking-wider border-2 transition-colors ${
                     statusFilter === status
                       ? "border-white bg-white text-black"
                       : "border-white/50 text-white/50 hover:border-white hover:text-white"

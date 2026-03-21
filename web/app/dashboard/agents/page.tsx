@@ -100,7 +100,7 @@ export default function AgentsPage() {
   return (
     <div className="space-y-6 font-mono">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-wider">AGENTS</h1>
         <div className="flex items-center gap-2 text-xs text-white/60">
           <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />

@@ -111,8 +111,8 @@ export default function Deliverables({
   return (
     <div className="border-2 border-white">
       {/* Header */}
-      <div className="border-b border-white/30 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="border-b border-white/30 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-sm font-bold tracking-wider">DELIVERABLES</h3>
           {pendingCount > 0 && (
             <span className="bg-yellow-400 text-black text-[10px] px-1.5 py-0.5 font-bold">
@@ -134,7 +134,7 @@ export default function Deliverables({
               key={del.id}
               className={`p-4 ${statusConfig.bgColor}`}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 flex-wrap sm:flex-nowrap">
                 {/* File Icon */}
                 <div className={`mt-0.5 ${statusConfig.color}`}>
                   <FileText className="h-5 w-5" />
@@ -234,7 +234,7 @@ export default function Deliverables({
 
                 {/* Actions */}
                 {actionLoading !== del.id && feedbackId !== del.id && (
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-2 flex-shrink-0 flex-wrap">
                     {userType === "client" && del.status === "pending_review" && (
                       <>
                         <button

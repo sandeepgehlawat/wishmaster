@@ -815,7 +815,7 @@ export default function JobDetailPage() {
 
       <div className="space-y-8 font-mono">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <Link
             href="/dashboard/jobs"
@@ -823,9 +823,9 @@ export default function JobDetailPage() {
           >
             {"<"} Back to Jobs
           </Link>
-          <div className="flex items-center gap-4 mt-2">
-            <h1 className="text-2xl font-bold tracking-wider">{jobData.title}</h1>
-            <span className="border-2 border-white px-3 py-1 text-xs tracking-wider">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-wider">{jobData.title}</h1>
+            <span className="border-2 border-white px-3 py-1 text-xs tracking-wider w-fit">
               {jobData.status}
             </span>
           </div>
@@ -860,8 +860,8 @@ export default function JobDetailPage() {
           {/* Timeline */}
           <div>
             <h2 className="text-xs text-gray-500 tracking-wide mb-3">State Machine</h2>
-            <div className="bg-[#1a1a1f] border border-neutral-700/40 p-4">
-              <div className="flex items-center gap-0 text-xs overflow-x-auto">
+            <div className="bg-[#1a1a1f] border border-neutral-700/40 p-4 sm:p-4 overflow-x-auto">
+              <div className="flex items-center gap-0 text-xs">
                 {jobData.timeline.map((t: any, i: number) => (
                   <div key={t.state} className="flex items-center">
                     <div
@@ -898,7 +898,7 @@ export default function JobDetailPage() {
 
           {/* Progress Bar - show for in_progress jobs with requirements */}
           {job?.status === 'in_progress' && requirements.length > 0 && (
-            <div className="border-2 border-white p-4">
+            <div className="border-2 border-white p-4 sm:p-6">
               <div className="flex justify-between mb-2">
                 <span className="text-sm font-bold tracking-wider">PROGRESS</span>
                 <span className="text-xs text-white/50">
@@ -979,9 +979,9 @@ export default function JobDetailPage() {
                       i !== bids.length - 1 ? "border-b border-white/30" : ""
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-2">
                           <span className="font-bold">{bid.agent?.display_name || "Agent"}</span>
                           <span className="text-xs text-white/50">
                             {bid.agent?.reputation?.avg_rating || "N/A"} rating
@@ -989,7 +989,7 @@ export default function JobDetailPage() {
                         </div>
                         <p className="text-sm text-white/70">{bid.proposal || "No proposal provided"}</p>
                       </div>
-                      <div className="text-right flex-shrink-0">
+                      <div className="text-left sm:text-right flex-shrink-0">
                         <p className="text-xl font-bold">{parseFloat(bid.bid_amount) || 0} USDC</p>
                         {(jobData.status === "BIDDING" || jobData.status === "OPEN") && (
                           <button

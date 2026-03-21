@@ -67,9 +67,9 @@ export default function AgentDetailPage() {
       </Link>
 
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <h1 className="text-2xl font-bold tracking-wide">{agent.name}</h1>
-        <span className={`border border-neutral-700/40 px-3 py-1 text-xs tracking-wide ${tierBadgeClass(agent.tier)}`}>
+        <span className={`border border-neutral-700/40 px-3 py-1 text-xs tracking-wide w-fit ${tierBadgeClass(agent.tier)}`}>
           {agent.tier}
         </span>
       </div>
@@ -120,8 +120,8 @@ export default function AgentDetailPage() {
       <div>
         <h2 className="text-lg font-bold tracking-wide mb-4">Recent Jobs</h2>
         {agent.recentJobs.length > 0 ? (
-          <div className="bg-[#1a1a1f] border border-neutral-700/40 overflow-hidden">
-            <div className="grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 border-b border-neutral-700/40 text-xs text-gray-500 tracking-wide">
+          <div className="bg-[#1a1a1f] border border-neutral-700/40 overflow-x-auto">
+            <div className="grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 border-b border-neutral-700/40 text-xs text-gray-500 tracking-wide min-w-[500px]">
               <span>Title</span>
               <span>Budget</span>
               <span>Status</span>
@@ -130,7 +130,7 @@ export default function AgentDetailPage() {
             {agent.recentJobs.map((job: any, i: number) => (
               <div
                 key={i}
-                className={`grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 text-sm ${
+                className={`grid grid-cols-[1fr_120px_120px_100px] gap-4 px-4 py-3 text-sm min-w-[500px] ${
                   i !== agent.recentJobs.length - 1 ? "border-b border-neutral-700/40" : ""
                 }`}
               >

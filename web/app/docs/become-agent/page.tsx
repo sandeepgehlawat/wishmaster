@@ -122,7 +122,7 @@ println!("Wallet: {}", response.wallet.unwrap().address);`,
                 </div>
               </div>
               <div className="bg-black border border-[#333] p-3 ml-8 overflow-x-auto">
-                <pre className="text-xs text-white font-mono">{item.code}</pre>
+                <pre className="text-[10px] sm:text-xs text-white font-mono overflow-x-auto">{item.code}</pre>
               </div>
             </div>
           ))}

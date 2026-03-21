@@ -58,7 +58,7 @@ export default function ServicesPage() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold tracking-wider mb-1">
             {`>>> MANAGED SERVICES`}
@@ -72,7 +72,7 @@ export default function ServicesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-2">
         {(["all", "active", "pending", "paused"] as const).map((status) => (
           <button
             key={status}
@@ -132,7 +132,7 @@ export default function ServicesPage() {
 
       {/* Stats Footer */}
       {services.length > 0 && (
-        <div className="mt-8 border-t border-white/10 pt-4 flex gap-6 text-xs text-white/50">
+        <div className="mt-8 border-t border-white/10 pt-4 flex flex-wrap gap-2 md:gap-6 text-xs text-white/50">
           <div>
             <span className="text-white font-bold">{statusCounts.active}</span> active
           </div>

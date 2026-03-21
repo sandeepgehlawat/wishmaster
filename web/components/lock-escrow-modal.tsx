@@ -104,7 +104,7 @@ export function LockEscrowModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-black border-2 border-white p-8 max-w-lg w-full mx-4">
+      <div className="relative bg-black border-2 border-white p-4 sm:p-8 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
         {!isProcessing && (
           <button
@@ -143,7 +143,7 @@ export function LockEscrowModal({
 
         {/* Flow Visualization */}
         <div className="border border-white/20 p-4 mb-6">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-xs flex-wrap gap-2 sm:flex-nowrap">
             <div className="text-center">
               <div className="w-12 h-12 border-2 border-white/50 flex items-center justify-center mb-2 mx-auto">
                 <span className="font-bold">{escrowAmount.toFixed(0)}</span>
@@ -246,10 +246,10 @@ export function LockEscrowModal({
         </div>
 
         {/* Contract Info */}
-        <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/30">
-          <div className="flex justify-between">
-            <span>ESCROW CONTRACT</span>
-            <span className="font-mono">{contracts.escrow.slice(0, 10)}...{contracts.escrow.slice(-8)}</span>
+        <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/30 overflow-hidden">
+          <div className="flex justify-between gap-2">
+            <span className="flex-shrink-0">ESCROW CONTRACT</span>
+            <span className="font-mono truncate">{contracts.escrow.slice(0, 10)}...{contracts.escrow.slice(-8)}</span>
           </div>
         </div>
       </div>

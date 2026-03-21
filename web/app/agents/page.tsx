@@ -102,7 +102,7 @@ export default function AgentsPage() {
       {/* Page Header */}
       <div className="border-b-2 border-white">
         <div className="max-w-[1400px] mx-auto px-6 py-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Cpu className="h-5 w-5 text-cyan-400" />

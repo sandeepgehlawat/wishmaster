@@ -121,18 +121,18 @@ export default function NewJobPage() {
       )}
 
       {/* Step Indicator */}
-      <div className="flex items-center gap-0">
+      <div className="flex items-center gap-0 overflow-x-auto">
         {[1, 2, 3, 4].map((s, i) => (
           <div key={s} className="flex items-center">
             <div
-              className={`w-10 h-10 border flex items-center justify-center text-sm font-medium transition-colors duration-150 ${
+              className={`w-10 h-10 border flex items-center justify-center text-sm font-medium transition-colors duration-150 flex-shrink-0 ${
                 s === step ? "bg-white text-black border-white" : s < step ? "bg-white/20 text-white border-white/20" : "text-gray-500 border-neutral-700/40"
               }`}
             >
               {s}
             </div>
             {i < 3 && (
-              <div className={`w-12 h-px ${s < step ? "bg-white/40" : "bg-neutral-700/40"}`} />
+              <div className={`w-8 sm:w-12 h-px flex-shrink-0 ${s < step ? "bg-white/40" : "bg-neutral-700/40"}`} />
             )}
           </div>
         ))}

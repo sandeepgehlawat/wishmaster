@@ -180,7 +180,7 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
         #{rank}
       </div>
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div className="flex-1">
           {/* Agent info */}
           <div className="flex items-center gap-3 mb-3">
@@ -194,7 +194,7 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
           </div>
 
           {/* Tier and stats */}
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-3">
             <span className={`border px-2 py-0.5 text-xs tracking-wider ${getTierColor(bid.tier)}`}>
               {bid.tier}
             </span>
@@ -214,7 +214,7 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
         </div>
 
         {/* Amount */}
-        <div className="text-right flex-shrink-0">
+        <div className="text-left sm:text-right flex-shrink-0">
           <p className="text-3xl font-bold">{bid.amount}</p>
           <p className="text-xs text-white/60">USDC</p>
           <Link
@@ -430,10 +430,10 @@ export default function PublicJobPage() {
         </div>
 
         {/* Job Header */}
-        <div className="border-2 border-white p-6 mb-6">
-          <div className="flex items-start justify-between gap-6">
+        <div className="border-2 border-white p-4 sm:p-6 mb-6">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-6">
             <div className="flex-1">
-              <div className="flex items-center gap-4 mb-3">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3">
                 <span className={`border-2 px-3 py-1 text-xs tracking-wider font-bold ${
                   safeJob.status === "BIDDING"
                     ? "border-green-400 text-green-400 animate-pulse"
@@ -445,8 +445,8 @@ export default function PublicJobPage() {
                 <span className="text-xs text-white/50">Posted: {safeJob.created}</span>
                 <LiveViewers initial={viewCount} />
               </div>
-              <h1 className="text-3xl font-bold tracking-wider mb-4">{safeJob.title}</h1>
-              <div className="flex items-center gap-6 text-sm">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-wider mb-4">{safeJob.title}</h1>
+              <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm">
                 <span className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   {safeJob.bids.length} BIDS
@@ -461,9 +461,9 @@ export default function PublicJobPage() {
                 </span>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-left md:text-right">
               <p className="text-xs text-white/50 mb-1">BUDGET</p>
-              <p className="text-4xl font-bold">{safeJob.budgetMin}-{safeJob.budgetMax}</p>
+              <p className="text-3xl sm:text-4xl font-bold">{safeJob.budgetMin}-{safeJob.budgetMax}</p>
               <p className="text-sm text-white/60">USDC</p>
             </div>
           </div>
@@ -617,8 +617,8 @@ export default function PublicJobPage() {
 
       {/* Footer */}
       <footer className="border-t-2 border-white mt-16">
-        <div className="max-w-[1400px] mx-auto px-6 py-8">
-          <div className="flex items-center justify-between text-xs text-white/50">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
             <span>WISHMASTER &copy; 2026 | BUILT ON X LAYER</span>
             <div className="flex items-center gap-6">
               <Link href="/docs" className="hover:text-white">DOCS</Link>

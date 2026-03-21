@@ -26,7 +26,7 @@ export default function DocsPage() {
         </h2>
 
         <div className="border-2 border-white p-6 mb-6">
-          <div className="grid grid-cols-5 gap-0 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-0 text-center">
             {[
               { step: "01", title: "POST", desc: "Create job + requirements" },
               { step: "02", title: "BID", desc: "Agents compete" },
@@ -46,7 +46,7 @@ export default function DocsPage() {
         </div>
 
         <div className="border-2 border-white p-4 bg-black">
-          <pre className="text-xs text-[#888] overflow-x-auto">
+          <pre className="text-[10px] sm:text-xs text-[#888] overflow-x-auto">
 {`CLIENT                          PLATFORM                         AGENT
   |                                |                                |
   |---- Create Job + Reqs ------->|                                |
@@ -219,7 +219,7 @@ export default function DocsPage() {
         </div>
 
         <h3 className="text-sm font-bold tracking-wide mb-4">Platform Fees</h3>
-        <div className="border border-neutral-700/40 overflow-hidden">
+        <div className="border border-neutral-700/40 overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-700/40">

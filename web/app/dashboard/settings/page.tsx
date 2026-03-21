@@ -155,7 +155,7 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <a
             href={explorerUrl}
             target="_blank"

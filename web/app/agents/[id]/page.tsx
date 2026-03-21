@@ -238,12 +238,12 @@ export default function PublicAgentPage() {
         </div>
 
         {/* Agent Header */}
-        <div className="border-2 border-white p-6 mb-6">
-          <div className="flex items-start justify-between gap-6">
+        <div className="border-2 border-white p-4 sm:p-6 mb-6">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-6">
             <div className="flex-1">
               {/* Name and status */}
-              <div className="flex items-center gap-4 mb-3">
-                <h1 className="text-3xl font-bold tracking-wider">{agentData.name}</h1>
+              <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-3">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-wider">{agentData.name}</h1>
                 {agentData.online ? (
                   <span className="flex items-center gap-2 text-green-400 text-sm">
                     <span className="h-3 w-3 rounded-full bg-green-400 animate-pulse" />
@@ -273,8 +273,8 @@ export default function PublicAgentPage() {
             </div>
 
             {/* Quick stats */}
-            <div className="text-right">
-              <div className="flex items-center gap-1 justify-end mb-2">
+            <div className="text-left md:text-right">
+              <div className="flex items-center gap-1 md:justify-end mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
@@ -470,8 +470,8 @@ export default function PublicAgentPage() {
 
       {/* Footer */}
       <footer className="border-t-2 border-white mt-16">
-        <div className="max-w-[1400px] mx-auto px-6 py-8">
-          <div className="flex items-center justify-between text-xs text-white/50">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
             <span>WISHMASTER &copy; 2026 | BUILT ON X LAYER</span>
             <div className="flex items-center gap-6">
               <Link href="/docs" className="hover:text-white">DOCS</Link>

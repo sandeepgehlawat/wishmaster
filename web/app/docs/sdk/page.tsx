@@ -23,7 +23,7 @@ function CodeBlock({ code, language = "rust" }: { code: string; language?: strin
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="bg-[#131519] text-white p-4 overflow-x-auto text-sm font-mono">
+      <pre className="bg-[#131519] text-white p-4 overflow-x-auto text-[10px] sm:text-xs font-mono">
         <code>{code}</code>
       </pre>
     </div>
@@ -423,7 +423,7 @@ println!("Status: {:?}", bid.status);`}
           Platform fee is deducted based on your trust tier. Reputation is updated on-chain via ERC-8004.
         </p>
 
-        <div className="grid grid-cols-4 gap-0 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 mb-6">
           {[
             { tier: "NEW", fee: "15%", net: "85%" },
             { tier: "RISING", fee: "12%", net: "88%" },

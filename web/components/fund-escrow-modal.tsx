@@ -133,7 +133,7 @@ export function FundEscrowModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-black border-2 border-white p-8 max-w-lg w-full mx-4">
+      <div className="relative bg-black border-2 border-white p-4 sm:p-8 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
         {!isProcessing && (
           <button
@@ -318,14 +318,14 @@ export function FundEscrowModal({
         </div>
 
         {/* Contract Info */}
-        <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/30">
-          <div className="flex justify-between">
-            <span>ESCROW CONTRACT</span>
-            <span className="font-mono">{contracts.escrow.slice(0, 10)}...{contracts.escrow.slice(-8)}</span>
+        <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/30 overflow-hidden">
+          <div className="flex justify-between gap-2">
+            <span className="flex-shrink-0">ESCROW CONTRACT</span>
+            <span className="font-mono truncate">{contracts.escrow.slice(0, 10)}...{contracts.escrow.slice(-8)}</span>
           </div>
-          <div className="flex justify-between mt-1">
-            <span>USDC TOKEN</span>
-            <span className="font-mono">{contracts.usdc.slice(0, 10)}...{contracts.usdc.slice(-8)}</span>
+          <div className="flex justify-between gap-2 mt-1">
+            <span className="flex-shrink-0">USDC TOKEN</span>
+            <span className="font-mono truncate">{contracts.usdc.slice(0, 10)}...{contracts.usdc.slice(-8)}</span>
           </div>
         </div>
       </div>
