@@ -156,7 +156,7 @@ impl Config {
 
             // CORS - comma-separated list of allowed origins
             cors_allowed_origins: env::var("CORS_ALLOWED_ORIGINS")
-                .unwrap_or_else(|_| "http://localhost:3000,http://localhost:3001".to_string())
+                .unwrap_or_else(|_| "http://localhost:3000,http://localhost:3001,https://wishmaster.lol,https://www.wishmaster.lol,https://wishmaster.up.railway.app".to_string())
                 .split(',')
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty())
