@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Briefcase, Plus } from "lucide-react";
+import { Loader2, Briefcase } from "lucide-react";
 import { getServices } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import ServiceCard from "@/components/service-card";
@@ -49,7 +49,7 @@ export default function ServicesPage() {
 
   if (!token) {
     return (
-      <div className="p-8 text-center text-white/50">
+      <div className="p-8 text-center text-neutral-500 font-mono">
         Please connect your wallet to view services.
       </div>
     );
@@ -58,12 +58,15 @@ export default function ServicesPage() {
   return (
     <div className="space-y-6 font-mono">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-wider mb-1">
-            {`>>> MANAGED SERVICES`}
-          </h1>
-          <p className="text-white/50">
+          <div className="flex items-center gap-3 mb-1">
+            <Briefcase className="h-4 w-4 text-green-400" />
+            <h1 className="text-xl md:text-2xl font-bold tracking-wider">
+              MANAGED SERVICES
+            </h1>
+          </div>
+          <p className="text-neutral-500 text-sm">
             {userType === "client"
               ? "Services you subscribe to"
               : "Services you manage"}
@@ -72,40 +75,40 @@ export default function ServicesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 -mb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-none">
         {(["all", "active", "pending", "paused"] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 text-sm border-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+            className={`px-4 py-2 text-sm border transition-colors whitespace-nowrap flex-shrink-0 ${
               filter === status
-                ? "border-green-400 text-green-400"
-                : "border-white/30 text-white/50 hover:border-white hover:text-white"
+                ? "border-green-500/30 bg-green-500/10 text-green-400"
+                : "border-neutral-700/40 text-neutral-400 hover:border-neutral-500 hover:text-white"
             }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
-            <span className="ml-2 text-xs">({statusCounts[status]})</span>
+            <span className="ml-2 text-xs text-neutral-500">({statusCounts[status]})</span>
           </button>
         ))}
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="border-2 border-white/30 p-12">
-          <div className="flex items-center justify-center gap-2 text-white/50">
+        <div className="border border-neutral-700/40 bg-[#1a1a1f] p-12">
+          <div className="flex items-center justify-center gap-2 text-neutral-400">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading services...</span>
+            <span className="text-sm">Loading services...</span>
           </div>
         </div>
       ) : error ? (
-        <div className="border-2 border-red-400/30 p-6 text-red-400 text-center">
+        <div className="border border-red-500/30 bg-red-500/5 p-6 text-red-400 text-center text-sm">
           {error}
         </div>
       ) : filteredServices.length === 0 ? (
-        <div className="border-2 border-white/30 p-12 text-center">
-          <Briefcase className="h-12 w-12 mx-auto mb-4 text-white/20" />
+        <div className="border border-neutral-700/40 bg-[#1a1a1f] p-8 sm:p-12 text-center">
+          <Briefcase className="h-12 w-12 mx-auto mb-4 text-neutral-600" />
           <h2 className="text-lg font-bold mb-2">No Services Found</h2>
-          <p className="text-white/50 text-sm mb-6">
+          <p className="text-neutral-500 text-sm mb-6">
             {filter === "all"
               ? userType === "client"
                 ? "You haven't subscribed to any managed services yet."
@@ -113,7 +116,7 @@ export default function ServicesPage() {
               : `No ${filter} services.`}
           </p>
           {userType === "client" && filter === "all" && (
-            <p className="text-xs text-white/30">
+            <p className="text-xs text-neutral-600">
               Complete a job and offer ongoing management to the agent.
             </p>
           )}
@@ -132,7 +135,7 @@ export default function ServicesPage() {
 
       {/* Stats Footer */}
       {services.length > 0 && (
-        <div className="mt-8 border-t border-white/10 pt-4 flex flex-wrap gap-4 sm:gap-6 text-xs text-white/50">
+        <div className="mt-8 border-t border-neutral-700/40 pt-4 flex flex-wrap gap-4 sm:gap-6 text-xs text-neutral-500">
           <div>
             <span className="text-white font-bold">{statusCounts.active}</span> active
           </div>
@@ -140,7 +143,7 @@ export default function ServicesPage() {
             <span className="text-white font-bold">{statusCounts.pending}</span> pending
           </div>
           <div>
-            <span className="text-white font-bold">
+            <span className="text-green-400 font-bold">
               ${services
                 .filter((s) => s.status === "active")
                 .reduce((sum, s) => sum + s.monthly_rate_usd, 0)

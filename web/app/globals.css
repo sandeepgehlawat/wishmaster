@@ -552,13 +552,215 @@
   animation: scan-line 3s linear infinite;
 }
 
-/* ========== CARD HOVER LIFT ========== */
+/* ========== PAGE TRANSITION ========== */
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main,
+[data-page] {
+  animation: page-enter 300ms ease-out;
+}
+
+/* ========== CARD HOVER SYSTEM ========== */
 
 .card-hover {
-  transition: transform 150ms ease-out, border-color 150ms ease-out;
+  transition: transform 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out, background-color 200ms ease-out;
+  position: relative;
 }
+
 .card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -8px rgba(74, 222, 128, 0.08);
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.card-hover:active {
+  transform: translateY(-1px);
+  transition-duration: 80ms;
+}
+
+/* Interactive card — for linked cards in grids */
+.card-interactive {
+  transition: transform 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out, background-color 200ms ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-interactive::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.03) 0%, transparent 60%);
+  transition: opacity 300ms ease-out;
+  pointer-events: none;
+}
+
+.card-interactive:hover {
+  transform: translateY(-3px);
+  border-color: rgba(74, 222, 128, 0.2) !important;
+  box-shadow: 0 8px 30px -8px rgba(74, 222, 128, 0.1), 0 0 0 1px rgba(74, 222, 128, 0.05);
+}
+
+.card-interactive:hover::after {
+  opacity: 1;
+}
+
+.card-interactive:active {
+  transform: translateY(-1px);
+  transition-duration: 80ms;
+}
+
+/* ========== BUTTON EFFECTS ========== */
+
+/* Primary button (white bg) */
+.btn-primary {
+  position: relative;
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 4px 16px -4px rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
+  transition-duration: 80ms;
+}
+
+/* Ghost button (border only) */
+.btn-ghost {
+  position: relative;
+  transition: border-color 200ms ease-out, color 200ms ease-out, background-color 200ms ease-out, transform 150ms ease-out;
+}
+
+.btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background-color: rgba(255, 255, 255, 0.03);
+  transform: translateY(-1px);
+}
+
+.btn-ghost:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 80ms;
+}
+
+/* ========== INPUT FOCUS GLOW ========== */
+
+.input-glow {
+  transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+.input-glow:focus {
+  border-color: rgba(74, 222, 128, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.06);
+}
+
+/* ========== NAV LINK UNDERLINE ========== */
+
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #4ade80;
+  transition: width 200ms ease-out;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.nav-link[aria-current="page"]::after {
+  width: 100%;
+  background: #fff;
+}
+
+/* ========== STATUS DOT PULSE ========== */
+
+@keyframes dot-live {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(74, 222, 128, 0); }
+}
+
+.dot-live {
+  animation: dot-live 2s ease-in-out infinite;
+}
+
+/* ========== STAT CARD BORDER SHIMMER ========== */
+
+@keyframes border-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.stat-card {
+  position: relative;
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+.stat-card:hover {
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px -6px rgba(74, 222, 128, 0.1);
+}
+
+/* ========== TAG / BADGE HOVER ========== */
+
+.tag-hover {
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, transform 100ms ease-out;
+}
+
+.tag-hover:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.tag-hover:active {
+  transform: scale(0.96);
+}
+
+/* ========== LIST ITEM HOVER ========== */
+
+.list-item-hover {
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+  position: relative;
+}
+
+.list-item-hover::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #4ade80;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.list-item-hover:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.list-item-hover:hover::before {
+  opacity: 1;
 }
 
 /* ========== HEADER SCROLL SHADOW ========== */

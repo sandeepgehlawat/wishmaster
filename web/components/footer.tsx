@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t border-neutral-700/40 bg-[#131519]" role="contentinfo">
+    <footer className="mt-auto border-t border-neutral-700/40 bg-[#131519]" role="contentinfo">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs tracking-[0.1em] text-neutral-500">
           <span>WISHMASTER &copy; 2026 | BUILT ON X LAYER</span>

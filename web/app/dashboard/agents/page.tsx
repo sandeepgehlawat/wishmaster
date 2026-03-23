@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Cpu, Star, ArrowRight } from "lucide-react";
 import { listAgents } from "@/lib/api";
 import { useDebounce } from "@/hooks/use-debounce";
+import { AgentCardSkeletonGrid } from "@/components/skeletons";
 
 interface Agent {
   id: string;
@@ -65,14 +66,10 @@ export default function DashboardAgentsPage() {
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case "TOP_RATED":
-        return "text-yellow-400 border-yellow-400";
-      case "ESTABLISHED":
-        return "text-green-400 border-green-400";
-      case "RISING":
-        return "text-cyan-400 border-cyan-400";
-      default:
-        return "text-white/60 border-white/60";
+      case "TOP_RATED": return "text-yellow-400 border-yellow-500/20 bg-yellow-500/10";
+      case "ESTABLISHED": return "text-green-400 border-green-500/20 bg-green-500/10";
+      case "RISING": return "text-cyan-400 border-cyan-500/20 bg-cyan-500/10";
+      default: return "text-neutral-400 border-neutral-700/40";
     }
   };
 
@@ -80,8 +77,11 @@ export default function DashboardAgentsPage() {
     <div className="space-y-6 font-mono">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold tracking-wider">AGENTS</h1>
-        <div className="flex items-center gap-2 text-xs text-white/60">
+        <div className="flex items-center gap-3">
+          <Cpu className="h-4 w-4 text-green-400" />
+          <h1 className="text-xl md:text-2xl font-bold tracking-wider">AGENTS</h1>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-neutral-400">
           <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
           {onlineCount} ONLINE
         </div>
@@ -93,19 +93,19 @@ export default function DashboardAgentsPage() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="SEARCH AGENTS OR SKILLS..."
-        className="w-full max-w-md bg-black border-2 border-white px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/5"
+        className="input-glow w-full max-w-md bg-[#131519] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none"
       />
 
       {/* Tier Filter */}
-      <div className="flex gap-4 sm:gap-6 text-sm overflow-x-auto pb-1 -mb-1">
+      <div className="flex gap-3 sm:gap-4 text-sm overflow-x-auto pb-1 -mb-1 scrollbar-none">
         {TIERS.map((tier) => (
           <button
             key={tier}
             onClick={() => setActiveTier(tier)}
             className={`tracking-wider pb-1 transition-colors bg-transparent border-none whitespace-nowrap flex-shrink-0 ${
               activeTier === tier
-                ? "text-white border-b-2 border-white"
-                : "text-gray-500 hover:text-white"
+                ? "text-white border-b-2 border-green-400"
+                : "text-neutral-500 hover:text-white"
             }`}
           >
             {tier}
@@ -115,16 +115,13 @@ export default function DashboardAgentsPage() {
 
       {/* Agent Grid */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-white/50" />
-          <span className="ml-3 text-white/50">LOADING_AGENTS...</span>
-        </div>
+        <AgentCardSkeletonGrid count={4} />
       ) : error ? (
-        <div className="border-2 border-red-500 p-12 text-center">
-          <p className="text-red-500 mb-4">{error}</p>
+        <div className="border border-red-500/30 bg-red-500/5 p-8 sm:p-12 text-center">
+          <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+            className="border border-neutral-700/40 px-6 py-3 text-sm font-bold tracking-wider hover:bg-[#1a1a1f] transition-colors"
           >
             [RETRY]
           </button>
@@ -135,29 +132,26 @@ export default function DashboardAgentsPage() {
             <Link
               key={agent.id}
               href={`/agents/${agent.id}`}
-              className="border-2 border-white p-4 sm:p-6 hover:bg-white/5 transition-colors block"
+              className="card-interactive border border-neutral-700/40 bg-[#1a1a1f] p-5 block no-underline group"
             >
               <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold">{agent.name}</h3>
+                <div className="min-w-0 flex-1 mr-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-base font-bold truncate">{agent.name}</h3>
                     {agent.online && (
-                      <span className="h-2 w-2 rounded-full bg-green-400" />
+                      <span className="h-2 w-2 rounded-full bg-green-400 flex-shrink-0" />
                     )}
                   </div>
-                  <span
-                    className={`border px-2 py-0.5 text-xs tracking-wider mt-1 inline-block ${getTierColor(
-                      agent.tier
-                    )}`}
-                  >
+                  <span className={`border px-2 py-0.5 text-[10px] tracking-wider inline-block ${getTierColor(agent.tier)}`}>
                     {agent.tier.replace("_", " ")}
                   </span>
                 </div>
-                <div className="text-right text-sm">
-                  <p>
-                    {"*".repeat(Math.round(agent.rating))} ({agent.rating ? agent.rating.toFixed(1) : "N/A"})
-                  </p>
-                  <p className="text-xs text-white/50">
+                <div className="text-right flex-shrink-0">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                    <span className="font-bold">{agent.rating ? agent.rating.toFixed(1) : "N/A"}</span>
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-1">
                     {agent.completedJobs} jobs
                   </p>
                 </div>
@@ -167,28 +161,26 @@ export default function DashboardAgentsPage() {
                 {agent.skills.slice(0, 5).map((skill) => (
                   <span
                     key={skill}
-                    className="border border-neutral-700/40 px-2.5 py-0.5 text-xs text-gray-400"
+                    className="border border-neutral-700/40 px-2 py-0.5 text-[10px] text-neutral-400 tracking-wide"
                   >
                     {skill}
                   </span>
                 ))}
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/40">
+              <div className="flex items-center justify-between pt-3 border-t border-neutral-700/40">
+                <span className="text-xs text-neutral-500">
                   {agent.online ? "ONLINE_NOW" : "OFFLINE"}
                 </span>
-                <span className="border-2 border-white px-3 py-1 text-xs font-bold tracking-wider hover:bg-white hover:text-black transition-colors">
-                  [VIEW]
-                </span>
+                <ArrowRight className="h-4 w-4 text-neutral-500 group-hover:text-white transition-colors" />
               </div>
             </Link>
           ))}
         </div>
       ) : (
-        <div className="border-2 border-white p-12 text-center">
-          <p className="text-white/60 mb-4">NO_AGENTS_FOUND</p>
-          <p className="text-white/40 text-sm">
+        <div className="border border-neutral-700/40 bg-[#1a1a1f] p-8 sm:p-12 text-center">
+          <p className="text-neutral-400 mb-4">NO_AGENTS_FOUND</p>
+          <p className="text-neutral-500 text-sm">
             No agents match your search. Try different filters.
           </p>
         </div>

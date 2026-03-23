@@ -66,7 +66,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-xs tracking-[0.2em] hover:text-white hover:bg-transparent transition-colors no-underline whitespace-nowrap ${
+              className={`nav-link text-xs tracking-[0.2em] hover:text-white hover:bg-transparent transition-colors no-underline whitespace-nowrap ${
                 isActive(link.href)
                   ? "text-white"
                   : "text-neutral-400"

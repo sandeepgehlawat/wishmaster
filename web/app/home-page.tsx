@@ -159,7 +159,7 @@ function getTimeLeft(deadline?: string): string {
 
 function JobCard({ job }: { job: Job }) {
   return (
-    <div className="card-hover border border-neutral-700/40 bg-[#1a1a1f] p-5 hover:border-neutral-600/60 transition-colors duration-150 group">
+    <div className="card-interactive border border-neutral-700/40 bg-[#1a1a1f] p-5 group">
       <div className="flex items-center justify-between mb-3">
         <span
           className={`text-xs font-mono px-2 py-0.5 border ${
@@ -225,7 +225,7 @@ function AgentCard({ agent }: { agent: Agent }) {
   const ratingPercent = (ratingValue / 5) * 100;
 
   return (
-    <div className="card-hover border border-neutral-700/40 bg-[#1a1a1f] hover:border-neutral-600/60 transition-colors duration-150 group">
+    <div className="card-interactive border border-neutral-700/40 bg-[#1a1a1f] group">
       {/* Header: Name + Tier */}
       <div className="flex items-center justify-between p-5 pb-3">
         <div className="text-base font-bold font-mono tracking-wide truncate mr-2">
@@ -503,7 +503,7 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono selection:bg-white selection:text-black">
+    <div className="min-h-screen flex flex-col bg-[#131519] text-white font-mono selection:bg-white selection:text-black">
       <Header />
 
       {/* Hero Section */}

@@ -155,7 +155,7 @@ export default function DocsLayout({
   }, [sidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono">
+    <div className="min-h-screen flex flex-col bg-[#131519] text-white font-mono">
       <Header />
 
       {/* Mobile sidebar overlay */}
@@ -177,17 +177,7 @@ export default function DocsLayout({
         </div>
       )}
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-        {/* Mobile docs menu button */}
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="lg:hidden flex items-center gap-2 py-3 text-xs tracking-wider text-neutral-400 hover:text-white transition-colors"
-          aria-label="Open docs menu"
-        >
-          <Menu className="h-4 w-4" />
-          DOCS MENU
-        </button>
-
+      <div className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 w-full">
         <div className="flex">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-neutral-700/40 bg-[#131519] min-h-[calc(100vh-3.5rem)]">
@@ -198,6 +188,15 @@ export default function DocsLayout({
 
           {/* Main Content */}
           <main className="flex-1 min-w-0 max-w-4xl py-8 pl-0 lg:pl-8">
+            {/* Mobile docs menu button */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden flex items-center gap-2 mb-6 text-xs tracking-wider text-neutral-400 hover:text-white transition-colors border border-neutral-700/40 px-3 py-2"
+              aria-label="Open docs menu"
+            >
+              <Menu className="h-4 w-4" />
+              DOCS MENU
+            </button>
             {children}
           </main>
         </div>

@@ -145,7 +145,7 @@ export default function MarketplacePage() {
   const liveJobs = jobs.length;
 
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono">
+    <div className="min-h-screen flex flex-col bg-[#131519] text-white font-mono">
       <Header />
 
       {/* Page Header */}
@@ -164,7 +164,7 @@ export default function MarketplacePage() {
             </div>
             <Link
               href="/dashboard/jobs/new"
-              className="border-2 border-white px-5 py-2.5 text-xs sm:text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors"
+              className="btn-primary border-2 border-white px-5 py-2.5 text-xs sm:text-sm font-bold tracking-wider bg-white text-black hover:bg-neutral-200 no-underline"
             >
               [+ POST JOB]
             </Link>
@@ -179,7 +179,7 @@ export default function MarketplacePage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="SEARCH JOBS..."
-                className="w-full bg-[#131519] border border-neutral-700/40 pl-12 pr-4 py-3 text-sm placeholder:text-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors"
+                className="input-glow w-full bg-[#131519] border border-neutral-700/40 pl-12 pr-4 py-3 text-sm placeholder:text-neutral-500 focus:outline-none"
               />
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-none">
@@ -187,7 +187,7 @@ export default function MarketplacePage() {
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs font-bold tracking-wider border transition-colors whitespace-nowrap flex-shrink-0 ${
+                  className={`tag-hover px-3 sm:px-4 py-2 sm:py-3 text-xs font-bold tracking-wider border whitespace-nowrap flex-shrink-0 ${
                     statusFilter === status
                       ? "border-white bg-white text-black"
                       : "border-neutral-700/40 text-neutral-400 hover:border-neutral-500 hover:text-white"
@@ -202,7 +202,7 @@ export default function MarketplacePage() {
       </div>
 
       {/* Job Grid */}
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 py-8 w-full">
         {loading ? (
           <JobCardSkeletonGrid count={6} />
         ) : error ? (
@@ -222,7 +222,7 @@ export default function MarketplacePage() {
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}
-                  className="block border border-neutral-700/40 bg-[#1a1a1f] p-5 hover:border-neutral-600/60 transition-colors duration-150 group no-underline"
+                  className="card-interactive block border border-neutral-700/40 bg-[#1a1a1f] p-5 group no-underline"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span

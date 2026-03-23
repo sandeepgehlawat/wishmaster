@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { getCurrentUser, updateUser } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
-import { Loader2 } from "lucide-react";
+import { Loader2, Settings, Shield, Wallet, Bell } from "lucide-react";
 import { activeChain } from "@/lib/wagmi-config";
 
 export default function SettingsPage() {
@@ -69,16 +69,19 @@ export default function SettingsPage() {
     : `https://www.oklink.com/xlayer/address/${walletAddress}`;
 
   return (
-    <div className="space-y-8 font-mono max-w-2xl min-w-0">
+    <div className="space-y-6 font-mono max-w-2xl min-w-0">
       {/* Header */}
-      <h1 className="text-2xl font-bold tracking-wide">Settings</h1>
+      <div className="flex items-center gap-3">
+        <Settings className="h-4 w-4 text-green-400" />
+        <h1 className="text-xl md:text-2xl font-bold tracking-wide">Settings</h1>
+      </div>
 
       {/* Profile Section */}
-      <div className="border-2 border-white p-6 space-y-6">
-        <h2 className="text-xs text-white/50 tracking-wider">PROFILE</h2>
+      <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 sm:p-6 space-y-6">
+        <h2 className="text-xs text-neutral-500 tracking-wider">PROFILE</h2>
 
         <div>
-          <label className="block text-xs text-white/60 tracking-wider mb-2">
+          <label className="block text-xs text-neutral-500 tracking-wider mb-2">
             DISPLAY_NAME
           </label>
           <input
@@ -86,12 +89,12 @@ export default function SettingsPage() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Enter your name..."
-            className="w-full bg-black border-2 border-white px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/5"
+            className="w-full bg-[#131519] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-500 transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-white/60 tracking-wider mb-2">
+          <label className="block text-xs text-neutral-500 tracking-wider mb-2">
             EMAIL
           </label>
           <input
@@ -99,15 +102,15 @@ export default function SettingsPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full bg-black border-2 border-white px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/5"
+            className="w-full bg-[#131519] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-500 transition-colors"
           />
-          <p className="text-xs text-white/40 mt-2">
+          <p className="text-xs text-neutral-600 mt-2">
             Used for notifications about your jobs
           </p>
         </div>
 
         <div>
-          <label className="block text-xs text-white/60 tracking-wider mb-2">
+          <label className="block text-xs text-neutral-500 tracking-wider mb-2">
             COMPANY (OPTIONAL)
           </label>
           <input
@@ -115,7 +118,7 @@ export default function SettingsPage() {
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             placeholder="Your company name..."
-            className="w-full bg-black border-2 border-white px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/5"
+            className="w-full bg-[#131519] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-500 transition-colors"
           />
         </div>
 
@@ -123,7 +126,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={updateMutation.isPending}
-            className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors disabled:opacity-50"
+            className="bg-white text-black px-6 py-2 text-sm font-bold tracking-wider hover:bg-neutral-200 transition-colors disabled:opacity-50"
           >
             {updateMutation.isPending ? (
               <span className="flex items-center gap-2">
@@ -143,30 +146,33 @@ export default function SettingsPage() {
       </div>
 
       {/* Wallet Section */}
-      <div className="border-2 border-white p-6 space-y-6">
-        <h2 className="text-xs text-white/50 tracking-wider">WALLET</h2>
+      <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 sm:p-6 space-y-6">
+        <div className="flex items-center gap-2">
+          <Wallet className="h-3.5 w-3.5 text-neutral-500" />
+          <h2 className="text-xs text-neutral-500 tracking-wider">WALLET</h2>
+        </div>
 
         <div>
-          <p className="text-xs text-white/60 tracking-wider mb-2">
+          <p className="text-xs text-neutral-500 tracking-wider mb-2">
             CONNECTED_ADDRESS
           </p>
-          <p className="text-sm font-mono bg-white/5 border border-white/30 px-4 py-3 break-all">
+          <p className="text-sm font-mono bg-[#131519] border border-neutral-700/40 px-4 py-3 break-all text-neutral-300">
             {walletAddress}
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-3">
           <a
             href={explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="border-2 border-white px-4 py-2 text-xs font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+            className="border border-neutral-700/40 px-4 py-2 text-xs font-bold tracking-wider hover:border-neutral-500 hover:text-white transition-colors text-neutral-300 no-underline"
           >
             [VIEW ON EXPLORER]
           </a>
           <button
             onClick={signOut}
-            className="border-2 border-white px-4 py-2 text-xs font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+            className="border border-neutral-700/40 px-4 py-2 text-xs font-bold tracking-wider hover:border-neutral-500 hover:text-white transition-colors text-neutral-300"
           >
             [DISCONNECT]
           </button>
@@ -174,14 +180,17 @@ export default function SettingsPage() {
       </div>
 
       {/* Notifications Section */}
-      <div className="border-2 border-white p-6 space-y-6">
-        <h2 className="text-xs text-white/50 tracking-wider">NOTIFICATIONS</h2>
+      <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 sm:p-6 space-y-6">
+        <div className="flex items-center gap-2">
+          <Bell className="h-3.5 w-3.5 text-neutral-500" />
+          <h2 className="text-xs text-neutral-500 tracking-wider">NOTIFICATIONS</h2>
+        </div>
 
-        <div className="space-y-4">
-          <label className="flex items-center justify-between py-2 border-b border-white/20 cursor-pointer">
+        <div className="space-y-0">
+          <label className="flex items-center justify-between py-3 border-b border-neutral-700/40 cursor-pointer">
             <div>
               <span className="text-sm">EMAIL_BID_ALERTS</span>
-              <p className="text-xs text-white/40 mt-1">
+              <p className="text-xs text-neutral-500 mt-1">
                 Get notified when agents bid on your jobs
               </p>
             </div>
@@ -194,14 +203,14 @@ export default function SettingsPage() {
                   emailBids: !prev.emailBids,
                 }))
               }
-              className="w-5 h-5 accent-white appearance-none border border-neutral-700/40 bg-[#111114] checked:bg-white cursor-pointer"
+              className="w-5 h-5 accent-green-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-green-400 cursor-pointer"
             />
           </label>
 
-          <label className="flex items-center justify-between py-2 border-b border-white/20 cursor-pointer">
+          <label className="flex items-center justify-between py-3 border-b border-neutral-700/40 cursor-pointer">
             <div>
               <span className="text-sm">EMAIL_MESSAGES</span>
-              <p className="text-xs text-white/40 mt-1">
+              <p className="text-xs text-neutral-500 mt-1">
                 Get notified when agents send you messages
               </p>
             </div>
@@ -214,14 +223,14 @@ export default function SettingsPage() {
                   emailMessages: !prev.emailMessages,
                 }))
               }
-              className="w-5 h-5 accent-white appearance-none border border-neutral-700/40 bg-[#111114] checked:bg-white cursor-pointer"
+              className="w-5 h-5 accent-green-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-green-400 cursor-pointer"
             />
           </label>
 
-          <label className="flex items-center justify-between py-2 cursor-pointer">
+          <label className="flex items-center justify-between py-3 cursor-pointer">
             <div>
               <span className="text-sm">PUSH_ALERTS</span>
-              <p className="text-xs text-white/40 mt-1">
+              <p className="text-xs text-neutral-500 mt-1">
                 Browser push notifications for urgent updates
               </p>
             </div>
@@ -234,26 +243,29 @@ export default function SettingsPage() {
                   pushAlerts: !prev.pushAlerts,
                 }))
               }
-              className="w-5 h-5 accent-white appearance-none border border-neutral-700/40 bg-[#111114] checked:bg-white cursor-pointer"
+              className="w-5 h-5 accent-green-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-green-400 cursor-pointer"
             />
           </label>
         </div>
       </div>
 
       {/* Security Tips */}
-      <div className="border-2 border-white p-6 space-y-4">
-        <h2 className="text-xs text-white/50 tracking-wider">SECURITY</h2>
+      <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 sm:p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Shield className="h-3.5 w-3.5 text-neutral-500" />
+          <h2 className="text-xs text-neutral-500 tracking-wider">SECURITY</h2>
+        </div>
 
-        <p className="text-sm text-white/60 leading-relaxed">
+        <p className="text-sm text-neutral-400 leading-relaxed">
           Your wallet is the only way to access your account. Keep your seed
           phrase safe and never share it with anyone.
         </p>
 
-        <div className="bg-white/5 border border-white/30 p-4">
-          <p className="text-xs text-white/60 tracking-wider mb-3">
+        <div className="bg-[#131519] border border-neutral-700/40 p-4">
+          <p className="text-xs text-neutral-500 tracking-wider mb-3">
             SECURITY_TIPS
           </p>
-          <ul className="text-xs text-white/50 space-y-2">
+          <ul className="text-xs text-neutral-400 space-y-2">
             <li>* Never share your seed phrase</li>
             <li>* Use a hardware wallet for large amounts</li>
             <li>* Verify transaction details before signing</li>
@@ -263,10 +275,10 @@ export default function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="border-2 border-white p-6 space-y-6">
-        <h2 className="text-xs text-white/50 tracking-wider">DANGER_ZONE</h2>
+      <div className="border border-red-500/10 bg-red-500/[0.02] p-5 sm:p-6 space-y-4">
+        <h2 className="text-xs text-red-400/60 tracking-wider">DANGER_ZONE</h2>
 
-        <p className="text-sm text-white/60">
+        <p className="text-sm text-neutral-400">
           This action is irreversible. All data associated with your account
           will be permanently deleted.
         </p>

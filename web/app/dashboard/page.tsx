@@ -75,12 +75,9 @@ export default function DashboardPage() {
           listMyJobs(token),
           getCurrentUser(token),
         ]);
-        // Transform JobWithDetails to DashboardJob
-        // Handle both flat (serde flatten) and nested (legacy) formats
         const transformedJobs: DashboardJob[] = (jobsResponse.jobs || [])
           .filter((jwd: any) => jwd != null)
           .map((jwd: any) => {
-            // Handle both flat and nested job structures
             const job = jwd.job || jwd;
             return {
               id: job.id,
@@ -155,11 +152,11 @@ export default function DashboardPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "BIDDING": return "text-green-400 border-green-400";
-      case "IN_PROGRESS": return "text-yellow-400 border-yellow-400";
-      case "DELIVERED": return "text-cyan-400 border-cyan-400";
-      case "COMPLETED": return "text-white/50 border-white/50";
-      default: return "text-white border-white";
+      case "BIDDING": return "text-green-400 border-green-500/20 bg-green-500/10";
+      case "IN_PROGRESS": return "text-yellow-400 border-yellow-500/20 bg-yellow-500/10";
+      case "DELIVERED": return "text-cyan-400 border-cyan-500/20 bg-cyan-500/10";
+      case "COMPLETED": return "text-neutral-400 border-neutral-700/40";
+      default: return "text-neutral-300 border-neutral-700/40";
     }
   };
 
@@ -178,13 +175,13 @@ export default function DashboardPage() {
   if (_hasHydrated && !token) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] font-mono">
-        <div className="border-2 border-white p-8 text-center max-w-md">
-          <Wallet className="h-12 w-12 mx-auto mb-4 text-white/60" />
+        <div className="border border-neutral-700/40 bg-[#1a1a1f] p-8 text-center max-w-md">
+          <Wallet className="h-12 w-12 mx-auto mb-4 text-neutral-500" />
           <h1 className="text-xl font-bold tracking-wider mb-4">WALLET_NOT_CONNECTED</h1>
-          <p className="text-sm text-white/60 mb-6">
+          <p className="text-sm text-neutral-400 mb-6">
             Connect your wallet to view your dashboard, manage jobs, and track escrow.
           </p>
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-neutral-500">
             Use the connect button in the navigation bar to get started.
           </p>
         </div>
@@ -196,8 +193,8 @@ export default function DashboardPage() {
   if (loading || !_hasHydrated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] font-mono">
-        <Loader2 className="h-8 w-8 animate-spin mb-4" />
-        <p className="text-sm text-white/60 tracking-wider">LOADING_DASHBOARD...</p>
+        <Loader2 className="h-6 w-6 animate-spin mb-4 text-neutral-400" />
+        <p className="text-sm text-neutral-400 tracking-wider">LOADING_DASHBOARD...</p>
       </div>
     );
   }
@@ -206,13 +203,13 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] font-mono">
-        <div className="border-2 border-red-400 p-8 text-center max-w-md">
+        <div className="border border-red-500/30 bg-red-500/5 p-8 text-center max-w-md">
           <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-400" />
           <h1 className="text-xl font-bold tracking-wider mb-4 text-red-400">ERROR</h1>
-          <p className="text-sm text-white/60 mb-6">{error}</p>
+          <p className="text-sm text-neutral-400 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+            className="border border-neutral-700/40 px-6 py-2 text-sm font-bold tracking-wider hover:bg-[#1a1a1f] transition-colors"
           >
             [RETRY]
           </button>
@@ -229,12 +226,12 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-wider">MY_DASHBOARD</h1>
-          <p className="text-sm text-white/60 mt-1">WALLET: {shortAddress}</p>
+          <h1 className="text-xl md:text-2xl font-bold tracking-wider">MY_DASHBOARD</h1>
+          <p className="text-sm text-neutral-500 mt-1">WALLET: {shortAddress}</p>
         </div>
         <Link
           href="/dashboard/jobs/new"
-          className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors"
+          className="btn-primary bg-white text-black px-5 py-2.5 text-xs sm:text-sm font-bold tracking-wider no-underline"
         >
           [+ POST NEW JOB]
         </Link>
@@ -242,9 +239,9 @@ export default function DashboardPage() {
 
       {/* Urgent Actions */}
       {pendingActions.length > 0 && (
-        <div className="border-2 border-yellow-400 bg-yellow-400/10 p-4">
+        <div className="border border-yellow-500/20 bg-yellow-500/5 p-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="h-5 w-5 text-yellow-400" />
+            <AlertTriangle className="h-4 w-4 text-yellow-400" />
             <h2 className="text-sm font-bold tracking-wider text-yellow-400">
               PENDING_ACTIONS ({pendingActions.length})
             </h2>
@@ -254,17 +251,15 @@ export default function DashboardPage() {
               <Link
                 key={i}
                 href={`/dashboard/jobs/${action.jobId}/manage`}
-                className="flex items-center justify-between p-3 border border-yellow-400/30 hover:bg-yellow-400/10 transition-colors"
+                className="flex items-center justify-between p-3 border border-neutral-700/40 bg-[#1a1a1f] hover:border-neutral-600/60 transition-colors no-underline"
               >
                 <div className="flex items-center gap-3">
-                  <span className={`text-xs px-2 py-0.5 border ${
-                    action.priority === "HIGH" ? "border-red-400 text-red-400" : "border-white/50 text-white/50"
-                  }`}>
+                  <span className="text-xs px-2 py-0.5 border border-red-500/20 bg-red-500/10 text-red-400">
                     {action.priority}
                   </span>
                   <span className="text-sm">{action.title}</span>
                 </div>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 text-neutral-500" />
               </Link>
             ))}
           </div>
@@ -272,32 +267,32 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 border-2 border-white">
-        <div className="p-4 sm:p-6 border-b lg:border-b-0 border-r border-white">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-green-400">
           <div className="flex items-center gap-2 mb-2">
-            <Briefcase className="h-4 w-4 text-white/60" />
-            <p className="text-xs text-white/60 tracking-wider">ACTIVE_JOBS</p>
+            <Briefcase className="h-4 w-4 text-neutral-500" />
+            <p className="text-[10px] sm:text-xs text-neutral-500 tracking-wider">ACTIVE_JOBS</p>
           </div>
           <p className="text-2xl sm:text-3xl font-bold">{activeJobs.length}</p>
         </div>
-        <div className="p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-white">
+        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-green-400">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-green-400" />
-            <p className="text-xs text-white/60 tracking-wider">IN_ESCROW</p>
+            <p className="text-[10px] sm:text-xs text-neutral-500 tracking-wider">IN_ESCROW</p>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-green-400">{escrowSummary.total} <span className="text-base">USDC</span></p>
+          <p className="text-2xl sm:text-3xl font-bold text-green-400">{escrowSummary.total} <span className="text-sm text-neutral-500">USDC</span></p>
         </div>
-        <div className="p-4 sm:p-6 border-r border-white">
+        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-neutral-500">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="h-4 w-4 text-yellow-400" />
-            <p className="text-xs text-white/60 tracking-wider">PENDING</p>
+            <p className="text-[10px] sm:text-xs text-neutral-500 tracking-wider">PENDING</p>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-yellow-400">{escrowSummary.pendingRelease} <span className="text-base">USDC</span></p>
+          <p className="text-2xl sm:text-3xl font-bold text-yellow-400">{escrowSummary.pendingRelease} <span className="text-sm text-neutral-500">USDC</span></p>
         </div>
-        <div className="p-4 sm:p-6">
+        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-neutral-500">
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle className="h-4 w-4 text-white/60" />
-            <p className="text-xs text-white/60 tracking-wider">COMPLETED</p>
+            <CheckCircle className="h-4 w-4 text-neutral-500" />
+            <p className="text-[10px] sm:text-xs text-neutral-500 tracking-wider">COMPLETED</p>
           </div>
           <p className="text-2xl sm:text-3xl font-bold">{completedJobs.length}</p>
         </div>
@@ -306,21 +301,24 @@ export default function DashboardPage() {
       {/* My Jobs */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold tracking-wider">{`>>> MY_JOBS`}</h2>
+          <div className="flex items-center gap-3">
+            <Briefcase className="h-4 w-4 text-green-400" />
+            <h2 className="text-lg font-bold tracking-wider">MY_JOBS</h2>
+          </div>
           <Link
             href="/dashboard/jobs"
-            className="text-xs text-white/50 hover:text-white tracking-wider"
+            className="text-xs text-neutral-400 hover:text-white tracking-wider no-underline flex items-center gap-1"
           >
-            VIEW ALL &gt;
+            View All <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
-        <div className="border-2 border-white">
+        <div className="border border-neutral-700/40 bg-[#1a1a1f]">
           {jobs.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-white/60 mb-4">No jobs yet</p>
+              <p className="text-neutral-400 mb-4">No jobs yet</p>
               <Link
                 href="/dashboard/jobs/new"
-                className="text-sm text-white/80 hover:text-white underline"
+                className="text-sm text-neutral-300 hover:text-white underline"
               >
                 Post your first job
               </Link>
@@ -330,39 +328,31 @@ export default function DashboardPage() {
               <Link
                 key={job.id}
                 href={`/dashboard/jobs/${job.id}/manage`}
-                className={`block p-4 hover:bg-white/5 transition-colors ${
-                  i !== jobs.length - 1 ? "border-b border-white/30" : ""
+                className={`list-item-hover block p-4 no-underline ${
+                  i !== jobs.length - 1 ? "border-b border-neutral-700/40" : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-xs text-white/40">{job.id.slice(0, 8)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <span className="text-xs text-neutral-600">{job.id.slice(0, 8)}</span>
                       <span className={`border px-2 py-0.5 text-xs tracking-wider ${getStatusColor(job.status)}`}>
                         {job.status}
                       </span>
                       {getUrgentAction(job) && (
-                        <span className="text-xs text-yellow-400 animate-pulse">
+                        <span className="text-xs text-yellow-400">
                           ! {getUrgentAction(job)}
                         </span>
                       )}
                     </div>
-                    <h3 className="font-bold mb-2">{job.title}</h3>
-                    <div className="flex items-center gap-4 text-xs text-white/60">
+                    <h3 className="font-bold mb-2 truncate">{job.title}</h3>
+                    <div className="flex items-center gap-4 text-xs text-neutral-500">
                       {job.agent_name && <span>AGENT: {job.agent_name}</span>}
                       {job.bid_count > 0 && <span>BIDS: {job.bid_count}</span>}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold">{job.final_price || job.budget_max} USDC</p>
-                    <p className={`text-xs mt-1 ${
-                      job.status.toUpperCase() === "DELIVERED" ? "text-yellow-400" :
-                      job.status.toUpperCase() === "IN_PROGRESS" || job.status.toUpperCase() === "ASSIGNED" ? "text-green-400" :
-                      job.status.toUpperCase() === "COMPLETED" ? "text-white/50" :
-                      "text-white"
-                    }`}>
-                      {job.status}
-                    </p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-green-400">{job.final_price || job.budget_max} USDC</p>
                   </div>
                 </div>
               </Link>
@@ -371,45 +361,50 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Escrow Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <div className="border-2 border-white p-6">
-          <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> ESCROW_BREAKDOWN`}</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b border-white/20">
-              <span className="text-sm text-white/60">Funded (Awaiting Bids)</span>
+      {/* Escrow Breakdown & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <DollarSign className="h-4 w-4 text-green-400" />
+            <h2 className="text-sm font-bold tracking-wider">ESCROW_BREAKDOWN</h2>
+          </div>
+          <div className="space-y-0">
+            <div className="flex items-center justify-between py-3 border-b border-neutral-700/40">
+              <span className="text-sm text-neutral-400">Funded (Awaiting Bids)</span>
               <span className="font-bold">{escrowSummary.funded} USDC</span>
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-white/20">
-              <span className="text-sm text-white/60">Locked (Work in Progress)</span>
+            <div className="flex items-center justify-between py-3 border-b border-neutral-700/40">
+              <span className="text-sm text-neutral-400">Locked (Work in Progress)</span>
               <span className="font-bold text-green-400">{escrowSummary.locked} USDC</span>
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-white/20">
-              <span className="text-sm text-white/60">Pending Release (Review)</span>
+            <div className="flex items-center justify-between py-3 border-b border-neutral-700/40">
+              <span className="text-sm text-neutral-400">Pending Release (Review)</span>
               <span className="font-bold text-yellow-400">{escrowSummary.pendingRelease} USDC</span>
             </div>
-            <div className="flex items-center justify-between py-2">
+            <div className="flex items-center justify-between py-3">
               <span className="text-sm font-bold">TOTAL</span>
               <span className="text-xl font-bold">{escrowSummary.total} USDC</span>
             </div>
           </div>
         </div>
 
-        {/* Empty transactions section - can be filled with real data later */}
-        <div className="border-2 border-white p-6">
-          <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> RECENT_ACTIVITY`}</h2>
-          <div className="space-y-3">
+        <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <TrendingUp className="h-4 w-4 text-green-400" />
+            <h2 className="text-sm font-bold tracking-wider">RECENT_ACTIVITY</h2>
+          </div>
+          <div className="space-y-0">
             {jobs.length === 0 ? (
-              <p className="text-white/60 text-sm">No recent activity</p>
+              <p className="text-neutral-500 text-sm">No recent activity</p>
             ) : (
               jobs.slice(0, 5).map((job) => (
-                <div key={job.id} className="flex items-center justify-between py-2 border-b border-white/20 last:border-0">
-                  <div>
-                    <p className="text-sm font-bold truncate max-w-[150px] sm:max-w-[200px]">{job.title}</p>
-                    <p className="text-xs text-white/50">{job.status}</p>
+                <div key={job.id} className="flex items-center justify-between py-3 border-b border-neutral-700/40 last:border-0">
+                  <div className="min-w-0 flex-1 mr-3">
+                    <p className="text-sm font-bold truncate">{job.title}</p>
+                    <p className="text-xs text-neutral-500">{job.status}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold">{job.final_price || job.budget_max} USDC</p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-green-400">{job.final_price || job.budget_max} USDC</p>
                   </div>
                 </div>
               ))
@@ -422,19 +417,19 @@ export default function DashboardPage() {
       <div className="flex flex-wrap gap-3">
         <Link
           href="/dashboard/jobs/new"
-          className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors"
+          className="bg-white text-black px-5 py-2.5 text-sm font-bold tracking-wider hover:bg-neutral-200 transition-colors no-underline"
         >
           Post New Job
         </Link>
         <Link
           href="/dashboard/jobs"
-          className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+          className="btn-ghost border border-neutral-700/40 px-5 py-2.5 text-sm font-bold tracking-wider no-underline text-neutral-300"
         >
           [MANAGE JOBS]
         </Link>
         <Link
           href="/dashboard/agents"
-          className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+          className="btn-ghost border border-neutral-700/40 px-5 py-2.5 text-sm font-bold tracking-wider no-underline text-neutral-300"
         >
           Browse Agents
         </Link>

@@ -43,9 +43,9 @@ function Badge({ type }: { type: string }) {
 // Loading skeleton component
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono">
+    <div className="min-h-screen flex flex-col bg-[#131519] text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 py-8 w-full">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
@@ -66,9 +66,9 @@ function LoadingSkeleton() {
 // Error component
 function ErrorDisplay({ message }: { message: string }) {
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono">
+    <div className="min-h-screen flex flex-col bg-[#131519] text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 py-8 w-full">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
@@ -96,9 +96,9 @@ function ErrorDisplay({ message }: { message: string }) {
 // Not found component
 function AgentNotFound({ agentId }: { agentId: string }) {
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono">
+    <div className="min-h-screen flex flex-col bg-[#131519] text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 py-8 w-full">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
@@ -214,11 +214,11 @@ export default function PublicAgentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono">
+    <div className="min-h-screen flex flex-col bg-[#131519] text-white font-mono">
       <Header />
 
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 py-8 w-full">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>

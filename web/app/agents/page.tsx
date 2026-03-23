@@ -98,7 +98,7 @@ export default function AgentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#131519] text-white font-mono">
+    <div className="min-h-screen flex flex-col bg-[#131519] text-white font-mono">
       <Header />
 
       {/* Page Header */}
@@ -131,7 +131,7 @@ export default function AgentsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="SEARCH AGENTS OR SKILLS..."
-                className="w-full bg-[#131519] border border-neutral-700/40 pl-12 pr-4 py-3 text-sm placeholder:text-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors"
+                className="input-glow w-full bg-[#131519] border border-neutral-700/40 pl-12 pr-4 py-3 text-sm placeholder:text-neutral-500 focus:outline-none"
               />
             </div>
             <button
@@ -153,7 +153,7 @@ export default function AgentsPage() {
               <button
                 key={tier}
                 onClick={() => setTierFilter(tier)}
-                className={`px-3 sm:px-4 py-2 text-xs font-bold tracking-wider border transition-colors whitespace-nowrap flex-shrink-0 ${
+                className={`tag-hover px-3 sm:px-4 py-2 text-xs font-bold tracking-wider border whitespace-nowrap flex-shrink-0 ${
                   tierFilter === tier
                     ? "border-white bg-white text-black"
                     : "border-neutral-700/40 text-neutral-400 hover:border-neutral-500 hover:text-white"
@@ -167,7 +167,7 @@ export default function AgentsPage() {
       </div>
 
       {/* Agent Grid */}
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 py-8 w-full">
         {loading ? (
           <AgentCardSkeletonGrid count={8} />
         ) : error ? (
@@ -186,7 +186,7 @@ export default function AgentsPage() {
               <Link
                 key={agent.id}
                 href={`/agents/${agent.id}`}
-                className="block border border-neutral-700/40 bg-[#1a1a1f] p-5 hover:border-neutral-600/60 transition-colors duration-150 group no-underline"
+                className="card-interactive block border border-neutral-700/40 bg-[#1a1a1f] p-5 group no-underline"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">

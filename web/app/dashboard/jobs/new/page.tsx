@@ -60,7 +60,6 @@ export default function NewJobPage() {
       return;
     }
 
-    // Validate required fields
     if (!form.title.trim()) {
       setError("Please enter a job title");
       return;
@@ -81,7 +80,7 @@ export default function NewJobPage() {
       const jobData = {
         title: form.title.trim(),
         description: form.description.trim(),
-        task_type: form.type as TaskType, // Cast to TaskType
+        task_type: form.type as TaskType,
         required_skills: form.skills.length > 0 ? form.skills : ["general"],
         complexity: (form.complexity ? form.complexity.toLowerCase() : "moderate") as Complexity,
         budget_min: Number(form.budgetMin) || 100,
@@ -91,9 +90,6 @@ export default function NewJobPage() {
       };
 
       const result = await createJob(jobData, token);
-
-      // Redirect to job page or dashboard
-      // Handle both flat (serde flatten) and nested (legacy) formats
       const jobId = result.id || (result as any).job?.id;
       if (jobId) {
         router.push(`/dashboard/jobs/${jobId}`);
@@ -111,11 +107,11 @@ export default function NewJobPage() {
   return (
     <div className="max-w-2xl font-mono space-y-8 min-w-0">
       {/* Header */}
-      <h1 className="text-2xl font-bold tracking-wide">Create Job</h1>
+      <h1 className="text-xl md:text-2xl font-bold tracking-wide">Create Job</h1>
 
       {/* Error Message */}
       {error && (
-        <div className="border-2 border-red-500 bg-red-500/10 p-4 text-red-500 text-sm">
+        <div className="border border-red-500/30 bg-red-500/5 p-4 text-red-400 text-sm">
           {error}
         </div>
       )}
@@ -126,13 +122,13 @@ export default function NewJobPage() {
           <div key={s} className="flex items-center">
             <div
               className={`w-10 h-10 border flex items-center justify-center text-sm font-medium transition-colors duration-150 flex-shrink-0 ${
-                s === step ? "bg-white text-black border-white" : s < step ? "bg-white/20 text-white border-white/20" : "text-gray-500 border-neutral-700/40"
+                s === step ? "bg-white text-black border-white" : s < step ? "bg-green-400/20 text-green-400 border-green-500/20" : "text-neutral-500 border-neutral-700/40"
               }`}
             >
               {s}
             </div>
             {i < 3 && (
-              <div className={`w-8 sm:w-12 h-px flex-shrink-0 ${s < step ? "bg-white/40" : "bg-neutral-700/40"}`} />
+              <div className={`w-8 sm:w-12 h-px flex-shrink-0 ${s < step ? "bg-green-400/40" : "bg-neutral-700/40"}`} />
             )}
           </div>
         ))}
@@ -147,10 +143,10 @@ export default function NewJobPage() {
               <button
                 key={type.value}
                 onClick={() => updateForm({ type: type.value })}
-                className={`block w-full text-left px-4 py-3 border-2 border-white -mt-[2px] first:mt-0 text-sm tracking-wider transition-colors ${
+                className={`block w-full text-left px-4 py-3 border text-sm tracking-wider transition-colors ${
                   form.type === type.value
-                    ? "bg-white text-black"
-                    : "hover:bg-white/5"
+                    ? "bg-white text-black border-white"
+                    : "border-neutral-700/40 hover:border-neutral-600/60 hover:bg-[#1a1a1f]"
                 }`}
               >
                 {type.label}
@@ -161,7 +157,7 @@ export default function NewJobPage() {
             <button
               onClick={() => form.type && setStep(2)}
               disabled={!form.type}
-              className="bg-white text-black px-6 py-2 text-sm font-medium tracking-wide hover:bg-white/90 transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="bg-white text-black px-6 py-2 text-sm font-medium tracking-wide hover:bg-neutral-200 transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -175,24 +171,24 @@ export default function NewJobPage() {
           <h2 className="text-lg tracking-wide">Job Details</h2>
 
           <div>
-            <label className="block text-xs text-gray-500 tracking-wide mb-2">Title</label>
+            <label className="block text-xs text-neutral-500 tracking-wide mb-2">Title</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => updateForm({ title: e.target.value })}
               placeholder="Enter job title..."
-              className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-neutral-500/50 transition-colors duration-150"
+              className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-500 transition-colors duration-150"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 tracking-wide mb-2">Description</label>
+            <label className="block text-xs text-neutral-500 tracking-wide mb-2">Description</label>
             <textarea
               value={form.description}
               onChange={(e) => updateForm({ description: e.target.value })}
               placeholder="Describe the job requirements..."
               rows={6}
-              className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-neutral-500/50 resize-none transition-colors duration-150"
+              className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-500 resize-none transition-colors duration-150"
             />
           </div>
 
@@ -206,7 +202,7 @@ export default function NewJobPage() {
             <button
               onClick={() => form.title && form.description && setStep(3)}
               disabled={!form.title || !form.description}
-              className="bg-white text-black px-6 py-2 text-sm font-medium tracking-wide hover:bg-white/90 transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="bg-white text-black px-6 py-2 text-sm font-medium tracking-wide hover:bg-neutral-200 transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -226,8 +222,8 @@ export default function NewJobPage() {
                 onClick={() => toggleSkill(skill)}
                 className={`border px-3 py-1.5 text-xs tracking-wide transition-colors duration-150 ${
                   form.skills.includes(skill)
-                    ? "bg-[#1a1a1f] text-white border-neutral-500/50"
-                    : "border-neutral-700/40 text-gray-400 hover:border-neutral-600/60 hover:text-white"
+                    ? "bg-[#1a1a1f] text-white border-green-500/30"
+                    : "border-neutral-700/40 text-neutral-400 hover:border-neutral-600/60 hover:text-white"
                 }`}
               >
                 {skill}
@@ -236,7 +232,7 @@ export default function NewJobPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 tracking-wide mb-2">Complexity</label>
+            <label className="block text-xs text-neutral-500 tracking-wide mb-2">Complexity</label>
             <div className="flex gap-2">
               {["Simple", "Moderate", "Complex"].map((level) => (
                 <button
@@ -244,7 +240,7 @@ export default function NewJobPage() {
                   onClick={() => updateForm({ complexity: level })}
                   className={`flex-1 border px-4 py-3 text-sm tracking-wide transition-colors duration-150 ${
                     form.complexity === level
-                      ? "bg-[#1a1a1f] text-white border-neutral-500/50"
+                      ? "bg-[#1a1a1f] text-white border-green-500/30"
                       : "border-neutral-700/40 hover:border-neutral-600/60"
                   }`}
                 >
@@ -263,7 +259,7 @@ export default function NewJobPage() {
             </button>
             <button
               onClick={() => setStep(4)}
-              className="bg-white text-black px-6 py-2 text-sm font-medium tracking-wide hover:bg-white/90 transition-colors duration-150"
+              className="bg-white text-black px-6 py-2 text-sm font-medium tracking-wide hover:bg-neutral-200 transition-colors duration-150"
             >
               Next
             </button>
@@ -277,7 +273,7 @@ export default function NewJobPage() {
           <h2 className="text-lg tracking-wide">Budget & Deadline</h2>
 
           <div>
-            <label className="block text-xs text-gray-500 tracking-wide mb-2">Pricing Model</label>
+            <label className="block text-xs text-neutral-500 tracking-wide mb-2">Pricing Model</label>
             <div className="flex gap-2">
               {["FIXED", "HOURLY"].map((model) => (
                 <button
@@ -285,7 +281,7 @@ export default function NewJobPage() {
                   onClick={() => updateForm({ pricingModel: model })}
                   className={`flex-1 border px-4 py-3 text-sm tracking-wide transition-colors duration-150 ${
                     form.pricingModel === model
-                      ? "bg-[#1a1a1f] text-white border-neutral-500/50"
+                      ? "bg-[#1a1a1f] text-white border-green-500/30"
                       : "border-neutral-700/40 hover:border-neutral-600/60"
                   }`}
                 >
@@ -297,60 +293,60 @@ export default function NewJobPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-500 tracking-wide mb-2">Min (USDC)</label>
+              <label className="block text-xs text-neutral-500 tracking-wide mb-2">Min (USDC)</label>
               <input
                 type="number"
                 value={form.budgetMin}
                 onChange={(e) => updateForm({ budgetMin: e.target.value })}
                 placeholder="0"
-                className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-neutral-500/50 transition-colors duration-150"
+                className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-500 transition-colors duration-150"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 tracking-wide mb-2">Max (USDC)</label>
+              <label className="block text-xs text-neutral-500 tracking-wide mb-2">Max (USDC)</label>
               <input
                 type="number"
                 value={form.budgetMax}
                 onChange={(e) => updateForm({ budgetMax: e.target.value })}
                 placeholder="0"
-                className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-neutral-500/50 transition-colors duration-150"
+                className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-500 transition-colors duration-150"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 tracking-wide mb-2">Deadline</label>
+            <label className="block text-xs text-neutral-500 tracking-wide mb-2">Deadline</label>
             <input
               type="date"
               value={form.deadline}
               onChange={(e) => updateForm({ deadline: e.target.value })}
-              className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white outline-none focus:border-neutral-500/50 transition-colors duration-150"
+              className="w-full bg-[#1a1a1f] border border-neutral-700/40 px-4 py-3 text-sm text-white outline-none focus:border-neutral-500 transition-colors duration-150"
             />
           </div>
 
           {/* Summary */}
-          <div className="border-2 border-white p-4 space-y-2 text-sm">
-            <p className="text-xs text-white/60 tracking-wider mb-3">SUMMARY</p>
-            <p><span className="text-white/50">TYPE:</span> {form.type.toUpperCase()}</p>
-            <p><span className="text-white/50">TITLE:</span> {form.title}</p>
-            <p><span className="text-white/50">SKILLS:</span> {form.skills.join(", ") || "NONE"}</p>
-            <p><span className="text-white/50">COMPLEXITY:</span> {form.complexity || "UNSET"}</p>
-            <p><span className="text-white/50">BUDGET:</span> {form.budgetMin || "?"} - {form.budgetMax || "?"} USDC ({form.pricingModel})</p>
-            <p><span className="text-white/50">DEADLINE:</span> {form.deadline || "NONE"}</p>
+          <div className="border border-neutral-700/40 bg-[#1a1a1f] p-4 space-y-2 text-sm">
+            <p className="text-xs text-neutral-500 tracking-wider mb-3">SUMMARY</p>
+            <p><span className="text-neutral-500">TYPE:</span> {form.type.toUpperCase()}</p>
+            <p><span className="text-neutral-500">TITLE:</span> {form.title}</p>
+            <p><span className="text-neutral-500">SKILLS:</span> {form.skills.join(", ") || "NONE"}</p>
+            <p><span className="text-neutral-500">COMPLEXITY:</span> {form.complexity || "UNSET"}</p>
+            <p><span className="text-neutral-500">BUDGET:</span> {form.budgetMin || "?"} - {form.budgetMax || "?"} USDC ({form.pricingModel})</p>
+            <p><span className="text-neutral-500">DEADLINE:</span> {form.deadline || "NONE"}</p>
           </div>
 
           <div className="flex gap-3">
             <button
               onClick={() => setStep(3)}
               disabled={loading}
-              className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors disabled:opacity-50"
+              className="border border-neutral-700/40 px-6 py-2 text-sm font-bold tracking-wider hover:bg-[#1a1a1f] transition-colors disabled:opacity-50"
             >
               Back
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="border-2 border-white px-6 py-2 text-sm font-bold tracking-wider bg-white text-black hover:bg-black hover:text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="bg-white text-black px-6 py-2 text-sm font-bold tracking-wider hover:bg-neutral-200 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {loading ? "[SUBMITTING...]" : "[SUBMIT]"}
