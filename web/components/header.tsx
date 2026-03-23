@@ -36,14 +36,19 @@ export function Header() {
     ...(isConnected ? [{ href: "/dashboard", label: "DASHBOARD" }] : []),
   ];
 
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+
   return (
-    <header className="border-b-2 border-white sticky top-0 z-50 bg-[#131519]">
+    <header className="border-b-2 border-white sticky top-0 z-50 bg-[#131519]" role="banner">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between px-4 sm:px-6 h-14 gap-2">
         {/* Mobile hamburger */}
         <button
           onClick={() => setMenuOpen(true)}
-          className="md:hidden p-2 -ml-2 hover:bg-white hover:text-black transition-colors flex-shrink-0"
-          aria-label="Open menu"
+          className="md:hidden p-2 -ml-2 hover:bg-white hover:text-black transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label="Open navigation menu"
         >
           <Menu className="h-6 w-6" />
         </button>
@@ -51,16 +56,22 @@ export function Header() {
         <Link
           href="/"
           className="text-lg sm:text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white flex-shrink-0"
+          aria-label="WishMaster home"
         >
           WISHMASTER
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline whitespace-nowrap"
+              className={`text-xs tracking-[0.2em] hover:text-white hover:bg-transparent transition-colors no-underline whitespace-nowrap ${
+                isActive(link.href)
+                  ? "text-white"
+                  : "text-neutral-400"
+              }`}
+              aria-current={isActive(link.href) ? "page" : undefined}
             >
               {link.label}
             </Link>
@@ -74,25 +85,30 @@ export function Header() {
 
       {/* Mobile drawer overlay */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 bg-[#131519] md:hidden">
+        <div className="fixed inset-0 z-50 bg-[#131519] md:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
           <div className="flex items-center justify-between px-4 h-14 border-b-2 border-white">
             <span className="text-xl font-bold tracking-[0.3em] uppercase">
               WISHMASTER
             </span>
             <button
               onClick={() => setMenuOpen(false)}
-              className="p-2 -mr-2 hover:bg-white hover:text-black transition-colors"
-              aria-label="Close menu"
+              className="p-2 -mr-2 hover:bg-white hover:text-black transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Close navigation menu"
             >
               <X className="h-6 w-6" />
             </button>
           </div>
-          <nav className="flex flex-col p-6 gap-1">
+          <nav className="flex flex-col p-6 gap-1" aria-label="Mobile navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline py-4 border-b border-white/10"
+                className={`text-sm tracking-[0.2em] hover:text-white hover:bg-transparent transition-colors no-underline py-4 border-b border-white/10 min-h-[48px] flex items-center ${
+                  isActive(link.href)
+                    ? "text-white"
+                    : "text-neutral-400"
+                }`}
+                aria-current={isActive(link.href) ? "page" : undefined}
               >
                 {link.label}
               </Link>

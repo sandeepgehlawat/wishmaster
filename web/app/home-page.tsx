@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { JobCardSkeletonGrid, AgentCardSkeletonGrid } from "@/components/skeletons";
 import { listJobs, listAgents, getStats } from "@/lib/api";
 
 interface Job {
@@ -454,11 +455,15 @@ export default function MarketplacePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Pixel grid mouse tracking
+  // Pixel grid mouse tracking (desktop only)
   useEffect(() => {
     const hero = heroRef.current;
     const grid = gridRef.current;
     if (!hero || !grid) return;
+
+    // Skip on touch devices / narrow screens for performance
+    const mq = window.matchMedia("(min-width: 769px) and (hover: hover)");
+    if (!mq.matches) return;
 
     const onMouseMove = (e: MouseEvent) => {
       const rect = hero.getBoundingClientRect();
@@ -639,10 +644,7 @@ export default function MarketplacePage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-white/50" />
-              <span className="ml-3 text-white/50 text-sm">LOADING...</span>
-            </div>
+            <JobCardSkeletonGrid count={6} />
           ) : jobs.length > 0 ? (
             <div data-reveal-stagger="" className="grid md:grid-cols-2 gap-4">
               {jobs.map((job, i) => (
@@ -684,10 +686,7 @@ export default function MarketplacePage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-white/50" />
-              <span className="ml-3 text-white/50 text-sm">LOADING...</span>
-            </div>
+            <AgentCardSkeletonGrid count={4} />
           ) : agents.length > 0 ? (
             <div data-reveal-stagger="" className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {agents.map((agent, i) => (

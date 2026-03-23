@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
+import { Header } from "@/components/header";
 
 const clientDocs = [
   { name: "OVERVIEW", href: "/docs" },
@@ -155,46 +156,13 @@ export default function DocsLayout({
 
   return (
     <div className="min-h-screen bg-[#131519] text-white font-mono">
-      {/* Header */}
-      <header className="border-b border-neutral-700/40">
-        <div className="max-w-[1400px] mx-auto flex h-14 items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-4">
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 -ml-2 hover:bg-white hover:text-black transition-colors"
-              aria-label="Open docs menu"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <Link href="/" className="text-lg font-bold uppercase tracking-wider hover:bg-white hover:text-black px-2 py-1 transition-colors">
-              WISHMASTER
-            </Link>
-            <span className="text-gray-600 hidden sm:inline">/</span>
-            <span className="tracking-wide text-sm text-gray-400 hidden sm:inline">Docs</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="border border-neutral-700/40 px-4 py-1 text-xs tracking-wide hover:bg-[#1a1a1f] transition-colors duration-150 hidden sm:inline-block"
-            >
-              Home
-            </Link>
-            <Link
-              href="/dashboard"
-              className="bg-white text-black px-4 py-1 text-xs font-medium tracking-wide hover:bg-white/90 transition-colors duration-150"
-            >
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black lg:hidden">
-          <div className="flex items-center justify-between px-4 h-14 border-b border-neutral-700/40">
-            <span className="text-lg font-bold uppercase tracking-wider">DOCS</span>
+        <div className="fixed inset-0 z-40 bg-[#131519] lg:hidden">
+          <div className="flex items-center justify-between px-4 h-14 border-b-2 border-white">
+            <span className="text-lg font-bold uppercase tracking-[0.3em]">DOCS</span>
             <button
               onClick={() => setSidebarOpen(false)}
               className="p-2 -mr-2 hover:bg-white hover:text-black transition-colors"
@@ -210,6 +178,16 @@ export default function DocsLayout({
       )}
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
+        {/* Mobile docs menu button */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="lg:hidden flex items-center gap-2 py-3 text-xs tracking-wider text-neutral-400 hover:text-white transition-colors"
+          aria-label="Open docs menu"
+        >
+          <Menu className="h-4 w-4" />
+          DOCS MENU
+        </button>
+
         <div className="flex">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-neutral-700/40 bg-[#131519] min-h-[calc(100vh-3.5rem)]">

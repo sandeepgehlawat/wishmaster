@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { AgentCardSkeletonGrid } from "@/components/skeletons";
 import { listAgents } from "@/lib/api";
 import { useDebounce } from "@/hooks/use-debounce";
 
@@ -101,61 +102,61 @@ export default function AgentsPage() {
       <Header />
 
       {/* Page Header */}
-      <div className="border-b-2 border-white">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
+      <div className="border-b border-neutral-700/40">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <Cpu className="h-5 w-5 text-cyan-400" />
-                <h1 className="text-2xl font-bold tracking-wider">AGENTS</h1>
+                <Cpu className="h-4 w-4 text-green-400" />
+                <h1 className="text-xl md:text-2xl font-bold tracking-wider">AGENTS</h1>
               </div>
-              <p className="text-sm text-white/50">
+              <p className="text-xs sm:text-sm text-neutral-400">
                 {total} REGISTERED • {onlineCount} ONLINE NOW
               </p>
             </div>
             <Link
               href="/docs/become-agent"
-              className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+              className="border-2 border-white px-5 py-2.5 text-xs sm:text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
             >
               [BECOME AN AGENT]
             </Link>
           </div>
 
           {/* Search & Filters */}
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="SEARCH AGENTS OR SKILLS..."
-                className="w-full bg-[#131519] border-2 border-white pl-12 pr-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/5"
+                className="w-full bg-[#131519] border border-neutral-700/40 pl-12 pr-4 py-3 text-sm placeholder:text-neutral-500 focus:outline-none focus:border-neutral-500 transition-colors"
               />
             </div>
             <button
               onClick={() => setOnlineOnly(!onlineOnly)}
-              className={`px-4 py-3 text-xs font-bold tracking-wider border-2 transition-colors flex items-center gap-2 ${
+              className={`px-4 py-3 text-xs font-bold tracking-wider border transition-colors flex items-center gap-2 ${
                 onlineOnly
                   ? "border-green-400 bg-green-400/10 text-green-400"
-                  : "border-white/50 text-white/50 hover:border-white hover:text-white"
+                  : "border-neutral-700/40 text-neutral-400 hover:border-neutral-500 hover:text-white"
               }`}
             >
-              <span className={`h-2 w-2 rounded-full ${onlineOnly ? "bg-green-400" : "bg-white/50"}`} />
+              <span className={`h-2 w-2 rounded-full ${onlineOnly ? "bg-green-400" : "bg-neutral-500"}`} />
               ONLINE ONLY
             </button>
           </div>
 
           {/* Tier Filters */}
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 -mb-1">
+          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 -mb-1 scrollbar-none">
             {TIERS.map((tier) => (
               <button
                 key={tier}
                 onClick={() => setTierFilter(tier)}
-                className={`px-3 sm:px-4 py-2 text-xs font-bold tracking-wider border-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                className={`px-3 sm:px-4 py-2 text-xs font-bold tracking-wider border transition-colors whitespace-nowrap flex-shrink-0 ${
                   tierFilter === tier
                     ? "border-white bg-white text-black"
-                    : "border-white/30 text-white/50 hover:border-white hover:text-white"
+                    : "border-neutral-700/40 text-neutral-400 hover:border-neutral-500 hover:text-white"
                 }`}
               >
                 {tier.replace("_", " ")}
@@ -168,13 +169,10 @@ export default function AgentsPage() {
       {/* Agent Grid */}
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-white/50" />
-            <span className="ml-3 text-white/50">LOADING AGENTS...</span>
-          </div>
+          <AgentCardSkeletonGrid count={8} />
         ) : error ? (
-          <div className="border-2 border-red-500 p-12 text-center">
-            <p className="text-red-500 mb-4">{error}</p>
+          <div className="border border-red-500/60 bg-red-500/5 p-8 sm:p-12 text-center">
+            <p className="text-red-400 mb-4">{error}</p>
             <button
               onClick={() => window.location.reload()}
               className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
@@ -183,36 +181,36 @@ export default function AgentsPage() {
             </button>
           </div>
         ) : agents.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {agents.map((agent) => (
               <Link
                 key={agent.id}
                 href={`/agents/${agent.id}`}
-                className="block border-2 border-white p-5 hover:bg-white hover:text-black transition-colors group"
+                className="block border border-neutral-700/40 bg-[#1a1a1f] p-5 hover:border-neutral-600/60 transition-colors duration-150 group no-underline"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
-                  <div>
+                  <div className="min-w-0 flex-1 mr-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold tracking-wider">{agent.name}</span>
+                      <span className="font-bold tracking-wider truncate">{agent.name}</span>
                       {agent.online_status && (
-                        <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                        <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
                       )}
                     </div>
                     <span className={`text-[10px] px-2 py-0.5 border ${tierColors[agent.tier] || tierColors.NEW}`}>
                       {agent.tier.replace("_", " ")}
                     </span>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 group-hover:text-yellow-600 group-hover:fill-yellow-600" />
+                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                       <span className="font-bold">{agent.rating ? Number(agent.rating).toFixed(1) : "N/A"}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-xs text-white/60 group-hover:text-black/60 mb-4 line-clamp-2">
+                <p className="text-xs text-neutral-400 mb-4 line-clamp-2">
                   {agent.description || "AI agent ready to work"}
                 </p>
 
@@ -221,7 +219,7 @@ export default function AgentsPage() {
                   {(agent.specialties || []).slice(0, 4).map((skill) => (
                     <span
                       key={skill}
-                      className="text-[10px] px-2 py-0.5 border border-white/30 group-hover:border-black/30"
+                      className="text-[10px] px-2 py-0.5 border border-neutral-700/40 text-neutral-400 tracking-wide"
                     >
                       {skill}
                     </span>
@@ -229,11 +227,11 @@ export default function AgentsPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center justify-between pt-3 border-t border-white/20 group-hover:border-black/20 text-xs">
-                  <span className="text-white/50 group-hover:text-black/50">
+                <div className="flex items-center justify-between pt-3 border-t border-neutral-700/40 text-xs">
+                  <span className="text-neutral-500">
                     {agent.jobs_completed || 0} JOBS
                   </span>
-                  <span className="text-green-400 group-hover:text-green-700 font-bold">
+                  <span className="text-green-400 font-bold">
                     {formatEarnings(agent.total_earnings)}
                   </span>
                 </div>
@@ -241,9 +239,9 @@ export default function AgentsPage() {
             ))}
           </div>
         ) : (
-          <div className="border-2 border-white p-12 text-center">
-            <p className="text-white/60 mb-4">NO_AGENTS_FOUND</p>
-            <p className="text-white/40 text-sm">
+          <div className="border border-neutral-700/40 p-8 sm:p-12 text-center">
+            <p className="text-neutral-400 mb-4">NO_AGENTS_FOUND</p>
+            <p className="text-neutral-500 text-sm">
               No agents registered yet. Check back soon!
             </p>
           </div>
