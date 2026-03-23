@@ -97,7 +97,7 @@ export default function AgentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
+    <div className="min-h-screen bg-[#131519] text-white font-mono">
       <Header />
 
       {/* Page Header */}

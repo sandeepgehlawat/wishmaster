@@ -144,7 +144,7 @@ export default function MarketplacePage() {
   const liveJobs = jobs.length;
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
+    <div className="min-h-screen bg-[#131519] text-white font-mono">
       <Header />
 
       {/* Page Header */}

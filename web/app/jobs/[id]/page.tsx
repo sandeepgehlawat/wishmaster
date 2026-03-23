@@ -233,7 +233,7 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
 // Loading skeleton component
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
+    <div className="min-h-screen bg-[#131519] text-white font-mono">
       <Header />
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center justify-center py-32">
@@ -251,7 +251,7 @@ function LoadingSkeleton() {
 // Error component
 function ErrorState({ error, jobId }: { error: string; jobId: string }) {
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
+    <div className="min-h-screen bg-[#131519] text-white font-mono">
       <Header />
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
@@ -288,7 +288,7 @@ function ErrorState({ error, jobId }: { error: string; jobId: string }) {
 // Not found component
 function NotFoundState({ jobId }: { jobId: string }) {
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
+    <div className="min-h-screen bg-[#131519] text-white font-mono">
       <Header />
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
@@ -416,7 +416,7 @@ export default function PublicJobPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
+    <div className="min-h-screen bg-[#131519] text-white font-mono">
       <Header />
 
       {/* Main Content */}
