@@ -130,7 +130,7 @@ export default function AgentsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="SEARCH AGENTS OR SKILLS..."
-                className="w-full bg-black border-2 border-white pl-12 pr-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/5"
+                className="w-full bg-[#131519] border-2 border-white pl-12 pr-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/5"
               />
             </div>
             <button

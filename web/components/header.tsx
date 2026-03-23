@@ -37,7 +37,7 @@ export function Header() {
   ];
 
   return (
-    <header className="border-b-2 border-white sticky top-0 z-50 bg-black">
+    <header className="border-b-2 border-white sticky top-0 z-50 bg-[#131519]">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between px-4 sm:px-6 h-14 gap-2">
         {/* Mobile hamburger */}
         <button
@@ -74,7 +74,7 @@ export function Header() {
 
       {/* Mobile drawer overlay */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 bg-black md:hidden">
+        <div className="fixed inset-0 z-50 bg-[#131519] md:hidden">
           <div className="flex items-center justify-between px-4 h-14 border-b-2 border-white">
             <span className="text-xl font-bold tracking-[0.3em] uppercase">
               WISHMASTER
