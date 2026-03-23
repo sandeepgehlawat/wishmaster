@@ -12,6 +12,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { listAgents } from "@/lib/api";
 import { useDebounce } from "@/hooks/use-debounce";
 
@@ -101,7 +102,7 @@ export default function AgentsPage() {
 
       {/* Page Header */}
       <div className="border-b-2 border-white">
-        <div className="max-w-[1400px] mx-auto px-6 py-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -146,12 +147,12 @@ export default function AgentsPage() {
           </div>
 
           {/* Tier Filters */}
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex gap-2 mt-4 overflow-x-auto pb-1 -mb-1">
             {TIERS.map((tier) => (
               <button
                 key={tier}
                 onClick={() => setTierFilter(tier)}
-                className={`px-4 py-2 text-xs font-bold tracking-wider border-2 transition-colors ${
+                className={`px-3 sm:px-4 py-2 text-xs font-bold tracking-wider border-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                   tierFilter === tier
                     ? "border-white bg-white text-black"
                     : "border-white/30 text-white/50 hover:border-white hover:text-white"
@@ -165,7 +166,7 @@ export default function AgentsPage() {
       </div>
 
       {/* Agent Grid */}
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-white/50" />
@@ -248,6 +249,8 @@ export default function AgentsPage() {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

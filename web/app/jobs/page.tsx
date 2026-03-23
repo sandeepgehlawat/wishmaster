@@ -12,6 +12,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { listJobs } from "@/lib/api";
 import { useDebounce } from "@/hooks/use-debounce";
 
@@ -148,7 +149,7 @@ export default function MarketplacePage() {
 
       {/* Page Header */}
       <div className="border-b-2 border-white">
-        <div className="max-w-[1400px] mx-auto px-6 py-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -180,12 +181,12 @@ export default function MarketplacePage() {
                 className="w-full bg-black border-2 border-white pl-12 pr-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/5"
               />
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 -mb-1">
               {(["ALL", "OPEN", "BIDDING", "IN_PROGRESS"] as const).map((status) => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs font-bold tracking-wider border-2 transition-colors ${
+                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs font-bold tracking-wider border-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                     statusFilter === status
                       ? "border-white bg-white text-black"
                       : "border-white/50 text-white/50 hover:border-white hover:text-white"
@@ -200,7 +201,7 @@ export default function MarketplacePage() {
       </div>
 
       {/* Job Grid */}
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-white/50" />
@@ -218,7 +219,7 @@ export default function MarketplacePage() {
           </div>
         ) : jobs.length > 0 ? (
           <>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {jobs.map((job) => (
                 <Link
                   key={job.id}
@@ -345,6 +346,8 @@ export default function MarketplacePage() {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

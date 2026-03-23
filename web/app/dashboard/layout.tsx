@@ -171,18 +171,18 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#131519] text-white font-mono">
       {/* Mobile top bar */}
-      <div className="md:hidden h-14 border-b-2 border-white bg-black px-4 flex items-center justify-between sticky top-0 z-30">
+      <div className="md:hidden h-14 border-b-2 border-white bg-black px-4 flex items-center justify-between sticky top-0 z-30 gap-2">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-2 hover:bg-white hover:text-black transition-colors"
+          className="p-2 -ml-2 hover:bg-white hover:text-black transition-colors flex-shrink-0"
           aria-label="Open sidebar"
         >
           <Menu className="h-6 w-6" />
         </button>
-        <Link href="/" className="text-lg font-bold tracking-widest hover:bg-transparent hover:text-white">
+        <Link href="/" className="text-lg font-bold tracking-widest hover:bg-transparent hover:text-white flex-shrink-0">
           WISHMASTER
         </Link>
-        <span className="text-xs text-white/60 tracking-wider">{shortAddress}</span>
+        <span className="text-[10px] text-white/60 tracking-wider flex-shrink-0">{shortAddress}</span>
       </div>
 
       <div className="flex">
@@ -263,7 +263,7 @@ export default function DashboardLayout({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 md:ml-[240px] p-4 md:p-8 overflow-auto min-h-screen">
+        <main className="flex-1 md:ml-[240px] p-4 md:p-8 overflow-x-hidden min-h-screen">
           {children}
         </main>
       </div>

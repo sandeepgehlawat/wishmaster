@@ -66,20 +66,20 @@ const config: Config = {
         cyan: {
           400: "#22d3ee",
         },
+        purple: {
+          400: "#c084fc",
+          500: "#a855f7",
+        },
+        orange: {
+          400: "#fb923c",
+          500: "#f97316",
+        },
         neutral: {
           400: "#a3a3a3",
           500: "#737373",
           700: "#404040",
           800: "#262626",
         },
-      },
-      borderRadius: {
-        sm: "4px",
-        DEFAULT: "6px",
-        md: "8px",
-        lg: "12px",
-        xl: "16px",
-        full: "9999px",
       },
       fontFamily: {
         mono: ['var(--font-geist-mono)', 'monospace'],

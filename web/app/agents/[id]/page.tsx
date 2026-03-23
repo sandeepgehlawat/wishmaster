@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { getAgent } from "@/lib/api";
 import {
   Star,
@@ -17,16 +18,6 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
-
-// Stats counter with animation
-function AnimatedStat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="border-2 border-white p-4 text-center">
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs text-white/50 tracking-wider mt-1">{label}</p>
-    </div>
-  );
-}
 
 // Badge component
 function Badge({ type }: { type: string }) {
@@ -54,7 +45,7 @@ function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-black text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
@@ -77,7 +68,7 @@ function ErrorDisplay({ message }: { message: string }) {
   return (
     <div className="min-h-screen bg-black text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
@@ -107,7 +98,7 @@ function AgentNotFound({ agentId }: { agentId: string }) {
   return (
     <div className="min-h-screen bg-black text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
@@ -227,7 +218,7 @@ export default function PublicAgentPage() {
       <Header />
 
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
@@ -290,15 +281,27 @@ export default function PublicAgentPage() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-0 mb-6">
-          <AnimatedStat value={agentData.earnings} label="TOTAL_EARNED" />
-          <AnimatedStat value={agentData.stats.avgDelivery} label="AVG_DELIVERY" />
-          <AnimatedStat value={agentData.stats.revisionRate} label="REVISION_RATE" />
-          <AnimatedStat value={agentData.stats.repeatClients} label="REPEAT_CLIENTS" />
+        <div className="grid grid-cols-2 md:grid-cols-4 border-2 border-white mb-6">
+          <div className="p-4 text-center border-r border-b md:border-b-0 border-white">
+            <p className="text-xl sm:text-2xl font-bold truncate">{agentData.earnings}</p>
+            <p className="text-xs text-white/50 tracking-wider mt-1">TOTAL_EARNED</p>
+          </div>
+          <div className="p-4 text-center border-b md:border-b-0 md:border-r border-white">
+            <p className="text-2xl font-bold">{agentData.stats.avgDelivery}</p>
+            <p className="text-xs text-white/50 tracking-wider mt-1">AVG_DELIVERY</p>
+          </div>
+          <div className="p-4 text-center border-r border-white">
+            <p className="text-2xl font-bold">{agentData.stats.revisionRate}</p>
+            <p className="text-xs text-white/50 tracking-wider mt-1">REVISION_RATE</p>
+          </div>
+          <div className="p-4 text-center">
+            <p className="text-2xl font-bold">{agentData.stats.repeatClients}</p>
+            <p className="text-xs text-white/50 tracking-wider mt-1">REPEAT_CLIENTS</p>
+          </div>
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* About */}
@@ -449,38 +452,21 @@ export default function PublicAgentPage() {
               </button>
             </div>
 
-            {/* Similar Agents */}
+            {/* Browse More Agents */}
             <div className="border-2 border-white p-4">
-              <h3 className="text-xs text-white/50 tracking-wider mb-3">SIMILAR_AGENTS</h3>
-              <div className="space-y-2">
-                {["SecureAI-3", "CodeGuard-X", "ChainCheck-1"].map((name) => (
-                  <Link
-                    key={name}
-                    href={`/agents/${name}`}
-                    className="block p-2 border border-white/20 hover:border-white hover:bg-white/5 transition-colors"
-                  >
-                    <span className="text-sm">{name}</span>
-                  </Link>
-                ))}
-              </div>
+              <h3 className="text-xs text-white/50 tracking-wider mb-3">EXPLORE</h3>
+              <Link
+                href="/agents"
+                className="block w-full text-center border border-white px-4 py-2.5 text-sm tracking-wider hover:bg-white hover:text-black transition-colors"
+              >
+                BROWSE ALL AGENTS
+              </Link>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t-2 border-white mt-16">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
-            <span>WISHMASTER &copy; 2026 | BUILT ON X LAYER</span>
-            <div className="flex items-center gap-6">
-              <Link href="/docs" className="hover:text-white">DOCS</Link>
-              <Link href="/docs/sdk" className="hover:text-white">SDK</Link>
-              <a href="https://github.com" className="hover:text-white">GITHUB</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

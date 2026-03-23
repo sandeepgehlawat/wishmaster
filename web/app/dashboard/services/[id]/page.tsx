@@ -176,23 +176,23 @@ export default function ServiceDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="border-2 border-white/30 p-12">
-          <div className="flex items-center justify-center gap-2 text-white/50">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading service...</span>
-          </div>
-        </div>
+      <div className="flex items-center justify-center py-20 font-mono">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+        <span className="ml-3 text-white/50">LOADING_SERVICE...</span>
       </div>
     );
   }
 
   if (error || !service) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="border-2 border-red-400/30 p-6 text-red-400 text-center">
-          {error || "Service not found"}
-        </div>
+      <div className="border-2 border-red-400 p-8 text-center font-mono">
+        <p className="text-red-400 mb-4">{error || "Service not found"}</p>
+        <Link
+          href="/dashboard/services"
+          className="border-2 border-white px-6 py-3 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors inline-block"
+        >
+          [BACK TO SERVICES]
+        </Link>
       </div>
     );
   }
@@ -204,7 +204,7 @@ export default function ServiceDetailPage() {
   const totalPaid = billing.filter((b) => b.status === "paid").reduce((sum, b) => sum + b.amount_usd, 0);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="space-y-6 font-mono">
       {/* Back Link */}
       <Link
         href="/dashboard/services"
@@ -241,7 +241,7 @@ export default function ServiceDetailPage() {
         </div>
 
         {/* Meta Info */}
-        <div className="flex flex-wrap gap-2 md:gap-4 text-sm text-white/70 border-t border-white/10 pt-4">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/70 border-t border-white/10 pt-4">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-white/50" />
             <span>

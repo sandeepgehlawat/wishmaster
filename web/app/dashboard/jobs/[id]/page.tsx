@@ -833,7 +833,7 @@ export default function JobDetailPage() {
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-8">
         {/* Left - Main */}
         <div className="space-y-8">
           {/* Description */}
@@ -860,12 +860,12 @@ export default function JobDetailPage() {
           {/* Timeline */}
           <div>
             <h2 className="text-xs text-gray-500 tracking-wide mb-3">State Machine</h2>
-            <div className="bg-[#1a1a1f] border border-neutral-700/40 p-4 sm:p-4 overflow-x-auto">
-              <div className="flex items-center gap-0 text-xs">
+            <div className="bg-[#1a1a1f] border border-neutral-700/40 p-3 sm:p-4 overflow-x-auto">
+              <div className="flex items-center gap-0 text-xs w-max">
                 {jobData.timeline.map((t: any, i: number) => (
                   <div key={t.state} className="flex items-center">
                     <div
-                      className={`px-3 py-2 border whitespace-nowrap transition-colors duration-150 ${
+                      className={`px-2 sm:px-3 py-2 border whitespace-nowrap transition-colors duration-150 ${
                         t.active
                           ? "bg-green-500/10 text-green-400 font-bold border-green-500/20"
                           : t.date !== "---"
@@ -877,7 +877,7 @@ export default function JobDetailPage() {
                       <div className="text-[10px] mt-0.5 opacity-60">{t.date}</div>
                     </div>
                     {i < jobData.timeline.length - 1 && (
-                      <div className={`w-4 h-[2px] ${t.date !== "---" ? "bg-white" : "bg-white/20"}`} />
+                      <div className={`w-3 sm:w-4 h-[2px] flex-shrink-0 ${t.date !== "---" ? "bg-white" : "bg-white/20"}`} />
                     )}
                   </div>
                 ))}

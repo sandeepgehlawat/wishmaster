@@ -38,11 +38,11 @@ export function Header() {
 
   return (
     <header className="border-b-2 border-white sticky top-0 z-50 bg-black">
-      <div className="max-w-[1400px] mx-auto flex items-center justify-between px-4 sm:px-6 h-14">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between px-4 sm:px-6 h-14 gap-2">
         {/* Mobile hamburger */}
         <button
           onClick={() => setMenuOpen(true)}
-          className="md:hidden p-2 -ml-2 hover:bg-white hover:text-black transition-colors"
+          className="md:hidden p-2 -ml-2 hover:bg-white hover:text-black transition-colors flex-shrink-0"
           aria-label="Open menu"
         >
           <Menu className="h-6 w-6" />
@@ -50,7 +50,7 @@ export function Header() {
 
         <Link
           href="/"
-          className="text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white"
+          className="text-lg sm:text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white flex-shrink-0"
         >
           WISHMASTER
         </Link>
@@ -60,14 +60,16 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
+              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline whitespace-nowrap"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <ConnectButton />
+        <div className="flex-shrink-0 [&_button]:!text-[10px] [&_button]:!px-3 [&_button]:!py-1.5 sm:[&_button]:!text-xs sm:[&_button]:!px-4 sm:[&_button]:!py-2">
+          <ConnectButton />
+        </div>
       </div>
 
       {/* Mobile drawer overlay */}
@@ -95,6 +97,9 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            <div className="pt-6">
+              <ConnectButton />
+            </div>
           </nav>
         </div>
       )}

@@ -194,7 +194,7 @@ export default function JobManagePage() {
   };
 
   return (
-    <div className="space-y-8 font-mono max-w-4xl">
+    <div className="space-y-8 font-mono max-w-4xl min-w-0">
       {/* Header */}
       <div>
         <Link href="/dashboard/jobs" className="text-xs text-white/50 hover:text-white tracking-wider">
@@ -215,10 +215,10 @@ export default function JobManagePage() {
           <Shield className="h-5 w-5 text-green-400" />
           <h2 className="text-lg font-bold tracking-wider">ESCROW_STATUS</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-white/50 tracking-wider mb-1">AMOUNT</p>
-            <p className="text-2xl font-bold">{job.escrowAmount} USDC</p>
+            <p className="text-xl sm:text-2xl font-bold">{job.escrowAmount} USDC</p>
           </div>
           <div>
             <p className="text-xs text-white/50 tracking-wider mb-1">STATUS</p>

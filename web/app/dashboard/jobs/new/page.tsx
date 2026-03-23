@@ -109,7 +109,7 @@ export default function NewJobPage() {
   };
 
   return (
-    <div className="max-w-2xl font-mono space-y-8">
+    <div className="max-w-2xl font-mono space-y-8 min-w-0">
       {/* Header */}
       <h1 className="text-2xl font-bold tracking-wide">Create Job</h1>
 

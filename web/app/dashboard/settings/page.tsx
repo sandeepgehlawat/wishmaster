@@ -69,7 +69,7 @@ export default function SettingsPage() {
     : `https://www.oklink.com/xlayer/address/${walletAddress}`;
 
   return (
-    <div className="space-y-8 font-mono max-w-2xl">
+    <div className="space-y-8 font-mono max-w-2xl min-w-0">
       {/* Header */}
       <h1 className="text-2xl font-bold tracking-wide">Settings</h1>
 

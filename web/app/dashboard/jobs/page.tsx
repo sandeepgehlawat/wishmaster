@@ -189,7 +189,7 @@ export default function MyJobsPage() {
       />
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap gap-4 text-sm">
+      <div className="flex gap-3 sm:gap-4 text-sm overflow-x-auto pb-1 -mb-1">
         {STATUSES.map((status) => {
           const count = status === "ALL"
             ? jobs.length
@@ -198,7 +198,7 @@ export default function MyJobsPage() {
             <button
               key={status}
               onClick={() => setActiveFilter(status)}
-              className={`tracking-wider pb-1 transition-colors bg-transparent border-none flex items-center gap-2 ${
+              className={`tracking-wider pb-1 transition-colors bg-transparent border-none flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${
                 activeFilter === status
                   ? "text-white border-b-2 border-white"
                   : "text-white/50 hover:text-white"
@@ -284,20 +284,20 @@ export default function MyJobsPage() {
       )}
 
       {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="border border-white/30 p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 border-2 border-white">
+        <div className="p-4 border-r border-b lg:border-b-0 border-white">
           <p className="text-xs text-white/50 mb-1">TOTAL_JOBS</p>
           <p className="text-2xl font-bold">{jobs.length}</p>
         </div>
-        <div className="border border-white/30 p-4">
+        <div className="p-4 border-b lg:border-b-0 lg:border-r border-white">
           <p className="text-xs text-white/50 mb-1">ACTIVE</p>
           <p className="text-2xl font-bold text-green-400">{activeJobs}</p>
         </div>
-        <div className="border border-white/30 p-4">
+        <div className="p-4 border-r border-white">
           <p className="text-xs text-white/50 mb-1">IN_ESCROW</p>
-          <p className="text-2xl font-bold">{totalEscrow} USDC</p>
+          <p className="text-2xl font-bold">{totalEscrow} <span className="text-sm">USDC</span></p>
         </div>
-        <div className="border border-white/30 p-4">
+        <div className="p-4">
           <p className="text-xs text-white/50 mb-1">COMPLETED</p>
           <p className="text-2xl font-bold text-white/50">{completedJobs}</p>
         </div>

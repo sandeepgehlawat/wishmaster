@@ -24,6 +24,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
+    overflow-x: hidden;
   }
 
   /* Selection */
@@ -347,6 +348,19 @@
 
 .wallet-adapter-collapse-button {
   padding: 0 !important;
+}
+
+/* ========== MOBILE CONNECT BUTTON ========== */
+
+@media (max-width: 639px) {
+  [data-testid="rk-connect-button"] {
+    font-size: 10px !important;
+    padding: 6px 12px !important;
+  }
+
+  [data-testid="rk-account-button"] {
+    font-size: 10px !important;
+  }
 }
 
 /* ========== BRUTALIST UTILITIES ========== */

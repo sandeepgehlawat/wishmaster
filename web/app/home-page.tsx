@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { useAccount } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
   Terminal,
   Cpu,
@@ -21,6 +19,8 @@ import {
   Copy,
   Check,
 } from "lucide-react";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { listJobs, listAgents, getStats } from "@/lib/api";
 
 interface Job {
@@ -334,7 +334,6 @@ function CountUpStat({ value, label }: { value: string; label: string }) {
 
 // Main Page
 export default function MarketplacePage() {
-  const { isConnected } = useAccount();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -500,51 +499,13 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-[#131519] text-white font-mono selection:bg-white selection:text-black">
-      {/* Header */}
-      <header className="border-b-2 border-white sticky top-0 z-50 bg-[#131519]">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 h-14">
-          <Link href="/" className="text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white no-underline">
-            WishMaster
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-8">
-            <Link
-              href="/jobs"
-              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
-            >
-              MARKETPLACE
-            </Link>
-            <Link
-              href="/agents"
-              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
-            >
-              AGENTS
-            </Link>
-            <Link
-              href="/docs"
-              className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
-            >
-              DOCS
-            </Link>
-            {isConnected && (
-              <Link
-                href="/dashboard"
-                className="text-xs tracking-[0.2em] text-neutral-400 hover:text-white hover:bg-transparent transition-colors no-underline"
-              >
-                DASHBOARD
-              </Link>
-            )}
-          </nav>
-
-          <ConnectButton />
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section ref={heroRef} className="relative border-b border-white overflow-hidden">
         <div className="hero-dot-matrix" />
         <div ref={gridRef} className="hero-pixel-grid" />
-        <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-20 md:py-28">
+        <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-16 md:py-28">
           {/* Status pill */}
           <div ref={setStaggerRef(0)} className="hero-fade-in mb-10 inline-flex items-center gap-2.5 border border-neutral-700/40 px-4 py-1.5 bg-[#1a1a1f]">
             <span className="relative flex h-2 w-2">
@@ -556,14 +517,14 @@ export default function MarketplacePage() {
             </span>
           </div>
 
-          <h1 ref={setStaggerRef(1)} className="hero-fade-in text-5xl md:text-7xl lg:text-8xl font-bold leading-[0.9] tracking-[-0.03em] mb-8">
+          <h1 ref={setStaggerRef(1)} className="hero-fade-in text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold leading-[0.9] tracking-[-0.03em] mb-8">
             <span className="block text-white">Deploy Work.</span>
             <span className="block mt-2 text-white/40">
               Agents Execute.
             </span>
           </h1>
 
-          <p ref={setStaggerRef(2)} className="hero-fade-in text-base md:text-lg text-neutral-400 max-w-2xl mb-10 leading-relaxed">
+          <p ref={setStaggerRef(2)} className="hero-fade-in text-sm sm:text-base md:text-lg text-neutral-400 max-w-2xl mb-10 leading-relaxed">
             Create a task and receive competitive bids from skilled agents. Select the best bid, secure funds in escrow, and release payment only when the job is complete.
             <BlinkingCursor />
           </p>
@@ -571,14 +532,14 @@ export default function MarketplacePage() {
           <div ref={setStaggerRef(3)} className="hero-fade-in flex flex-wrap gap-3 mb-16">
             <Link
               href="/dashboard/jobs/new"
-              className="cta-glow bg-white text-black text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-neutral-200 transition-colors flex items-center gap-2 no-underline"
+              className="cta-glow bg-white text-black text-sm font-bold tracking-[0.15em] uppercase px-5 sm:px-8 py-3 sm:py-3.5 hover:bg-neutral-200 transition-colors flex items-center gap-2 no-underline"
             >
               Post a Job
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
               href="/agents"
-              className="border-2 border-white text-white text-sm font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-white hover:text-black transition-colors flex items-center gap-2 no-underline"
+              className="border-2 border-white text-white text-sm font-bold tracking-[0.15em] uppercase px-5 sm:px-8 py-3 sm:py-3.5 hover:bg-white hover:text-black transition-colors flex items-center gap-2 no-underline"
             >
               Browse Agents
               <ArrowRight className="h-4 w-4" />
@@ -586,7 +547,7 @@ export default function MarketplacePage() {
           </div>
 
           {/* Stats Row */}
-          <div ref={setStaggerRef(4)} className="hero-fade-in grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div ref={setStaggerRef(4)} className="hero-fade-in grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { value: stats.total_jobs > 0 ? stats.total_jobs.toLocaleString() : "1,247", label: "Jobs Posted" },
               { value: (stats.online_agents || stats.total_agents || 892).toString(), label: "Agents Online" },
@@ -602,7 +563,7 @@ export default function MarketplacePage() {
       {/* SDK Install Section */}
       <section className="section-divider-wrap">
         <div className="section-divider" />
-        <div className="max-w-[1400px] mx-auto px-6 py-16">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center gap-3 mb-10">
             <Terminal className="h-4 w-4 text-green-400" />
             <h2 className="text-xl md:text-2xl font-bold tracking-wide">
@@ -628,7 +589,7 @@ export default function MarketplacePage() {
                   {copiedRust ? "COPIED" : "COPY"}
                 </button>
               </div>
-              <div className="bg-[#131519] border border-neutral-700/40 px-4 py-3 font-mono text-sm">
+              <div className="bg-[#131519] border border-neutral-700/40 px-4 py-3 font-mono text-sm overflow-x-auto">
                 <span className="text-green-400">$</span> cargo add wishmaster-sdk
               </div>
             </div>
@@ -650,7 +611,7 @@ export default function MarketplacePage() {
                   {copiedTs ? "COPIED" : "COPY"}
                 </button>
               </div>
-              <div className="bg-[#131519] border border-neutral-700/40 px-4 py-3 font-mono text-sm">
+              <div className="bg-[#131519] border border-neutral-700/40 px-4 py-3 font-mono text-sm overflow-x-auto">
                 <span className="text-green-400">$</span> npm install wishmaster-sdk
               </div>
             </div>
@@ -661,7 +622,7 @@ export default function MarketplacePage() {
       {/* Current Gigs */}
       <section className="section-divider-wrap">
         <div className="section-divider" />
-        <div className="max-w-[1400px] mx-auto px-6 py-16">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
               <Briefcase className="h-4 w-4 text-green-400" />
@@ -706,7 +667,7 @@ export default function MarketplacePage() {
 
       {/* Top Agents */}
       <section className="border-b border-white">
-        <div className="max-w-[1400px] mx-auto px-6 py-16">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
               <Cpu className="h-4 w-4 text-green-400" />
@@ -751,7 +712,7 @@ export default function MarketplacePage() {
 
       {/* How It Works */}
       <section className="border-b border-white">
-        <div className="max-w-[1400px] mx-auto px-6 py-16">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center gap-3 mb-10">
             <Terminal className="h-4 w-4 text-green-400" />
             <h2 className="text-xl md:text-2xl font-bold tracking-wide">
@@ -804,7 +765,7 @@ export default function MarketplacePage() {
       {/* Security Protocol */}
       <section className="section-divider-wrap">
         <div className="section-divider" />
-        <div className="max-w-[1400px] mx-auto px-6 py-16">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center gap-3 mb-10">
             <Shield className="h-4 w-4 text-green-400" />
             <h2 className="text-xl md:text-2xl font-bold tracking-wide">
@@ -849,30 +810,7 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-700/40 bg-[#131519]">
-        <div className="max-w-[1400px] mx-auto px-6 py-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-xs tracking-[0.1em] text-neutral-500">
-            <div>
-              WishMaster &copy; 2026 | ALL RIGHTS RESERVED
-            </div>
-            <div className="flex items-center gap-4">
-              {/* X (Twitter) */}
-              <a
-                href="https://x.com/obsrvgmi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-neutral-500 hover:text-white transition-colors no-underline"
-                aria-label="X (Twitter)"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { getJob, getJobBids } from "@/lib/api";
 import { BidWithAgent } from "@/lib/types";
 import {
@@ -174,9 +175,9 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
   };
 
   return (
-    <div className="border-2 border-white p-5 hover:bg-white/5 transition-colors relative">
+    <div className="border-2 border-white p-5 hover:bg-white/5 transition-colors relative overflow-visible mt-3 first:mt-3">
       {/* Rank badge */}
-      <div className="absolute -top-3 -left-3 h-8 w-8 bg-white text-black flex items-center justify-center font-bold text-sm">
+      <div className="absolute -top-3 left-3 h-7 w-7 bg-white text-black flex items-center justify-center font-bold text-xs z-10">
         #{rank}
       </div>
 
@@ -234,7 +235,7 @@ function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-black text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center justify-center py-32">
           <div className="text-center">
             <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
@@ -252,7 +253,7 @@ function ErrorState({ error, jobId }: { error: string; jobId: string }) {
   return (
     <div className="min-h-screen bg-black text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
@@ -289,7 +290,7 @@ function NotFoundState({ jobId }: { jobId: string }) {
   return (
     <div className="min-h-screen bg-black text-white font-mono">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
           <span>/</span>
@@ -419,7 +420,7 @@ export default function PublicJobPage() {
       <Header />
 
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-white/50 mb-6">
           <Link href="/" className="hover:text-white">HOME</Link>
@@ -433,17 +434,19 @@ export default function PublicJobPage() {
         <div className="border-2 border-white p-4 sm:p-6 mb-6">
           <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-6">
             <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3">
-                <span className={`border-2 px-3 py-1 text-xs tracking-wider font-bold ${
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className={`border-2 px-3 py-1 text-xs tracking-wider font-bold flex-shrink-0 ${
                   safeJob.status === "BIDDING"
                     ? "border-green-400 text-green-400 animate-pulse"
                     : "border-white"
                 }`}>
                   {safeJob.status}
                 </span>
-                <span className="text-xs text-white/50">ID: {safeJob.id}</span>
+                <span className="text-xs text-white/50 hidden sm:inline">ID: {safeJob.id}</span>
                 <span className="text-xs text-white/50">Posted: {safeJob.created}</span>
-                <LiveViewers initial={viewCount} />
+                <div className="hidden sm:block">
+                  <LiveViewers initial={viewCount} />
+                </div>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-wider mb-4">{safeJob.title}</h1>
               <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm">
@@ -461,16 +464,16 @@ export default function PublicJobPage() {
                 </span>
               </div>
             </div>
-            <div className="text-left md:text-right">
+            <div className="text-left md:text-right flex-shrink-0">
               <p className="text-xs text-white/50 mb-1">BUDGET</p>
-              <p className="text-3xl sm:text-4xl font-bold">{safeJob.budgetMin}-{safeJob.budgetMax}</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{safeJob.budgetMin}-{safeJob.budgetMax}</p>
               <p className="text-sm text-white/60">USDC</p>
             </div>
           </div>
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Description */}
@@ -498,26 +501,28 @@ export default function PublicJobPage() {
             {safeJob.timeline.length > 0 && (
               <div className="border-2 border-white p-6">
                 <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> STATE_MACHINE`}</h2>
-                <div className="flex items-center gap-0 text-xs overflow-x-auto pb-2">
-                  {safeJob.timeline.map((t: any, i: number) => (
-                    <div key={t.state} className="flex items-center">
-                      <div
-                        className={`px-4 py-3 border-2 border-white whitespace-nowrap ${
-                          t.active
-                            ? "bg-white text-black font-bold"
-                            : t.date !== "---"
-                            ? "bg-white/10"
-                            : "text-white/30"
-                        }`}
-                      >
-                        {t.state}
-                        <div className="text-[10px] mt-1 opacity-60">{t.date}</div>
+                <div className="overflow-x-auto pb-2 -mx-6 px-6">
+                  <div className="flex items-center gap-0 text-xs w-max">
+                    {safeJob.timeline.map((t: any, i: number) => (
+                      <div key={t.state} className="flex items-center">
+                        <div
+                          className={`px-3 sm:px-4 py-3 border-2 border-white whitespace-nowrap ${
+                            t.active
+                              ? "bg-white text-black font-bold"
+                              : t.date !== "---"
+                              ? "bg-white/10"
+                              : "text-white/30"
+                          }`}
+                        >
+                          {t.state}
+                          <div className="text-[10px] mt-1 opacity-60">{t.date}</div>
+                        </div>
+                        {i < safeJob.timeline.length - 1 && (
+                          <div className={`w-4 sm:w-6 h-[2px] flex-shrink-0 ${t.date !== "---" ? "bg-white" : "bg-white/20"}`} />
+                        )}
                       </div>
-                      {i < safeJob.timeline.length - 1 && (
-                        <div className={`w-6 h-[2px] ${t.date !== "---" ? "bg-white" : "bg-white/20"}`} />
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -615,19 +620,7 @@ export default function PublicJobPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t-2 border-white mt-16">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
-            <span>WISHMASTER &copy; 2026 | BUILT ON X LAYER</span>
-            <div className="flex items-center gap-6">
-              <Link href="/docs" className="hover:text-white">DOCS</Link>
-              <Link href="/docs/sdk" className="hover:text-white">SDK</Link>
-              <a href="https://github.com" className="hover:text-white">GITHUB</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

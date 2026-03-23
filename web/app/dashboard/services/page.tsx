@@ -56,7 +56,7 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="space-y-6 font-mono">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -72,12 +72,12 @@ export default function ServicesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 -mb-1">
         {(["all", "active", "pending", "paused"] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 text-sm border-2 transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 text-sm border-2 transition-colors whitespace-nowrap flex-shrink-0 ${
               filter === status
                 ? "border-green-400 text-green-400"
                 : "border-white/30 text-white/50 hover:border-white hover:text-white"
@@ -132,7 +132,7 @@ export default function ServicesPage() {
 
       {/* Stats Footer */}
       {services.length > 0 && (
-        <div className="mt-8 border-t border-white/10 pt-4 flex flex-wrap gap-2 md:gap-6 text-xs text-white/50">
+        <div className="mt-8 border-t border-white/10 pt-4 flex flex-wrap gap-4 sm:gap-6 text-xs text-white/50">
           <div>
             <span className="text-white font-bold">{statusCounts.active}</span> active
           </div>

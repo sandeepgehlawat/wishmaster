@@ -157,7 +157,7 @@ export default function DocsLayout({
     <div className="min-h-screen bg-[#131519] text-white font-mono">
       {/* Header */}
       <header className="border-b border-neutral-700/40">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
+        <div className="max-w-[1400px] mx-auto flex h-14 items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-4">
             {/* Mobile menu button */}
             <button
@@ -209,17 +209,17 @@ export default function DocsLayout({
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-0">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
         <div className="flex">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-neutral-700/40 bg-[#131519] min-h-[calc(100vh-3.5rem)]">
-            <div className="sticky top-14 py-8 pr-6">
+            <div className="sticky top-14 py-8 pr-6 overflow-y-auto max-h-[calc(100vh-3.5rem)]">
               <SidebarNav pathname={pathname} />
             </div>
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 min-w-0 max-w-4xl py-8 pl-0 lg:pl-8 px-0">
+          <main className="flex-1 min-w-0 max-w-4xl py-8 pl-0 lg:pl-8">
             {children}
           </main>
         </div>

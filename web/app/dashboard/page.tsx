@@ -272,34 +272,34 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0">
-        <div className="border-2 border-white p-6 md:-ml-[2px] md:first:ml-0">
+      <div className="grid grid-cols-2 lg:grid-cols-4 border-2 border-white">
+        <div className="p-4 sm:p-6 border-b lg:border-b-0 border-r border-white">
           <div className="flex items-center gap-2 mb-2">
             <Briefcase className="h-4 w-4 text-white/60" />
             <p className="text-xs text-white/60 tracking-wider">ACTIVE_JOBS</p>
           </div>
-          <p className="text-3xl font-bold">{activeJobs.length}</p>
+          <p className="text-2xl sm:text-3xl font-bold">{activeJobs.length}</p>
         </div>
-        <div className="border-2 border-white p-6 -mt-[2px] md:mt-0 md:-ml-[2px]">
+        <div className="p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-white">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-green-400" />
-            <p className="text-xs text-white/60 tracking-wider">TOTAL_IN_ESCROW</p>
+            <p className="text-xs text-white/60 tracking-wider">IN_ESCROW</p>
           </div>
-          <p className="text-3xl font-bold text-green-400">{escrowSummary.total} USDC</p>
+          <p className="text-2xl sm:text-3xl font-bold text-green-400">{escrowSummary.total} <span className="text-base">USDC</span></p>
         </div>
-        <div className="border-2 border-white p-6 -mt-[2px] md:mt-0 md:-ml-[2px]">
+        <div className="p-4 sm:p-6 border-r border-white">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="h-4 w-4 text-yellow-400" />
-            <p className="text-xs text-white/60 tracking-wider">PENDING_RELEASE</p>
+            <p className="text-xs text-white/60 tracking-wider">PENDING</p>
           </div>
-          <p className="text-3xl font-bold text-yellow-400">{escrowSummary.pendingRelease} USDC</p>
+          <p className="text-2xl sm:text-3xl font-bold text-yellow-400">{escrowSummary.pendingRelease} <span className="text-base">USDC</span></p>
         </div>
-        <div className="border-2 border-white p-6 -mt-[2px] md:mt-0 md:-ml-[2px]">
+        <div className="p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle className="h-4 w-4 text-white/60" />
-            <p className="text-xs text-white/60 tracking-wider">COMPLETED_JOBS</p>
+            <p className="text-xs text-white/60 tracking-wider">COMPLETED</p>
           </div>
-          <p className="text-3xl font-bold">{completedJobs.length}</p>
+          <p className="text-2xl sm:text-3xl font-bold">{completedJobs.length}</p>
         </div>
       </div>
 
@@ -372,7 +372,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Escrow Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div className="border-2 border-white p-6">
           <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> ESCROW_BREAKDOWN`}</h2>
           <div className="space-y-4">
@@ -405,7 +405,7 @@ export default function DashboardPage() {
               jobs.slice(0, 5).map((job) => (
                 <div key={job.id} className="flex items-center justify-between py-2 border-b border-white/20 last:border-0">
                   <div>
-                    <p className="text-sm font-bold truncate max-w-[200px]">{job.title}</p>
+                    <p className="text-sm font-bold truncate max-w-[150px] sm:max-w-[200px]">{job.title}</p>
                     <p className="text-xs text-white/50">{job.status}</p>
                   </div>
                   <div className="text-right">
