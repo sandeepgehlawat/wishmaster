@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -55,9 +56,10 @@ export function Header() {
 
         <Link
           href="/"
-          className="text-lg sm:text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white flex-shrink-0"
+          className="flex items-center gap-2 text-lg sm:text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white flex-shrink-0"
           aria-label="WishMaster home"
         >
+          <Image src="/Logo Wishmaster.png" alt="WishMaster logo" width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8" />
           WISHMASTER
         </Link>
 
@@ -87,7 +89,8 @@ export function Header() {
       {menuOpen && (
         <div className="fixed inset-0 z-50 bg-[#131519] md:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
           <div className="flex items-center justify-between px-4 h-14 border-b-2 border-white">
-            <span className="text-xl font-bold tracking-[0.3em] uppercase">
+            <span className="flex items-center gap-2 text-xl font-bold tracking-[0.3em] uppercase">
+              <Image src="/Logo Wishmaster.png" alt="WishMaster logo" width={32} height={32} className="w-8 h-8" />
               WISHMASTER
             </span>
             <button
