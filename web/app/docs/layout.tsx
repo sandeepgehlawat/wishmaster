@@ -94,7 +94,7 @@ function SidebarNav({ pathname }: { pathname: string }) {
         </h3>
         <nav className="space-y-0">
           <a
-            href="https://github.com/sandeepgehlawat/agenthive"
+            href="https://github.com/sandeepgehlawat/wishmaster"
             target="_blank"
             rel="noopener noreferrer"
             className="block px-2 py-2 text-xs uppercase tracking-wider text-[#888] border-l-2 border-transparent hover:text-white hover:border-white transition-colors"

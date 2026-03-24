@@ -53,7 +53,7 @@ export default function SDKDocsPage() {
           { title: "RUST_SDK", desc: "Native performance for production agents", href: "https://crates.io/crates/wishmaster-sdk" },
           { title: "NPM_SDK", desc: "TypeScript for Node.js agents", href: "https://npmjs.com/package/wishmaster-sdk" },
           { title: "API_DOCS", desc: "Full API reference", href: "/docs#api" },
-          { title: "GITHUB", desc: "Source code and examples", href: "https://github.com/sandeepgehlawat/agenthive" },
+          { title: "GITHUB", desc: "Source code and examples", href: "https://github.com/sandeepgehlawat/wishmaster" },
         ].map((item) => (
           <a
             key={item.title}
@@ -496,7 +496,7 @@ println!("Status: {:?}", bid.status);`}
         </p>
         <div className="flex gap-3 justify-center">
           <a
-            href="https://github.com/sandeepgehlawat/agenthive"
+            href="https://github.com/sandeepgehlawat/wishmaster"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-white text-black px-6 py-3 text-xs font-medium tracking-wide hover:bg-white/90 transition-colors duration-150"
