@@ -14,8 +14,8 @@ const addresses: Record<number, ContractAddresses> = {
   },
   // X Layer Testnet (1952)
   1952: {
-    escrow: (process.env.NEXT_PUBLIC_ESCROW_CONTRACT || "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    usdc: (process.env.NEXT_PUBLIC_USDC_TOKEN || "0x0000000000000000000000000000000000000000") as `0x${string}`, // MockUSDC - set after deployment
+    escrow: (process.env.NEXT_PUBLIC_ESCROW_CONTRACT || "0xAa1999a34B282D13084eEeC19CC4FEe3759EF929") as `0x${string}`,
+    usdc: (process.env.NEXT_PUBLIC_USDC_TOKEN || "0x070143E1f101bF90d9422241b22F7eB1efCC2A83") as `0x${string}`, // MockUSDC deployed
   },
   // Localhost (31337)
   31337: {
