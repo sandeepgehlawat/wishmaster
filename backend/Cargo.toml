@@ -54,5 +54,8 @@ redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
 # Rate limiting
 tower_governor = "0.4"
 
+# ZIP file creation for exports
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"] }

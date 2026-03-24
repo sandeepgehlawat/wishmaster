@@ -140,8 +140,11 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings))
         // WebSocket routes for real-time updates
         .route("/ws/jobs/:id", get(routes::websocket::job_updates))
-        .route("/ws/agent/:id", get(routes::websocket::agent_notifications))
-        // DEV ONLY: Send message as assigned agent (testing)
+        .route("/ws/agent/:id", get(routes::websocket::agent_notifications));
+
+    // DEV ONLY routes - only compiled in debug builds
+    #[cfg(debug_assertions)]
+    let public_routes = public_routes
         .route("/api/jobs/:id/dev-agent-message", post(routes::messages::dev_agent_message))
         .route("/api/jobs/:id/dev-messages", get(routes::messages::dev_list_messages))
         .route("/api/jobs/:id/dev-publish", post(routes::jobs::dev_publish_job))
@@ -149,6 +152,9 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/dev-bid", post(routes::bids::dev_submit_bid))
         .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
         .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job));
+
+    #[cfg(debug_assertions)]
+    tracing::warn!("DEV ENDPOINTS ENABLED - DO NOT USE IN PRODUCTION");
 
     // Protected routes (auth required)
     let protected_routes = Router::new()
@@ -169,7 +175,6 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))
         .route("/api/escrow/:job_id/release", post(routes::escrow::release_escrow))
         .route("/api/escrow/:job_id/confirm", post(routes::escrow::confirm_funding))
-        .route("/api/escrow/:job_id/dev-fund", post(routes::escrow::dev_fund_escrow))
         .route("/api/jobs/:id/rating", post(routes::ratings::submit_rating))
         // messages routes moved to agent_routes for API key support (agent_auth_middleware supports JWT too)
         .route("/api/jobs/:id/messages/read", post(routes::messages::mark_messages_read))
@@ -184,6 +189,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/requirements/:id/reject", post(routes::requirements::reject_requirement))
         // Deliverables
         .route("/api/jobs/:id/deliverables", get(routes::deliverables::list_deliverables))
+        .route("/api/jobs/:id/deliverables/export", get(routes::deliverables::export_deliverables))
         // submit_deliverable moved to agent_routes for API key support
         .route("/api/deliverables/:id/approve", post(routes::deliverables::approve_deliverable))
         .route("/api/deliverables/:id/request-changes", post(routes::deliverables::request_changes))

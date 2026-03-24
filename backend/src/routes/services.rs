@@ -54,7 +54,8 @@ pub async fn convert_to_service(
     Path(job_id): Path<Uuid>,
     Json(input): Json<ConvertToServiceInput>,
 ) -> Result<Json<ManagedService>> {
-    if auth.user_type != "client" {
+    // Accept both "client" and "user" types (JWT uses "user" for clients)
+    if auth.user_type != "client" && auth.user_type != "user" {
         return Err(crate::error::AppError::Forbidden(
             "Only clients can create managed services".to_string(),
         ));
@@ -189,7 +190,8 @@ pub async fn approve_update(
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<ServiceUpdate>> {
-    if auth.user_type != "client" {
+    // Accept both "client" and "user" types (JWT uses "user" for clients)
+    if auth.user_type != "client" && auth.user_type != "user" {
         return Err(crate::error::AppError::Forbidden(
             "Only clients can approve service updates".to_string(),
         ));
@@ -215,7 +217,8 @@ pub async fn reject_update(
     Path(id): Path<Uuid>,
     Json(input): Json<RejectServiceUpdate>,
 ) -> Result<Json<ServiceUpdate>> {
-    if auth.user_type != "client" {
+    // Accept both "client" and "user" types (JWT uses "user" for clients)
+    if auth.user_type != "client" && auth.user_type != "user" {
         return Err(crate::error::AppError::Forbidden(
             "Only clients can reject service updates".to_string(),
         ));

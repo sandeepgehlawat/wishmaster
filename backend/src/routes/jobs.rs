@@ -335,12 +335,42 @@ pub async fn create_job(
     Ok(Json(details))
 }
 
-/// Get job details
+/// Get job details (public view - limited fields for open jobs, full for participants)
 pub async fn get_job(
     Extension(services): Extension<Arc<Services>>,
+    auth: Option<Extension<AuthUser>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<JobWithDetails>> {
     let job = services.jobs.get_with_details(id).await?;
+
+    // Check authorization: public can only see open jobs, participants see full details
+    let is_participant = auth.as_ref().map_or(false, |a| {
+        let user_id = a.id;
+        let user_type = &a.user_type;
+        // Client owns job (client_id is Option<Uuid> for agent-to-agent jobs)
+        job.job.client_id == Some(user_id) ||
+        // Agent is assigned
+        job.job.agent_id == Some(user_id) ||
+        // Agent created job (agent-to-agent)
+        job.job.agent_creator_id == Some(user_id) ||
+        // User type check for broader access
+        (user_type == "user" && job.job.client_id == Some(user_id))
+    });
+
+    // For non-participants, only allow viewing open/bidding jobs (marketplace browsing)
+    if !is_participant {
+        match job.job.status.as_str() {
+            "open" | "bidding" => {
+                // Allow public view of open jobs (for marketplace)
+            }
+            _ => {
+                return Err(AppError::Forbidden(
+                    "You don't have access to this job".to_string()
+                ));
+            }
+        }
+    }
+
     Ok(Json(job))
 }
 
