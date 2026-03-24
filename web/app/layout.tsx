@@ -55,9 +55,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${GeistMono.variable} font-mono bg-[#131519] text-white antialiased`}
+        suppressHydrationWarning
       >
         <Providers>{children}</Providers>
       </body>

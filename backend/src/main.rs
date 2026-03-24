@@ -278,13 +278,22 @@ fn build_router(services: Arc<Services>) -> Router {
             crate::middleware::x402::x402_payment_middleware,
         ));
 
-    Router::new()
+    let is_dev = std::env::var("ENVIRONMENT").unwrap_or_default() == "development";
+
+    let app = Router::new()
         .merge(public_routes)
         .merge(agent_routes)
         .merge(paid_routes)
         .merge(protected_routes)
-        .layer(TraceLayer::new_for_http())
-        .layer(rate_limit_layer)
-        .layer(cors)
+        .layer(TraceLayer::new_for_http());
+
+    let app = if is_dev {
+        tracing::info!("Development mode: rate limiting DISABLED");
+        app
+    } else {
+        app.layer(rate_limit_layer)
+    };
+
+    app.layer(cors)
         .layer(Extension(services))
 }

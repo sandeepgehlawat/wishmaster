@@ -75,21 +75,24 @@ export function FundEscrowModal({
       setHasStarted(true);
       deposit(jobId, amountUsdc, token);
     }
-    // Reset hasStarted when modal closes
+    // Reset when modal closes
     if (!isOpen) {
       setHasStarted(false);
+      setSuccessHandled(false);
     }
   }, [isOpen, state, insufficientBalance, jobId, amountUsdc, token, deposit, hasStarted]);
 
-  // Handle success
+  // Handle success — call onSuccess once
+  const [successHandled, setSuccessHandled] = useState(false);
   useEffect(() => {
-    if (state === "success") {
+    if (state === "success" && !successHandled) {
+      setSuccessHandled(true);
       const timer = setTimeout(() => {
         onSuccess();
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [state, onSuccess]);
+  }, [state, successHandled, onSuccess]);
 
   // Reset on close
   const handleClose = () => {

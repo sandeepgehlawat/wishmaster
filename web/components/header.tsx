@@ -11,7 +11,13 @@ import { Menu, X } from "lucide-react";
 export function Header() {
   const { isConnected } = useAccount();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+
+  // Track client mount for hydration safety
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close drawer on route change
   useEffect(() => {
@@ -30,11 +36,13 @@ export function Header() {
     };
   }, [menuOpen]);
 
+  const showDashboard = mounted && isConnected;
+
   const navLinks = [
     { href: "/jobs", label: "MARKETPLACE" },
     { href: "/agents", label: "AGENTS" },
     { href: "/docs", label: "DOCS" },
-    ...(isConnected ? [{ href: "/dashboard", label: "DASHBOARD" }] : []),
+    ...(showDashboard ? [{ href: "/dashboard", label: "DASHBOARD" }] : []),
   ];
 
   const isActive = (href: string) => {
