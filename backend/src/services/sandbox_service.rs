@@ -70,43 +70,64 @@ impl SandboxService {
     }
 
     /// Claim a job and start sandbox execution
+    /// Uses atomic transaction to prevent race conditions
     pub async fn claim_job(&self, job_id: Uuid, agent_id: Uuid) -> Result<SandboxSession> {
-        // Verify agent is assigned to this job
-        let job: (Uuid, String) = sqlx::query_as(
-            "SELECT agent_id, status FROM jobs WHERE id = $1"
+        // Generate ephemeral access token upfront
+        let token = generate_sandbox_token();
+        let now = Utc::now();
+        let expires_at = now + Duration::hours(24);
+
+        // ATOMIC: Use a transaction with row-level locking to prevent race conditions
+        // This ensures only one agent can claim the job even with concurrent requests
+        let mut tx = self.db.begin().await?;
+
+        // Select FOR UPDATE locks the row, preventing concurrent modifications
+        let job: Option<(Uuid, String)> = sqlx::query_as(
+            "SELECT agent_id, status FROM jobs WHERE id = $1 FOR UPDATE"
         )
         .bind(job_id)
-        .fetch_optional(&self.db)
-        .await?
-        .ok_or_else(|| AppError::NotFound("Job not found".to_string()))?;
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        let job = job.ok_or_else(|| AppError::NotFound("Job not found".to_string()))?;
 
         if job.0 != agent_id {
+            tx.rollback().await?;
             return Err(AppError::Forbidden("You are not assigned to this job".to_string()));
         }
 
         if job.1 != "assigned" {
+            tx.rollback().await?;
             return Err(AppError::BadRequest(format!(
                 "Job is in {} state, expected 'assigned'",
                 job.1
             )));
         }
 
-        // Generate ephemeral access token
-        let token = generate_sandbox_token();
-        let now = Utc::now();
-        let expires_at = now + Duration::hours(24);
-
-        // Transition job to in_progress
+        // Transition job to in_progress (within same transaction)
         sqlx::query(
             "UPDATE jobs SET status = 'in_progress', started_at = NOW() WHERE id = $1"
         )
         .bind(job_id)
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        // Log audit entry
-        self.log_audit(agent_id, job_id, "sandbox_claimed", None).await?;
+        // Log audit entry (within transaction for consistency)
+        sqlx::query(
+            r#"INSERT INTO audit_log (user_id, job_id, action, metadata, created_at)
+               VALUES ($1, $2, $3, $4, NOW())"#
+        )
+        .bind(agent_id)
+        .bind(job_id)
+        .bind("sandbox_claimed")
+        .bind(serde_json::json!({}))
+        .execute(&mut *tx)
+        .await?;
 
+        // Commit the transaction - all or nothing
+        tx.commit().await?;
+
+        // Non-transactional operations (can fail without breaking state)
         // Create container ID (in production: Docker/K8s API)
         let container_id = self.create_sandbox_container(job_id, agent_id).await?;
 
@@ -119,8 +140,10 @@ impl SandboxService {
         };
         self.progress_store.write().await.insert(job_id, progress.clone());
 
-        // Publish start event
-        self.publish_progress_event(job_id, &progress).await?;
+        // Publish start event (best effort, don't fail if this fails)
+        if let Err(e) = self.publish_progress_event(job_id, &progress).await {
+            tracing::warn!("Failed to publish progress event for job {}: {}", job_id, e);
+        }
 
         Ok(SandboxSession {
             job_id,

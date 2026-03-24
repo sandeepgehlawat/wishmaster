@@ -26,6 +26,11 @@ export default function DashboardLayout({
   const { isConnected, address } = useAccount();
   const { isAuthenticated, isLoading, signIn, signOut, error } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -47,6 +52,15 @@ export default function DashboardLayout({
       document.body.style.overflow = "";
     };
   }, [sidebarOpen]);
+
+  // Wait for client mount to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#131519] text-white font-mono">
+        <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
 
   // Not connected - show connect prompt
   if (!isConnected) {

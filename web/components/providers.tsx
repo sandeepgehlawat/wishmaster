@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, type ReactNode } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
@@ -8,9 +9,22 @@ import { AuthProvider } from './auth-provider';
 
 import '@rainbow-me/rainbowkit/styles.css';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-export function Providers({ children }: { children: React.ReactNode }) {
+// Suppress hydration warnings from wallet state differences (server vs client)
+function HydrationSafe({ children }: { children: ReactNode }) {
+  return <div suppressHydrationWarning>{children}</div>;
+}
+
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
@@ -22,7 +36,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
             fontStack: 'system',
           })}
         >
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <HydrationSafe>{children}</HydrationSafe>
+          </AuthProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

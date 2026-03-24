@@ -41,7 +41,7 @@ export function useAuth() {
       setError(null);
     } catch (error: any) {
       setError(error.message || "Sign in failed");
-      // Don't clear auth on error - might be network issue
+      clearAuth(); // Clear stale auth on failure
     } finally {
       setIsSigningIn(false);
     }

@@ -91,6 +91,7 @@ export default function NewJobPage() {
 
       const result = await createJob(jobData, token);
       const jobId = result.id || (result as any).job?.id;
+      // Don't setLoading(false) — keep button disabled during navigation
       if (jobId) {
         router.push(`/dashboard/jobs/${jobId}`);
       } else {
@@ -99,7 +100,6 @@ export default function NewJobPage() {
     } catch (err: any) {
       const errorMessage = err.message || "Failed to create job. Please try again.";
       setError(errorMessage);
-    } finally {
       setLoading(false);
     }
   };

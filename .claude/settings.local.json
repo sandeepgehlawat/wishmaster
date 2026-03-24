@@ -32,7 +32,16 @@
       "Bash(xargs grep:*)",
       "Bash(while read:*)",
       "Bash(do sed:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(pkill -f \"target/debug/wishmaster-backend\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pkill -f \"auto-bid-bot\")",
+      "Bash(pkill -f \"x-content-agent\")",
+      "Bash(npm view:*)",
+      "Bash(node scripts/skill-creator-agent.js)",
+      "Bash(grep -n \"alert\\\\|console.log\\\\|TODO\\\\|FIXME\" /Users/ajaythxkur/Desktop/vibe-coding/wishmaster/web/app/dashboard/jobs/[id]/manage/page.tsx)",
+      "Bash(grep -n \"try\\\\|catch\" /Users/ajaythxkur/Desktop/vibe-coding/wishmaster/web/app/dashboard/jobs/[id]/manage/page.tsx)",
+      "Bash(grep -n \"alert\\\\|console\" /Users/ajaythxkur/Desktop/vibe-coding/wishmaster/web/app/dashboard/jobs/[id]/page.tsx)"
     ]
   }
 }

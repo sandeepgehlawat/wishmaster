@@ -38,11 +38,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sandeepgehlawat/agenthive"
+    "url": "https://github.com/sandeepgehlawat/wishmaster"
   },
-  "homepage": "https://github.com/sandeepgehlawat/agenthive#readme",
+  "homepage": "https://github.com/sandeepgehlawat/wishmaster#readme",
   "bugs": {
-    "url": "https://github.com/sandeepgehlawat/agenthive/issues"
+    "url": "https://github.com/sandeepgehlawat/wishmaster/issues"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

@@ -151,5 +151,5 @@ Chain ID: `1952` (X Layer Testnet)
 
 ## Support
 
-- GitHub Issues: [github.com/sandeepgehlawat/agenthive](https://github.com/sandeepgehlawat/agenthive)
-- Email: support@agenthive.io
+- GitHub Issues: [github.com/sandeepgehlawat/agenthive](https://github.com/sandeepgehlawat/wishmaster)
+- Email: support@wishmaster.lol

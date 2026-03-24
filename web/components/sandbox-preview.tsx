@@ -475,176 +475,125 @@ Automated social media management for OKX - built by RustaceanBot on WishMaster.
 });
 
 // Generate HTML with inline styles for client preview (no code exposure)
-const getPreviewHtml = (jobId: string) => `
+// Shows a generic "Work in Progress" view - NOT actual job content (security)
+const getPreviewHtml = (jobId: string, jobTitle: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OKX Daily Posts Preview</title>
+  <title>Work in Progress - WishMaster</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Courier New', Consolas, monospace;
-      background: #000;
+      background: #0a0a0a;
       color: #fff;
       min-height: 100vh;
-      line-height: 1.6;
-    }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    .header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 20px 0;
-      border-bottom: 1px solid #333;
+      justify-content: center;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+      max-width: 600px;
     }
     .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.5rem;
+      font-size: 2rem;
       font-weight: bold;
-      letter-spacing: 2px;
-    }
-    .logo-icon { color: #00ff88; font-size: 2rem; }
-    .nav { display: flex; gap: 30px; }
-    .nav a {
-      color: #888;
-      text-decoration: none;
-      text-transform: uppercase;
-      font-size: 0.9rem;
-    }
-    .nav a:hover { color: #00ff88; }
-    .hero {
-      text-align: center;
-      padding: 80px 0;
-      border-bottom: 1px solid #333;
-    }
-    .hero-badge {
-      display: inline-block;
-      padding: 8px 16px;
-      border: 1px solid #00ff88;
+      letter-spacing: 3px;
+      margin-bottom: 40px;
       color: #00ff88;
-      font-size: 0.75rem;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 12px 24px;
+      border: 2px solid #f59e0b;
+      color: #f59e0b;
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      margin-bottom: 30px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .job-title {
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: 20px;
+      word-break: break-word;
+    }
+    .message {
+      color: #666;
+      font-size: 0.9rem;
+      line-height: 1.8;
+      margin-bottom: 30px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #222;
+      border-radius: 2px;
+      overflow: hidden;
       margin-bottom: 20px;
     }
-    .hero h1 { font-size: 3rem; margin-bottom: 20px; line-height: 1.2; }
-    .highlight { color: #00ff88; }
-    .hero p { color: #888; font-size: 1.1rem; margin-bottom: 40px; }
-    .stats { display: flex; justify-content: center; gap: 60px; }
-    .stat { display: flex; flex-direction: column; align-items: center; }
-    .stat-value { font-size: 2.5rem; font-weight: bold; color: #00ff88; }
-    .stat-label { color: #666; text-transform: uppercase; font-size: 0.8rem; }
-    .posts { padding: 60px 0; }
-    .posts h2 { color: #00ff88; margin-bottom: 30px; font-size: 1rem; }
-    .post-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-    .post-card { border: 1px solid #333; padding: 20px; background: #0a0a0a; }
-    .post-card:hover { border-color: #00ff88; }
-    .post-time { color: #00ff88; font-size: 0.9rem; margin-bottom: 15px; }
-    .post-content p { margin-bottom: 10px; }
-    .hashtags { color: #0088ff; font-size: 0.85rem; }
-    .post-status { display: inline-block; padding: 4px 12px; font-size: 0.75rem; margin-top: 15px; }
-    .post-status.scheduled { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid #00ff88; }
-    .post-status.pending { background: rgba(255,170,0,0.1); color: #ffaa00; border: 1px solid #ffaa00; }
-    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px; }
-    .analytics-card { border: 1px solid #333; padding: 30px 20px; background: #0a0a0a; text-align: center; }
-    .analytics-icon { font-size: 2rem; margin-bottom: 10px; }
-    .analytics-value { font-size: 2rem; font-weight: bold; color: #00ff88; margin-bottom: 5px; }
-    .analytics-label { color: #888; font-size: 0.85rem; text-transform: uppercase; }
-    .footer { text-align: center; padding: 40px 0; border-top: 1px solid #333; color: #666; }
-    .agent { color: #00ff88; }
-    .job-id { font-size: 0.75rem; margin-top: 10px; color: #444; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .post-status.scheduled { animation: pulse 2s infinite; }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff88, #00cc6a);
+      width: 60%;
+      animation: progress 3s ease-in-out infinite;
+    }
+    @keyframes progress {
+      0% { width: 30%; }
+      50% { width: 70%; }
+      100% { width: 30%; }
+    }
+    .secure-notice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #444;
+      font-size: 0.75rem;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #222;
+    }
+    .lock-icon {
+      width: 14px;
+      height: 14px;
+    }
+    .job-id {
+      color: #333;
+      font-size: 0.7rem;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <header class="header">
-      <div class="logo">
-        <span class="logo-icon">&#9670;</span>
-        <span>OKX DAILY</span>
-      </div>
-      <nav class="nav">
-        <a href="#posts">Posts</a>
-        <a href="#schedule">Schedule</a>
-        <a href="#analytics">Analytics</a>
-      </nav>
-    </header>
-
-    <section class="hero">
-      <div class="hero-badge">POWERED BY WISHMASTER</div>
-      <h1>OKX Social Media<br><span class="highlight">Command Center</span></h1>
-      <p>Automated daily posts for X (Twitter) - Managed by AI Agent</p>
-      <div class="stats">
-        <div class="stat">
-          <span class="stat-value">24/7</span>
-          <span class="stat-label">Active</span>
-        </div>
-        <div class="stat">
-          <span class="stat-value">365</span>
-          <span class="stat-label">Posts/Year</span>
-        </div>
-        <div class="stat">
-          <span class="stat-value">100K+</span>
-          <span class="stat-label">Reach</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="posts" id="posts">
-      <h2>&gt;&gt;&gt; SCHEDULED POSTS</h2>
-      <div class="post-grid">
-        <div class="post-card">
-          <div class="post-time">09:00 AM</div>
-          <div class="post-content">
-            <p>GM! Start your day with OKX - The world's leading crypto exchange.</p>
-            <p class="hashtags">#OKX #Crypto #Web3 #GM</p>
-          </div>
-          <div class="post-status scheduled">SCHEDULED</div>
-        </div>
-        <div class="post-card">
-          <div class="post-time">02:00 PM</div>
-          <div class="post-content">
-            <p>Market Update: Stay informed with real-time data on OKX.</p>
-            <p class="hashtags">#Trading #DeFi #Bitcoin</p>
-          </div>
-          <div class="post-status scheduled">SCHEDULED</div>
-        </div>
-        <div class="post-card">
-          <div class="post-time">07:00 PM</div>
-          <div class="post-content">
-            <p>Evening vibes! What are you trading today? Drop a comment</p>
-            <p class="hashtags">#CryptoCommunity #OKX</p>
-          </div>
-          <div class="post-status pending">PENDING</div>
-        </div>
-      </div>
-
-      <div class="analytics-grid">
-        <div class="analytics-card">
-          <div class="analytics-icon">&#128200;</div>
-          <div class="analytics-value">12.5K</div>
-          <div class="analytics-label">Impressions</div>
-        </div>
-        <div class="analytics-card">
-          <div class="analytics-icon">&#128101;</div>
-          <div class="analytics-value">847</div>
-          <div class="analytics-label">Engagements</div>
-        </div>
-        <div class="analytics-card">
-          <div class="analytics-icon">&#128279;</div>
-          <div class="analytics-value">156</div>
-          <div class="analytics-label">Link Clicks</div>
-        </div>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <p>Built with care by <span class="agent">RustaceanBot</span> on WishMaster</p>
-      <p class="job-id">Job ID: ${jobId}</p>
-    </footer>
+    <div class="logo">WISHMASTER</div>
+    <div class="status-badge">WORK IN PROGRESS</div>
+    <h1 class="job-title">\${jobTitle}</h1>
+    <p class="message">
+      Your agent is actively working on this job.<br>
+      Source code and deliverables will be available<br>
+      once the job is completed and payment is released.
+    </p>
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+    <div class="secure-notice">
+      <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      Source code protected until delivery approval
+    </div>
+    <p class="job-id">Job ID: \${jobId}</p>
   </div>
 </body>
 </html>
@@ -686,8 +635,8 @@ export default function SandboxPreview({
 
     setIsLoading(true);
 
-    // Create blob URL from preview HTML
-    const html = getPreviewHtml(jobId);
+    // Create blob URL from preview HTML (shows job-specific title, not hardcoded content)
+    const html = getPreviewHtml(jobId, jobTitle);
     const blob = new Blob([html], { type: 'text/html' });
     const blobUrl = URL.createObjectURL(blob);
 
@@ -695,7 +644,7 @@ export default function SandboxPreview({
     iframeRef.current.onload = () => setIsLoading(false);
 
     return () => URL.revokeObjectURL(blobUrl);
-  }, [isMounted, canViewCode, jobId]);
+  }, [isMounted, canViewCode, jobId, jobTitle]);
 
   // For agents/completed: embed full StackBlitz editor
   useEffect(() => {
