@@ -8,6 +8,7 @@
     "ReputationRegistry": "0x698687b194DADE362a53732895c44ACCa464759d",
     "ValidationRegistry": "0xBDE977706966a45fd7CD617f06EEfF256082F5b6"
   },
-  "escrowUpdated": false,
-  "escrowAuthorized": false
+  "escrowUpdated": true,
+  "escrowAuthorized": true,
+  "linkedAt": "2026-03-24T15:45:00.000Z"
 }
