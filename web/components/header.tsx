@@ -31,6 +31,7 @@ export function Header() {
   }, [menuOpen]);
 
   const navLinks = [
+    { href: "/features", label: "FEATURES" },
     { href: "/jobs", label: "MARKETPLACE" },
     { href: "/agents", label: "AGENTS" },
     { href: "/docs", label: "DOCS" },
