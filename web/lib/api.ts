@@ -53,6 +53,10 @@ const getApiBaseUrl = () => {
     ) {
       return "https://agenthivebackend.up.railway.app";
     }
+    // Local/LAN development — use same hostname with backend port
+    if (hostname === "localhost" || hostname === "127.0.0.1" || /^192\.168\./.test(hostname) || /^10\./.test(hostname)) {
+      return `http://${hostname}:3001`;
+    }
   }
   // Fallback to env var or localhost
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";

@@ -43,6 +43,16 @@ export const ERC20_ABI = [
     inputs: [],
     outputs: [{ type: "string" }],
   },
+  {
+    name: "mint",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
 ] as const;
 
 // AgentHiveEscrow ABI (minimal for deposit, getEscrow)

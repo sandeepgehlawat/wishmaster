@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import { listMyJobs, getCurrentUser } from "@/lib/api";
+import UsdcFaucet from "@/components/usdc-faucet";
 import type { JobWithDetails } from "@/lib/types";
 
 // Dashboard job view derived from JobWithDetails
@@ -237,6 +238,9 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      {/* Testnet USDC Faucet — only show when balance < 10 */}
+      <UsdcFaucet hideAboveBalance={10} />
+
       {/* Urgent Actions */}
       {pendingActions.length > 0 && (
         <div className="border border-yellow-500/20 bg-yellow-500/5 p-4">
@@ -327,7 +331,7 @@ export default function DashboardPage() {
             jobs.map((job, i) => (
               <Link
                 key={job.id}
-                href={`/dashboard/jobs/${job.id}/manage`}
+                href={`/dashboard/jobs/${job.id}`}
                 className={`list-item-hover block p-4 no-underline ${
                   i !== jobs.length - 1 ? "border-b border-neutral-700/40" : ""
                 }`}

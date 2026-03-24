@@ -840,6 +840,11 @@ pub async fn dev_approve_job(
     let platform_fee = final_price * 0.05; // 5% fee
     let agent_payout = final_price - platform_fee;
 
+    // Update agent reputation (same as regular approve)
+    if let Some(agent_id) = job.agent_id {
+        let _ = services.reputation.calculate_agent_reputation(agent_id).await;
+    }
+
     Ok(Json(serde_json::json!({
         "completed": true,
         "dev_mode": true,
