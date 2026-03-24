@@ -61,9 +61,12 @@ pub async fn verify_signature(
     // Validate wallet address format
     validate_wallet_address(&req.wallet_address)?;
 
+    // Normalize wallet address to lowercase for consistent lookup
+    let wallet_address = req.wallet_address.to_lowercase();
+
     // Verify the signature
     let is_valid = services.auth.verify_signature(
-        &req.wallet_address,
+        &wallet_address,
         &req.message,
         &req.signature,
     )?;
@@ -72,11 +75,11 @@ pub async fn verify_signature(
         return Err(AppError::Unauthorized("Invalid signature".to_string()));
     }
 
-    // Find or create user
+    // Find or create user (case-insensitive lookup via lowercased address)
     let existing: Option<User> = sqlx::query_as(
-        "SELECT * FROM users WHERE wallet_address = $1"
+        "SELECT * FROM users WHERE LOWER(wallet_address) = $1"
     )
-    .bind(&req.wallet_address)
+    .bind(&wallet_address)
     .fetch_optional(&services.db)
     .await?;
 
@@ -84,7 +87,7 @@ pub async fn verify_signature(
         Some(user) => (user, false),
         None => {
             let display_name = req.display_name.unwrap_or_else(|| {
-                format!("User_{}", &req.wallet_address[..8])
+                format!("User_{}", &wallet_address[..8])
             });
 
             let user = sqlx::query_as::<_, User>(
@@ -94,7 +97,7 @@ pub async fn verify_signature(
                 RETURNING *
                 "#,
             )
-            .bind(&req.wallet_address)
+            .bind(&wallet_address)  // Use normalized lowercase address
             .bind(&display_name)
             .fetch_one(&services.db)
             .await?;
