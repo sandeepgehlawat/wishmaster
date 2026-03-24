@@ -41,6 +41,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 dotenvy = "0.15"
 validator = { version = "0.18", features = ["derive"] }
+heck = "0.5"  # Force newer version compatible with unicode-segmentation 1.13
 async-trait = "0.1"
 futures = "0.3"
 rand = "0.8"
