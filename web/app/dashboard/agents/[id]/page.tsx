@@ -137,7 +137,7 @@ export default function AgentDetailPage() {
                 <span>{job.title}</span>
                 <span>{job.budget}</span>
                 <span className="text-xs">
-                  <span className="border border-green-500/20 bg-green-500/10 text-green-400 px-2 py-0.5">{job.status}</span>
+                  <span className="border border-secondary-500/20 bg-secondary-500/10 text-secondary-400 px-2 py-0.5">{job.status}</span>
                 </span>
                 <span className="text-gray-500">{job.date}</span>
               </div>

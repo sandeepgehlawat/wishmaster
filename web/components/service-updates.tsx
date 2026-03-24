@@ -44,7 +44,7 @@ const STATUS_CONFIG: Record<
   pending: { icon: Clock, color: "text-yellow-400", label: "Pending Review" },
   approved: { icon: CheckCircle2, color: "text-blue-400", label: "Approved" },
   rejected: { icon: XCircle, color: "text-red-400", label: "Rejected" },
-  deployed: { icon: Rocket, color: "text-green-400", label: "Deployed" },
+  deployed: { icon: Rocket, color: "text-secondary-400", label: "Deployed" },
 };
 
 const CHANGE_TYPE_CONFIG: Record<
@@ -142,7 +142,7 @@ export default function ServiceUpdates({
             <div
               key={update.id}
               className={`p-4 ${
-                update.status === "deployed" ? "bg-green-400/5" : ""
+                update.status === "deployed" ? "bg-secondary-400/5" : ""
               }`}
             >
               <div className="flex items-start gap-3">
@@ -242,7 +242,7 @@ export default function ServiceUpdates({
                       <>
                         <button
                           onClick={() => handleApprove(update.id)}
-                          className="border-2 border-green-400 text-green-400 px-3 py-1 text-xs hover:bg-green-400 hover:text-black transition-colors"
+                          className="border-2 border-secondary-400 text-secondary-400 px-3 py-1 text-xs hover:bg-secondary-400 hover:text-black transition-colors"
                         >
                           Approve
                         </button>
@@ -259,7 +259,7 @@ export default function ServiceUpdates({
                     {userType === "agent" && update.status === "approved" && (
                       <button
                         onClick={() => handleDeploy(update.id)}
-                        className="border-2 border-green-400 text-green-400 px-3 py-1 text-xs hover:bg-green-400 hover:text-black transition-colors flex items-center gap-1"
+                        className="border-2 border-secondary-400 text-secondary-400 px-3 py-1 text-xs hover:bg-secondary-400 hover:text-black transition-colors flex items-center gap-1"
                       >
                         <Rocket className="h-3 w-3" />
                         Deploy
@@ -352,14 +352,14 @@ function AddUpdateForm({
         placeholder="Update title..."
         value={data.title}
         onChange={(e) => setData({ ...data, title: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
       />
 
       <textarea
         placeholder="Description..."
         value={data.description || ""}
         onChange={(e) => setData({ ...data, description: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400 h-20 resize-none"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400 h-20 resize-none"
       />
 
       <select
@@ -367,7 +367,7 @@ function AddUpdateForm({
         onChange={(e) =>
           setData({ ...data, change_type: e.target.value as UpdateChangeType })
         }
-        className="bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+        className="bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
       >
         <option value="feature">Feature</option>
         <option value="fix">Fix</option>
@@ -381,14 +381,14 @@ function AddUpdateForm({
         placeholder="File/artifact URL (optional)..."
         value={data.file_url || ""}
         onChange={(e) => setData({ ...data, file_url: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
       />
 
       <div className="flex gap-2">
         <button
           onClick={handleSubmit}
           disabled={!data.title.trim() || saving}
-          className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm hover:bg-green-400 hover:text-black transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="border-2 border-secondary-400 text-secondary-400 px-4 py-2 text-sm hover:bg-secondary-400 hover:text-black transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}
           Submit for Review

@@ -48,7 +48,7 @@ export default function ConvertToServiceModal({
         {/* Header */}
         <div className="border-b border-white/30 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-green-400" />
+            <Briefcase className="h-5 w-5 text-secondary-400" />
             <h2 className="font-bold tracking-wider">CONVERT TO MANAGED SERVICE</h2>
           </div>
           <button onClick={onClose} className="text-white/50 hover:text-white">
@@ -59,8 +59,8 @@ export default function ConvertToServiceModal({
         {/* Content */}
         <div className="p-4 space-y-4">
           {/* Info Box */}
-          <div className="bg-green-400/10 border border-green-400/30 p-3 text-sm">
-            <p className="text-green-400 font-bold mb-1">What is a Managed Service?</p>
+          <div className="bg-secondary-400/10 border border-secondary-400/30 p-3 text-sm">
+            <p className="text-secondary-400 font-bold mb-1">What is a Managed Service?</p>
             <p className="text-white/70">
               Turn this completed job into an ongoing service. The agent will manage
               your product with regular updates, fixes, and improvements. You approve
@@ -91,7 +91,7 @@ export default function ConvertToServiceModal({
                 type="text"
                 value={data.name}
                 onChange={(e) => setData({ ...data, name: e.target.value })}
-                className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+                className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
               />
             </div>
 
@@ -102,7 +102,7 @@ export default function ConvertToServiceModal({
               <textarea
                 value={data.description || ""}
                 onChange={(e) => setData({ ...data, description: e.target.value })}
-                className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400 h-20 resize-none"
+                className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400 h-20 resize-none"
               />
             </div>
 
@@ -119,7 +119,7 @@ export default function ConvertToServiceModal({
                   onChange={(e) =>
                     setData({ ...data, monthly_rate_usd: parseFloat(e.target.value) || 0 })
                   }
-                  className="w-full bg-black border-2 border-white pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-400"
+                  className="w-full bg-black border-2 border-white pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
                 />
               </div>
               <p className="text-[10px] text-white/30 mt-1">
@@ -156,7 +156,7 @@ export default function ConvertToServiceModal({
           <button
             onClick={handleSubmit}
             disabled={!data.name.trim() || data.monthly_rate_usd <= 0 || saving}
-            className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm hover:bg-green-400 hover:text-black transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="border-2 border-secondary-400 text-secondary-400 px-4 py-2 text-sm hover:bg-secondary-400 hover:text-black transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Create Service Offer

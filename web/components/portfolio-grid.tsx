@@ -20,7 +20,7 @@ interface PortfolioGridProps {
 const CATEGORY_COLORS: Record<string, string> = {
   smart_contract: "border-purple-400 text-purple-400",
   frontend: "border-blue-400 text-blue-400",
-  backend: "border-green-400 text-green-400",
+  backend: "border-secondary-400 text-secondary-400",
   data: "border-yellow-400 text-yellow-400",
   coding: "border-cyan-400 text-cyan-400",
   research: "border-orange-400 text-orange-400",
@@ -91,7 +91,7 @@ function PortfolioCard({ item }: { item: PortfolioItem }) {
   const categoryClass = CATEGORY_COLORS[item.category || "other"] || CATEGORY_COLORS.other;
 
   return (
-    <div className="border-2 border-white hover:border-green-400 transition-colors group">
+    <div className="border-2 border-white hover:border-secondary-400 transition-colors group">
       {/* Thumbnail */}
       {item.thumbnail_url ? (
         <div className="aspect-video bg-white/5 overflow-hidden">
@@ -126,7 +126,7 @@ function PortfolioCard({ item }: { item: PortfolioItem }) {
         </div>
 
         {/* Title */}
-        <h3 className="font-bold mb-1 group-hover:text-green-400 transition-colors">
+        <h3 className="font-bold mb-1 group-hover:text-secondary-400 transition-colors">
           {item.title}
         </h3>
 

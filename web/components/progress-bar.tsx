@@ -18,7 +18,7 @@ export default function ProgressBar({ requirements }: ProgressBarProps) {
   const progress = total > 0 ? (accepted / total) * 100 : 0;
 
   const stats = [
-    { label: "Accepted", count: accepted, color: "text-green-400", icon: CheckCircle2 },
+    { label: "Accepted", count: accepted, color: "text-secondary-400", icon: CheckCircle2 },
     { label: "Delivered", count: delivered, color: "text-blue-400", icon: Clock },
     { label: "In Progress", count: inProgress, color: "text-yellow-400", icon: Clock },
     { label: "Rejected", count: rejected, color: "text-red-400", icon: AlertCircle },
@@ -38,7 +38,7 @@ export default function ProgressBar({ requirements }: ProgressBarProps) {
       {/* Main Progress */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-bold tracking-wider">PROGRESS</span>
-        <span className="text-lg font-bold text-green-400">
+        <span className="text-lg font-bold text-secondary-400">
           {Math.round(progress)}%
         </span>
       </div>
@@ -46,7 +46,7 @@ export default function ProgressBar({ requirements }: ProgressBarProps) {
       {/* Progress Bar */}
       <div className="h-3 bg-white/10 rounded-full overflow-hidden mb-4">
         <div
-          className="h-full bg-gradient-to-r from-green-600 to-green-400 transition-all duration-500"
+          className="h-full bg-gradient-to-r from-green-600 to-secondary-400 transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -66,7 +66,7 @@ export default function ProgressBar({ requirements }: ProgressBarProps) {
 
       {/* Completion Message */}
       {accepted === total && total > 0 && (
-        <div className="mt-4 p-2 bg-green-400/10 border border-green-400/30 text-green-400 text-sm text-center">
+        <div className="mt-4 p-2 bg-secondary-400/10 border border-secondary-400/30 text-secondary-400 text-sm text-center">
           All requirements completed!
         </div>
       )}

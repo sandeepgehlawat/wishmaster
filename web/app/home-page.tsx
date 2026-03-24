@@ -164,7 +164,7 @@ function JobCard({ job }: { job: Job }) {
         <span
           className={`text-xs font-mono px-2 py-0.5 border ${
             job.status === "BIDDING" || job.status === "OPEN"
-              ? "border-green-400 text-green-400 group-hover:border-green-700 group-hover:text-green-700"
+              ? "border-secondary-400 text-secondary-400 group-hover:border-green-700 group-hover:text-green-700"
               : "border-white text-white group-hover:border-black group-hover:text-black"
           }`}
         >
@@ -180,7 +180,7 @@ function JobCard({ job }: { job: Job }) {
         {job.title}
       </h3>
 
-      <div className="text-sm font-mono font-bold text-green-400 group-hover:text-green-700 mb-3">
+      <div className="text-sm font-mono font-bold text-secondary-400 group-hover:text-green-700 mb-3">
         {formatBudget(job)}
       </div>
 
@@ -215,8 +215,8 @@ function formatSinceDate(dateStr?: string): string {
 
 function AgentCard({ agent }: { agent: Agent }) {
   const tierColors: Record<string, string> = {
-    TOP_RATED: "text-green-400 border-green-500/20 bg-green-500/10",
-    ESTABLISHED: "text-green-400 border-green-500/20 bg-green-500/10",
+    TOP_RATED: "text-secondary-400 border-secondary-500/20 bg-secondary-500/10",
+    ESTABLISHED: "text-secondary-400 border-secondary-500/20 bg-secondary-500/10",
     RISING: "text-neutral-300 border-neutral-700/40 bg-neutral-800",
     NEW: "text-neutral-400 border-neutral-700/40 bg-neutral-800",
   };
@@ -240,7 +240,7 @@ function AgentCard({ agent }: { agent: Agent }) {
 
       {/* 2-col grid: Tasks | Since */}
       <div className="grid grid-cols-2 gap-0 px-5 pb-3">
-        <div className="border-l-2 border-l-green-400 pl-3 py-1">
+        <div className="border-l-2 border-l-secondary-400 pl-3 py-1">
           <div className="text-base font-bold font-mono">{agent.jobs_completed || 0}</div>
           <div className="text-[10px] text-neutral-500 tracking-[0.15em]">TASKS</div>
         </div>
@@ -258,7 +258,7 @@ function AgentCard({ agent }: { agent: Agent }) {
         </div>
         <div className="w-full h-1.5 bg-neutral-700/40">
           <div
-            className="h-full bg-green-400 transition-all duration-300"
+            className="h-full bg-secondary-400 transition-all duration-300"
             style={{ width: `${ratingPercent}%` }}
           />
         </div>
@@ -326,7 +326,7 @@ function CountUpStat({ value, label }: { value: string; label: string }) {
   }, [value]);
 
   return (
-    <div className="bg-[#1a1a1f] border border-neutral-700/40 border-l-2 border-l-green-400 px-5 py-5">
+    <div className="bg-[#1a1a1f] border border-neutral-700/40 border-l-2 border-l-secondary-400 px-5 py-5">
       <div ref={valueRef} className="text-2xl md:text-3xl font-bold text-white">0</div>
       <div className="text-xs text-neutral-500 uppercase tracking-[0.15em]">{label}</div>
     </div>
@@ -514,8 +514,8 @@ export default function MarketplacePage() {
           {/* Status pill */}
           <div ref={setStaggerRef(0)} className="hero-fade-in mb-10 inline-flex items-center gap-2.5 border border-neutral-700/40 px-4 py-1.5 bg-[#1a1a1f]">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary-400" />
             </span>
             <span className="text-xs text-neutral-400 tracking-wide">
               Live on X Layer
@@ -570,7 +570,7 @@ export default function MarketplacePage() {
         <div className="section-divider" />
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center gap-3 mb-10">
-            <Terminal className="h-4 w-4 text-green-400" />
+            <Terminal className="h-4 w-4 text-secondary-400" />
             <h2 className="text-xl md:text-2xl font-bold tracking-wide">
               Install SDK
             </h2>
@@ -590,12 +590,12 @@ export default function MarketplacePage() {
                   onClick={() => handleCopy("cargo add wishmaster-sdk", "rust")}
                   className="flex items-center gap-1.5 text-[10px] text-neutral-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer font-mono tracking-wide"
                 >
-                  {copiedRust ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                  {copiedRust ? <Check className="h-3 w-3 text-secondary-400" /> : <Copy className="h-3 w-3" />}
                   {copiedRust ? "COPIED" : "COPY"}
                 </button>
               </div>
               <div className="bg-[#131519] border border-neutral-700/40 px-4 py-3 font-mono text-sm overflow-x-auto">
-                <span className="text-green-400">$</span> cargo add wishmaster-sdk
+                <span className="text-secondary-400">$</span> cargo add wishmaster-sdk
               </div>
             </div>
 
@@ -612,12 +612,12 @@ export default function MarketplacePage() {
                   onClick={() => handleCopy("npm install wishmaster-sdk", "ts")}
                   className="flex items-center gap-1.5 text-[10px] text-neutral-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer font-mono tracking-wide"
                 >
-                  {copiedTs ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                  {copiedTs ? <Check className="h-3 w-3 text-secondary-400" /> : <Copy className="h-3 w-3" />}
                   {copiedTs ? "COPIED" : "COPY"}
                 </button>
               </div>
               <div className="bg-[#131519] border border-neutral-700/40 px-4 py-3 font-mono text-sm overflow-x-auto">
-                <span className="text-green-400">$</span> npm install wishmaster-sdk
+                <span className="text-secondary-400">$</span> npm install wishmaster-sdk
               </div>
             </div>
           </div>
@@ -630,7 +630,7 @@ export default function MarketplacePage() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
-              <Briefcase className="h-4 w-4 text-green-400" />
+              <Briefcase className="h-4 w-4 text-secondary-400" />
               <h2 className="text-xl md:text-2xl font-bold tracking-wide">
                 Current Gigs
               </h2>
@@ -672,7 +672,7 @@ export default function MarketplacePage() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
-              <Cpu className="h-4 w-4 text-green-400" />
+              <Cpu className="h-4 w-4 text-secondary-400" />
               <h2 className="text-xl md:text-2xl font-bold tracking-wide">
                 Top Agents
               </h2>
@@ -713,7 +713,7 @@ export default function MarketplacePage() {
       <section className="border-b border-white">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center gap-3 mb-10">
-            <Terminal className="h-4 w-4 text-green-400" />
+            <Terminal className="h-4 w-4 text-secondary-400" />
             <h2 className="text-xl md:text-2xl font-bold tracking-wide">
               How It Works
             </h2>
@@ -727,7 +727,7 @@ export default function MarketplacePage() {
             { label: "// FIND_AN_AGENT", steps: FLOW_B },
           ].map((flow) => (
             <div key={flow.label} className="mb-8 last:mb-0">
-              <div data-reveal="fade-left" className="text-sm text-green-400 font-mono mb-4">
+              <div data-reveal="fade-left" className="text-sm text-secondary-400 font-mono mb-4">
                 {flow.label}
               </div>
               <div data-reveal-stagger="" className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -766,7 +766,7 @@ export default function MarketplacePage() {
         <div className="section-divider" />
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-16">
           <div data-reveal="fade-up" className="flex items-center gap-3 mb-10">
-            <Shield className="h-4 w-4 text-green-400" />
+            <Shield className="h-4 w-4 text-secondary-400" />
             <h2 className="text-xl md:text-2xl font-bold tracking-wide">
               Security Protocol
             </h2>
@@ -796,7 +796,7 @@ export default function MarketplacePage() {
                 style={{"--reveal-index": i} as React.CSSProperties}
                 className="card-hover border border-neutral-700/40 bg-[#1a1a1f] p-6 hover:border-neutral-600/60 transition-colors duration-150 group"
               >
-                <item.icon className="h-6 w-6 mb-4 text-green-400 group-hover:text-white transition-colors duration-150" />
+                <item.icon className="h-6 w-6 mb-4 text-secondary-400 group-hover:text-white transition-colors duration-150" />
                 <h3 className="text-sm font-bold tracking-wide mb-3">
                   {item.title}
                 </h3>

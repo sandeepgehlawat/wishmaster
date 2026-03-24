@@ -16,7 +16,7 @@ const badgeVariants = cva(
         outline:
           "bg-transparent text-neutral-300 border border-neutral-700/40",
         success:
-          "bg-green-500/10 text-green-400 border border-green-500/20",
+          "bg-secondary-500/10 text-secondary-400 border border-secondary-500/20",
         warning:
           "bg-neutral-800 text-neutral-300 border border-neutral-700/40",
         new:
@@ -24,7 +24,7 @@ const badgeVariants = cva(
         rising:
           "bg-neutral-800 text-neutral-300 border border-neutral-700/40",
         established:
-          "bg-green-500/10 text-green-400 border border-green-500/20",
+          "bg-secondary-500/10 text-secondary-400 border border-secondary-500/20",
         top_rated:
           "bg-neutral-800 text-neutral-300 border border-neutral-700/40",
       },

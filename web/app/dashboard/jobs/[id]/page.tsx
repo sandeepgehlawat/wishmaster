@@ -35,12 +35,12 @@ function SuccessModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center font-mono">
       <div className="absolute inset-0 bg-black/95" onClick={onClose} />
-      <div className="relative bg-black border-2 border-green-400 p-8 max-w-lg w-full mx-4">
+      <div className="relative bg-black border-2 border-secondary-400 p-8 max-w-lg w-full mx-4">
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <CheckCircle className="h-16 w-16 text-green-400" />
+            <CheckCircle className="h-16 w-16 text-secondary-400" />
           </div>
-          <h2 className="text-2xl font-bold tracking-wider mb-2 text-green-400">{title}</h2>
+          <h2 className="text-2xl font-bold tracking-wider mb-2 text-secondary-400">{title}</h2>
           <p className="text-sm text-white/60 mb-6">{">>>"} SUCCESS</p>
           <div className="border border-white/20 p-4 mb-6 text-left">
             <p className="text-sm text-white/80 leading-relaxed">{message}</p>
@@ -48,7 +48,7 @@ function SuccessModal({
           <div className="flex flex-col gap-3">
             <Link
               href={`/jobs/${jobId}`}
-              className="border-2 border-green-400 bg-green-400 text-black px-6 py-3 text-sm font-bold tracking-wider hover:bg-black hover:text-green-400 transition-colors flex items-center justify-center gap-2"
+              className="border-2 border-secondary-400 bg-secondary-400 text-black px-6 py-3 text-sm font-bold tracking-wider hover:bg-black hover:text-secondary-400 transition-colors flex items-center justify-center gap-2"
             >
               <ExternalLink className="h-4 w-4" />
               [VIEW IN MARKETPLACE]
@@ -614,7 +614,7 @@ export default function JobDetailPage() {
           {jobData.escrowStatus !== "FUNDED" && (
             <button
               onClick={() => setShowFundEscrowModal(true)}
-              className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-green-400 hover:text-black transition-colors flex items-center justify-center gap-2"
+              className="border-2 border-secondary-400 text-secondary-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-secondary-400 hover:text-black transition-colors flex items-center justify-center gap-2"
             >
               [FUND ESCROW]
             </button>
@@ -639,7 +639,7 @@ export default function JobDetailPage() {
         <div className="flex flex-col gap-2">
           <button
             onClick={() => setShowApproveModal(true)}
-            className="border-2 border-green-400 bg-green-400 text-black px-4 py-2 text-sm font-bold tracking-wider hover:bg-black hover:text-green-400 transition-colors"
+            className="border-2 border-secondary-400 bg-secondary-400 text-black px-4 py-2 text-sm font-bold tracking-wider hover:bg-black hover:text-secondary-400 transition-colors"
           >
             [APPROVE & RELEASE PAYMENT]
           </button>
@@ -670,7 +670,7 @@ export default function JobDetailPage() {
           <button
             onClick={handleDevDeliver}
             disabled={actionLoading}
-            className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-green-400 hover:text-black transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="border-2 border-secondary-400 text-secondary-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-secondary-400 hover:text-black transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {actionLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             [MARK AS DELIVERED (DEV)]
@@ -688,9 +688,9 @@ export default function JobDetailPage() {
     if (status === "completed") {
       return (
         <div className="space-y-4">
-          <div className="border-2 border-green-400 p-4 text-center">
-            <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
-            <p className="text-green-400 text-sm font-bold">JOB COMPLETED</p>
+          <div className="border-2 border-secondary-400 p-4 text-center">
+            <CheckCircle className="h-8 w-8 text-secondary-400 mx-auto mb-2" />
+            <p className="text-secondary-400 text-sm font-bold">JOB COMPLETED</p>
           </div>
           {/* Convert to Managed Service CTA */}
           {job?.agent_id && (
@@ -867,7 +867,7 @@ export default function JobDetailPage() {
                     <div
                       className={`px-2 sm:px-3 py-2 border whitespace-nowrap transition-colors duration-150 ${
                         t.active
-                          ? "bg-green-500/10 text-green-400 font-bold border-green-500/20"
+                          ? "bg-secondary-500/10 text-secondary-400 font-bold border-secondary-500/20"
                           : t.date !== "---"
                           ? "bg-[#1a1a1f] border-neutral-700/40"
                           : "text-gray-600 border-neutral-700/30"
@@ -907,7 +907,7 @@ export default function JobDetailPage() {
               </div>
               <div className="h-3 bg-white/10 border border-white">
                 <div
-                  className="h-full bg-green-400 transition-all duration-500"
+                  className="h-full bg-secondary-400 transition-all duration-500"
                   style={{
                     width: `${requirements.length > 0 ? (requirements.filter(r => r.status === 'accepted').length / requirements.length) * 100 : 0}%`
                   }}
@@ -1051,7 +1051,7 @@ export default function JobDetailPage() {
             <p className="text-lg font-bold">{jobData.escrowAmount} USDC</p>
             <p className="text-xs">
               STATUS:{" "}
-              <span className={jobData.escrowStatus === "FUNDED" ? "text-green-400" : "text-white/50"}>
+              <span className={jobData.escrowStatus === "FUNDED" ? "text-secondary-400" : "text-white/50"}>
                 {jobData.escrowStatus}
               </span>
             </p>

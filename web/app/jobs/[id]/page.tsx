@@ -43,7 +43,7 @@ function LiveViewers({ initial }: { initial: number }) {
       <Eye className="h-4 w-4" />
       <span className="text-sm font-bold">{count}</span>
       <span className="text-xs text-white/60">WATCHING</span>
-      <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+      <span className="h-2 w-2 rounded-full bg-secondary-400 animate-pulse" />
     </div>
   );
 }
@@ -133,7 +133,7 @@ function ActivityFeed({ bids }: { bids: any[] }) {
     <div className="border-2 border-white">
       <div className="border-b border-white px-4 py-2 flex items-center justify-between">
         <span className="text-xs tracking-wider font-bold">LIVE_ACTIVITY</span>
-        <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+        <span className="h-2 w-2 rounded-full bg-secondary-400 animate-pulse" />
       </div>
       <div className="max-h-[200px] overflow-y-auto">
         {activities.map((activity) => (
@@ -153,7 +153,7 @@ function ActivityFeed({ bids }: { bids: any[] }) {
           >
             <span className="text-white/60">{bid.bidTime}</span>
             <span className="mx-2">|</span>
-            <span className="text-green-400">{bid.agent}</span>
+            <span className="text-secondary-400">{bid.agent}</span>
             <span className="mx-2">bid</span>
             <span className="font-bold">{bid.amount} USDC</span>
           </div>
@@ -168,7 +168,7 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
   const getTierColor = (tier: string) => {
     switch (tier) {
       case "TOP_RATED": return "text-yellow-400 border-yellow-400";
-      case "ESTABLISHED": return "text-green-400 border-green-400";
+      case "ESTABLISHED": return "text-secondary-400 border-secondary-400";
       case "RISING": return "text-cyan-400 border-cyan-400";
       default: return "text-white/60 border-white/60";
     }
@@ -187,8 +187,8 @@ function BidCard({ bid, rank }: { bid: any; rank: number }) {
           <div className="flex items-center gap-3 mb-3">
             <span className="font-bold text-lg">{bid.agent}</span>
             {bid.online && (
-              <span className="flex items-center gap-1 text-xs text-green-400">
-                <span className="h-2 w-2 rounded-full bg-green-400" />
+              <span className="flex items-center gap-1 text-xs text-secondary-400">
+                <span className="h-2 w-2 rounded-full bg-secondary-400" />
                 ONLINE
               </span>
             )}
@@ -437,7 +437,7 @@ export default function PublicJobPage() {
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className={`border-2 px-3 py-1 text-xs tracking-wider font-bold flex-shrink-0 ${
                   safeJob.status === "BIDDING"
-                    ? "border-green-400 text-green-400 animate-pulse"
+                    ? "border-secondary-400 text-secondary-400 animate-pulse"
                     : "border-white"
                 }`}>
                   {safeJob.status}
@@ -459,7 +459,7 @@ export default function PublicJobPage() {
                   {viewCount} VIEWS
                 </span>
                 <span className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-green-400" />
+                  <Shield className="h-4 w-4 text-secondary-400" />
                   ESCROW {safeJob.escrowStatus}
                 </span>
               </div>
@@ -534,7 +534,7 @@ export default function PublicJobPage() {
                   {`>>> AGENT_BIDS (${safeJob.bids.length})`}
                 </h2>
                 {safeJob.bids.length > 0 && (
-                  <span className="text-xs text-green-400 animate-pulse">
+                  <span className="text-xs text-secondary-400 animate-pulse">
                     * COMPETITIVE BIDDING ACTIVE *
                   </span>
                 )}
@@ -572,7 +572,7 @@ export default function PublicJobPage() {
             {/* Escrow Info */}
             <div className="border-2 border-white p-4">
               <h3 className="text-xs text-white/50 tracking-wider mb-3">ESCROW_LOCKED</h3>
-              <p className="text-3xl font-bold text-green-400">{safeJob.escrowAmount} USDC</p>
+              <p className="text-3xl font-bold text-secondary-400">{safeJob.escrowAmount} USDC</p>
               <p className="text-xs text-white/50 mt-2">
                 <Shield className="h-3 w-3 inline mr-1" />
                 Protected by X Layer smart contract

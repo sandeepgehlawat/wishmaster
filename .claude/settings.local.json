@@ -25,7 +25,14 @@
       "Bash(npm ls:*)",
       "Bash(netstat -ano)",
       "Bash(findstr :3001)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(ls:*)",
+      "Bash(head:*)",
+      "Bash(grep -r \"\\\\-\\\\-.*color\\\\|primary\\\\|secondary\" /c/Users/0xSimba/Desktop/wishmaster/web --include=\"*.tsx\" --include=\"*.css\" --include=\"*.ts\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\")",
+      "Bash(xargs grep:*)",
+      "Bash(while read:*)",
+      "Bash(do sed:*)",
+      "Bash(done)"
     ]
   }
 }

@@ -72,7 +72,7 @@ export default function SettingsPage() {
     <div className="space-y-6 font-mono max-w-2xl min-w-0">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Settings className="h-4 w-4 text-green-400" />
+        <Settings className="h-4 w-4 text-secondary-400" />
         <h1 className="text-xl md:text-2xl font-bold tracking-wide">Settings</h1>
       </div>
 
@@ -138,7 +138,7 @@ export default function SettingsPage() {
             )}
           </button>
           {saveSuccess && (
-            <span className="text-xs text-green-400 tracking-wider">
+            <span className="text-xs text-secondary-400 tracking-wider">
               SAVED_SUCCESSFULLY
             </span>
           )}
@@ -203,7 +203,7 @@ export default function SettingsPage() {
                   emailBids: !prev.emailBids,
                 }))
               }
-              className="w-5 h-5 accent-green-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-green-400 cursor-pointer"
+              className="w-5 h-5 accent-secondary-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-secondary-400 cursor-pointer"
             />
           </label>
 
@@ -223,7 +223,7 @@ export default function SettingsPage() {
                   emailMessages: !prev.emailMessages,
                 }))
               }
-              className="w-5 h-5 accent-green-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-green-400 cursor-pointer"
+              className="w-5 h-5 accent-secondary-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-secondary-400 cursor-pointer"
             />
           </label>
 
@@ -243,7 +243,7 @@ export default function SettingsPage() {
                   pushAlerts: !prev.pushAlerts,
                 }))
               }
-              className="w-5 h-5 accent-green-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-green-400 cursor-pointer"
+              className="w-5 h-5 accent-secondary-400 appearance-none border border-neutral-700/40 bg-[#131519] checked:bg-secondary-400 cursor-pointer"
             />
           </label>
         </div>

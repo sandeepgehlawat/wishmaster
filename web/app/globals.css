@@ -118,7 +118,7 @@
 /* ========== WALLET ADAPTER OVERRIDES ========== */
 
 .wallet-adapter-button {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
   color: #fff !important;
   border: 2px solid #fff !important;
   border-radius: 0 !important;
@@ -134,20 +134,20 @@
 
 .wallet-adapter-button:hover {
   background-color: #fff !important;
-  color: #000 !important;
+  color: #0B2C38 !important;
 }
 
 .wallet-adapter-button:not([disabled]):hover {
   background-color: #fff !important;
-  color: #000 !important;
+  color: #0B2C38 !important;
 }
 
 .wallet-adapter-button-trigger {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
 }
 
 .wallet-adapter-button[disabled] {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
   color: #666 !important;
   border-color: #666 !important;
 }
@@ -172,7 +172,7 @@
 }
 
 .wallet-adapter-modal-container {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
   border: 2px solid #fff !important;
   border-radius: 0 !important;
   font-family: 'Space Mono', monospace !important;
@@ -184,7 +184,7 @@
 }
 
 .wallet-adapter-modal-wrapper .wallet-adapter-button {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
   border: 2px solid #fff !important;
   border-radius: 0 !important;
   width: 100% !important;
@@ -200,7 +200,7 @@
 
 .wallet-adapter-modal-wrapper .wallet-adapter-button:hover {
   background-color: #fff !important;
-  color: #000 !important;
+  color: #0B2C38 !important;
 }
 
 .wallet-adapter-modal-wrapper .wallet-adapter-button-end-icon {
@@ -256,7 +256,7 @@
 
 /* Close button */
 .wallet-adapter-modal-button-close {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
   border: 2px solid #fff !important;
   border-radius: 0 !important;
   padding: 8px !important;
@@ -281,7 +281,7 @@
 }
 
 .wallet-adapter-modal-button-close:hover svg {
-  fill: #000 !important;
+  fill: #0B2C38 !important;
 }
 
 /* Middle section */
@@ -290,7 +290,7 @@
 }
 
 .wallet-adapter-modal-middle-button {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
   border: 2px solid #fff !important;
   border-radius: 0 !important;
   color: #fff !important;
@@ -307,7 +307,7 @@
 
 .wallet-adapter-modal-middle-button:hover {
   background-color: #fff !important;
-  color: #000 !important;
+  color: #0B2C38 !important;
 }
 
 /* Dropdown menu */
@@ -316,14 +316,14 @@
 }
 
 .wallet-adapter-dropdown-list {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
   border: 2px solid #fff !important;
   border-radius: 0 !important;
   padding: 0 !important;
 }
 
 .wallet-adapter-dropdown-list-item {
-  background-color: #000 !important;
+  background-color: #0B2C38 !important;
   color: #fff !important;
   border-radius: 0 !important;
   font-family: 'Space Mono', monospace !important;
@@ -338,7 +338,7 @@
 
 .wallet-adapter-dropdown-list-item:hover {
   background-color: #fff !important;
-  color: #000 !important;
+  color: #0B2C38 !important;
 }
 
 /* Collapse button styling */
@@ -373,7 +373,7 @@
   /* Link that inverts on hover */
   .link-invert:hover {
     background-color: #fff;
-    color: #000;
+    color: #0B2C38;
     text-decoration: none;
   }
 
@@ -464,9 +464,9 @@
   background: conic-gradient(
     from var(--glow-angle),
     #fff,
-    #4ade80,
+    #CBEDF8,
     #fff,
-    #4ade80,
+    #CBEDF8,
     #fff
   );
   opacity: 0.6;
@@ -547,7 +547,7 @@
 
 .section-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, #4ade80, #fff, #4ade80, transparent);
+  background: linear-gradient(90deg, transparent, #CBEDF8, #fff, #CBEDF8, transparent);
   background-size: 200% 100%;
   animation: scan-line 3s linear infinite;
 }
@@ -680,7 +680,7 @@ main,
   left: 0;
   width: 0;
   height: 1px;
-  background: #4ade80;
+  background: #CBEDF8;
   transition: width 200ms ease-out;
 }
 
@@ -750,7 +750,7 @@ main,
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #4ade80;
+  background: #CBEDF8;
   opacity: 0;
   transition: opacity 200ms ease-out;
 }
@@ -766,19 +766,19 @@ main,
 /* ========== HEADER SCROLL SHADOW ========== */
 
 header.header-scrolled {
-  box-shadow: 0 1px 0 0 #4ade80;
+  box-shadow: 0 1px 0 0 #CBEDF8;
 }
 
 /* ========== FOCUS VISIBLE ========== */
 
 :focus-visible {
-  outline: 2px solid #4ade80;
+  outline: 2px solid #CBEDF8;
   outline-offset: 2px;
 }
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #4ade80;
+  outline: 2px solid #CBEDF8;
   outline-offset: 2px;
 }
 

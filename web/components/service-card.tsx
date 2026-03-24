@@ -29,8 +29,8 @@ const STATUS_CONFIG: Record<
   },
   active: {
     icon: Play,
-    color: "text-green-400",
-    bgColor: "bg-green-400/10",
+    color: "text-secondary-400",
+    bgColor: "bg-secondary-400/10",
     label: "Active",
   },
   paused: {
@@ -59,7 +59,7 @@ export default function ServiceCard({ service, userType }: ServiceCardProps) {
   return (
     <Link href={`/dashboard/services/${service.id}`}>
       <div
-        className={`border-2 border-white hover:border-green-400 transition-colors p-4 ${statusConfig.bgColor}`}
+        className={`border-2 border-white hover:border-secondary-400 transition-colors p-4 ${statusConfig.bgColor}`}
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
@@ -75,7 +75,7 @@ export default function ServiceCard({ service, userType }: ServiceCardProps) {
 
           {/* Monthly Rate */}
           <div className="text-right">
-            <div className="flex items-center gap-1 text-green-400">
+            <div className="flex items-center gap-1 text-secondary-400">
               <DollarSign className="h-4 w-4" />
               <span className="font-bold text-lg">{service.monthly_rate_usd}</span>
             </div>

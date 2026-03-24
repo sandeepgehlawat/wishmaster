@@ -185,7 +185,7 @@ export default function JobManagePage() {
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      BIDDING: "border-green-400 text-green-400 bg-green-400/10",
+      BIDDING: "border-secondary-400 text-secondary-400 bg-secondary-400/10",
       IN_PROGRESS: "border-yellow-400 text-yellow-400 bg-yellow-400/10",
       DELIVERED: "border-cyan-400 text-cyan-400 bg-cyan-400/10",
       COMPLETED: "border-white/50 text-white/50",
@@ -212,7 +212,7 @@ export default function JobManagePage() {
       {/* Escrow Status */}
       <div className="border-2 border-white p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Shield className="h-5 w-5 text-green-400" />
+          <Shield className="h-5 w-5 text-secondary-400" />
           <h2 className="text-lg font-bold tracking-wider">ESCROW_STATUS</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -223,7 +223,7 @@ export default function JobManagePage() {
           <div>
             <p className="text-xs text-white/50 tracking-wider mb-1">STATUS</p>
             <p className={`text-lg font-bold ${
-              job.escrowStatus === "LOCKED" ? "text-green-400" :
+              job.escrowStatus === "LOCKED" ? "text-secondary-400" :
               job.escrowStatus === "PENDING_RELEASE" ? "text-yellow-400" :
               job.escrowStatus === "RELEASED" ? "text-white/50" : ""
             }`}>
@@ -251,7 +251,7 @@ export default function JobManagePage() {
               <div
                 key={bid.id}
                 className={`border-2 p-4 cursor-pointer transition-colors ${
-                  selectedBid === bid.id ? "border-green-400 bg-green-400/10" : "border-white hover:bg-white/5"
+                  selectedBid === bid.id ? "border-secondary-400 bg-secondary-400/10" : "border-white hover:bg-white/5"
                 }`}
                 onClick={() => handleSelectBid(bid.id)}
               >
@@ -269,7 +269,7 @@ export default function JobManagePage() {
                   <div className="text-left sm:text-right">
                     <p className="text-xl font-bold">{bid.amount} USDC</p>
                     {selectedBid === bid.id && (
-                      <span className="text-xs text-green-400">SELECTED</span>
+                      <span className="text-xs text-secondary-400">SELECTED</span>
                     )}
                   </div>
                 </div>
@@ -312,7 +312,7 @@ export default function JobManagePage() {
             </div>
             <div className="h-3 bg-white/10 border border-white">
               <div
-                className="h-full bg-green-400 transition-all"
+                className="h-full bg-secondary-400 transition-all"
                 style={{ width: `${job.progress}%` }}
               />
             </div>
@@ -326,7 +326,7 @@ export default function JobManagePage() {
                     <div key={i} className="flex items-center justify-between py-2 border-b border-white/10">
                       <div className="flex items-center gap-3">
                         {m.status === "COMPLETED" ? (
-                          <CheckCircle className="h-4 w-4 text-green-400" />
+                          <CheckCircle className="h-4 w-4 text-secondary-400" />
                         ) : m.status === "IN_PROGRESS" ? (
                           <Clock className="h-4 w-4 text-yellow-400 animate-pulse" />
                         ) : (
@@ -347,7 +347,7 @@ export default function JobManagePage() {
             <h2 className="text-lg font-bold tracking-wider mb-4">{`>>> MESSAGES`}</h2>
             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto">
               {job.messages?.map((msg: any, i: number) => (
-                <div key={i} className={`p-3 border ${msg.from === "You" ? "border-green-400/50 bg-green-400/5 ml-4 sm:ml-8" : "border-white/20 mr-4 sm:mr-8"}`}>
+                <div key={i} className={`p-3 border ${msg.from === "You" ? "border-secondary-400/50 bg-secondary-400/5 ml-4 sm:ml-8" : "border-white/20 mr-4 sm:mr-8"}`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold">{msg.from}</span>
                     <span className="text-xs text-white/50">{msg.date}</span>

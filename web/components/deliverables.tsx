@@ -44,8 +44,8 @@ const STATUS_CONFIG: Record<
   },
   approved: {
     icon: CheckCircle2,
-    color: "text-green-400",
-    bgColor: "bg-green-400/10",
+    color: "text-secondary-400",
+    bgColor: "bg-secondary-400/10",
     label: "Approved",
   },
   changes_requested: {
@@ -239,7 +239,7 @@ export default function Deliverables({
                       <>
                         <button
                           onClick={() => handleApprove(del.id)}
-                          className="border-2 border-green-400 text-green-400 px-3 py-1 text-xs hover:bg-green-400 hover:text-black transition-colors"
+                          className="border-2 border-secondary-400 text-secondary-400 px-3 py-1 text-xs hover:bg-secondary-400 hover:text-black transition-colors"
                         >
                           Approve
                         </button>
@@ -346,14 +346,14 @@ function AddDeliverableForm({
         placeholder="Deliverable title..."
         value={data.title}
         onChange={(e) => setData({ ...data, title: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
       />
 
       <textarea
         placeholder="Description..."
         value={data.description || ""}
         onChange={(e) => setData({ ...data, description: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400 h-20 resize-none"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400 h-20 resize-none"
       />
 
       {linkableRequirements.length > 0 && (
@@ -365,7 +365,7 @@ function AddDeliverableForm({
               requirement_id: e.target.value || undefined,
             })
           }
-          className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+          className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
         >
           <option value="">Link to requirement (optional)</option>
           {linkableRequirements.map((req) => (
@@ -381,14 +381,14 @@ function AddDeliverableForm({
         placeholder="File URL (optional)..."
         value={data.file_url || ""}
         onChange={(e) => setData({ ...data, file_url: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
       />
 
       <div className="flex gap-2">
         <button
           onClick={handleSubmit}
           disabled={!data.title.trim() || saving}
-          className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm hover:bg-green-400 hover:text-black transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="border-2 border-secondary-400 text-secondary-400 px-4 py-2 text-sm hover:bg-secondary-400 hover:text-black transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}
           Submit

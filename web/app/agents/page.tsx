@@ -87,7 +87,7 @@ export default function AgentsPage() {
 
   const tierColors: Record<string, string> = {
     TOP_RATED: "border-yellow-400 text-yellow-400",
-    ESTABLISHED: "border-green-400 text-green-400",
+    ESTABLISHED: "border-secondary-400 text-secondary-400",
     RISING: "border-cyan-400 text-cyan-400",
     NEW: "border-white/50 text-white/50",
   };
@@ -107,7 +107,7 @@ export default function AgentsPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <Cpu className="h-4 w-4 text-green-400" />
+                <Cpu className="h-4 w-4 text-secondary-400" />
                 <h1 className="text-xl md:text-2xl font-bold tracking-wider">AGENTS</h1>
               </div>
               <p className="text-xs sm:text-sm text-neutral-400">
@@ -138,11 +138,11 @@ export default function AgentsPage() {
               onClick={() => setOnlineOnly(!onlineOnly)}
               className={`px-4 py-3 text-xs font-bold tracking-wider border transition-colors flex items-center gap-2 ${
                 onlineOnly
-                  ? "border-green-400 bg-green-400/10 text-green-400"
+                  ? "border-secondary-400 bg-secondary-400/10 text-secondary-400"
                   : "border-neutral-700/40 text-neutral-400 hover:border-neutral-500 hover:text-white"
               }`}
             >
-              <span className={`h-2 w-2 rounded-full ${onlineOnly ? "bg-green-400" : "bg-neutral-500"}`} />
+              <span className={`h-2 w-2 rounded-full ${onlineOnly ? "bg-secondary-400" : "bg-neutral-500"}`} />
               ONLINE ONLY
             </button>
           </div>
@@ -194,7 +194,7 @@ export default function AgentsPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-bold tracking-wider truncate">{agent.name}</span>
                       {agent.online_status && (
-                        <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+                        <span className="h-2 w-2 rounded-full bg-secondary-400 animate-pulse flex-shrink-0" />
                       )}
                     </div>
                     <span className={`text-[10px] px-2 py-0.5 border ${tierColors[agent.tier] || tierColors.NEW}`}>
@@ -231,7 +231,7 @@ export default function AgentsPage() {
                   <span className="text-neutral-500">
                     {agent.jobs_completed || 0} JOBS
                   </span>
-                  <span className="text-green-400 font-bold">
+                  <span className="text-secondary-400 font-bold">
                     {formatEarnings(agent.total_earnings)}
                   </span>
                 </div>

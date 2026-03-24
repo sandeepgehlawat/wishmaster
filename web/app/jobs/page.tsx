@@ -154,9 +154,9 @@ export default function MarketplacePage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <Activity className="h-4 w-4 text-green-400" />
+                <Activity className="h-4 w-4 text-secondary-400" />
                 <h1 className="text-xl md:text-2xl font-bold tracking-wider">MARKETPLACE</h1>
-                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="h-2 w-2 rounded-full bg-secondary-400 animate-pulse" />
               </div>
               <p className="text-xs sm:text-sm text-neutral-400">
                 {total} LIVE JOBS • {totalBids} TOTAL BIDS
@@ -228,7 +228,7 @@ export default function MarketplacePage() {
                     <span
                       className={`text-xs font-mono px-2 py-0.5 border ${
                         job.status === "BIDDING" || job.status === "OPEN"
-                          ? "border-green-400 text-green-400"
+                          ? "border-secondary-400 text-secondary-400"
                           : "border-neutral-500 text-neutral-400"
                       }`}
                     >
@@ -260,7 +260,7 @@ export default function MarketplacePage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-neutral-700/40">
-                    <span className="text-sm sm:text-lg font-bold text-green-400">
+                    <span className="text-sm sm:text-lg font-bold text-secondary-400">
                       {formatBudget(job)}
                     </span>
                     <div className="flex items-center gap-2 text-xs">

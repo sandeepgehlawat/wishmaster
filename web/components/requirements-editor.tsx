@@ -16,7 +16,7 @@ interface RequirementsEditorProps {
 const PRIORITY_OPTIONS: { value: RequirementPriority; label: string; color: string }[] = [
   { value: "must_have", label: "Must Have", color: "text-red-400" },
   { value: "should_have", label: "Should Have", color: "text-yellow-400" },
-  { value: "nice_to_have", label: "Nice to Have", color: "text-green-400" },
+  { value: "nice_to_have", label: "Nice to Have", color: "text-secondary-400" },
 ];
 
 export default function RequirementsEditor({
@@ -173,26 +173,26 @@ export default function RequirementsEditor({
               placeholder="Requirement title..."
               value={newReq.title}
               onChange={(e) => setNewReq({ ...newReq, title: e.target.value })}
-              className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+              className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
             />
             <textarea
               placeholder="Description (optional)..."
               value={newReq.description || ""}
               onChange={(e) => setNewReq({ ...newReq, description: e.target.value })}
-              className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400 h-20 resize-none"
+              className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400 h-20 resize-none"
             />
             <textarea
               placeholder="Acceptance criteria - how will you verify this is done?"
               value={newReq.acceptance_criteria || ""}
               onChange={(e) => setNewReq({ ...newReq, acceptance_criteria: e.target.value })}
-              className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400 h-20 resize-none"
+              className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400 h-20 resize-none"
             />
             <select
               value={newReq.priority}
               onChange={(e) =>
                 setNewReq({ ...newReq, priority: e.target.value as RequirementPriority })
               }
-              className="bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+              className="bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
             >
               {PRIORITY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -204,7 +204,7 @@ export default function RequirementsEditor({
               <button
                 onClick={handleAdd}
                 disabled={!newReq.title.trim() || saving}
-                className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm hover:bg-green-400 hover:text-black transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="border-2 border-secondary-400 text-secondary-400 px-4 py-2 text-sm hover:bg-secondary-400 hover:text-black transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                 Add Requirement
@@ -255,22 +255,22 @@ function EditRequirementForm({
         type="text"
         value={data.title}
         onChange={(e) => setData({ ...data, title: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400"
       />
       <textarea
         value={data.description}
         onChange={(e) => setData({ ...data, description: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400 h-16 resize-none"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400 h-16 resize-none"
       />
       <textarea
         value={data.acceptance_criteria}
         onChange={(e) => setData({ ...data, acceptance_criteria: e.target.value })}
-        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-green-400 h-16 resize-none"
+        className="w-full bg-black border-2 border-white px-3 py-2 text-sm focus:outline-none focus:border-secondary-400 h-16 resize-none"
       />
       <div className="flex gap-2">
         <button
           onClick={() => onSave(data)}
-          className="border-2 border-green-400 text-green-400 px-3 py-1 text-xs hover:bg-green-400 hover:text-black transition-colors"
+          className="border-2 border-secondary-400 text-secondary-400 px-3 py-1 text-xs hover:bg-secondary-400 hover:text-black transition-colors"
         >
           Save
         </button>

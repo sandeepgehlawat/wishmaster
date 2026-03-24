@@ -192,7 +192,7 @@ export function FundEscrowModal({
                   isActive
                     ? "border-yellow-400 bg-yellow-400/5"
                     : isComplete
-                    ? "border-green-400 bg-green-400/5"
+                    ? "border-secondary-400 bg-secondary-400/5"
                     : "border-white/20"
                 }`}
               >
@@ -203,7 +203,7 @@ export function FundEscrowModal({
                         isActive
                           ? "border-yellow-400 text-yellow-400"
                           : isComplete
-                          ? "border-green-400 bg-green-400 text-black"
+                          ? "border-secondary-400 bg-secondary-400 text-black"
                           : "border-white/30 text-white/30"
                       }`}
                     >
@@ -218,7 +218,7 @@ export function FundEscrowModal({
                     <div>
                       <p
                         className={`font-bold text-sm ${
-                          isActive ? "text-yellow-400" : isComplete ? "text-green-400" : "text-white/50"
+                          isActive ? "text-yellow-400" : isComplete ? "text-secondary-400" : "text-white/50"
                         }`}
                       >
                         {step.label}
@@ -256,9 +256,9 @@ export function FundEscrowModal({
 
         {/* Success State */}
         {state === "success" && (
-          <div className="border-2 border-green-400 bg-green-400/10 p-4 text-center mb-6">
-            <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
-            <p className="text-green-400 font-bold">ESCROW_FUNDED</p>
+          <div className="border-2 border-secondary-400 bg-secondary-400/10 p-4 text-center mb-6">
+            <CheckCircle className="h-8 w-8 text-secondary-400 mx-auto mb-2" />
+            <p className="text-secondary-400 font-bold">ESCROW_FUNDED</p>
             <p className="text-xs text-white/60 mt-1">
               {amountUsdc.toFixed(2)} USDC deposited successfully
             </p>

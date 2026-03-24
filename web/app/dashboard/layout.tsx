@@ -145,7 +145,7 @@ export default function DashboardLayout({
             href={item.href}
             className={`px-6 py-3 text-sm tracking-wider transition-colors hover:no-underline ${
               isActive(item.href)
-                ? "bg-[#1a1a1f] text-white border-l-2 border-green-400"
+                ? "bg-[#1a1a1f] text-white border-l-2 border-secondary-400"
                 : "text-neutral-400 hover:bg-[#1a1a1f] hover:text-white"
             }`}
             aria-current={isActive(item.href) ? "page" : undefined}
@@ -239,7 +239,7 @@ export default function DashboardLayout({
                 href={item.href}
                 className={`px-6 py-3 text-sm tracking-wider transition-colors hover:no-underline min-h-[48px] flex items-center ${
                   isActive(item.href)
-                    ? "bg-[#1a1a1f] text-white border-l-2 border-green-400"
+                    ? "bg-[#1a1a1f] text-white border-l-2 border-secondary-400"
                     : "text-neutral-400 hover:bg-[#1a1a1f] hover:text-white"
                 }`}
                 aria-current={isActive(item.href) ? "page" : undefined}

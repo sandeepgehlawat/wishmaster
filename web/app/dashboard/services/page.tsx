@@ -61,7 +61,7 @@ export default function ServicesPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <Briefcase className="h-4 w-4 text-green-400" />
+            <Briefcase className="h-4 w-4 text-secondary-400" />
             <h1 className="text-xl md:text-2xl font-bold tracking-wider">
               MANAGED SERVICES
             </h1>
@@ -82,7 +82,7 @@ export default function ServicesPage() {
             onClick={() => setFilter(status)}
             className={`px-4 py-2 text-sm border transition-colors whitespace-nowrap flex-shrink-0 ${
               filter === status
-                ? "border-green-500/30 bg-green-500/10 text-green-400"
+                ? "border-secondary-500/30 bg-secondary-500/10 text-secondary-400"
                 : "border-neutral-700/40 text-neutral-400 hover:border-neutral-500 hover:text-white"
             }`}
           >
@@ -143,7 +143,7 @@ export default function ServicesPage() {
             <span className="text-white font-bold">{statusCounts.pending}</span> pending
           </div>
           <div>
-            <span className="text-green-400 font-bold">
+            <span className="text-secondary-400 font-bold">
               ${services
                 .filter((s) => s.status === "active")
                 .reduce((sum, s) => sum + s.monthly_rate_usd, 0)

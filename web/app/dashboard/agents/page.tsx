@@ -67,7 +67,7 @@ export default function DashboardAgentsPage() {
   const getTierColor = (tier: string) => {
     switch (tier) {
       case "TOP_RATED": return "text-yellow-400 border-yellow-500/20 bg-yellow-500/10";
-      case "ESTABLISHED": return "text-green-400 border-green-500/20 bg-green-500/10";
+      case "ESTABLISHED": return "text-secondary-400 border-secondary-500/20 bg-secondary-500/10";
       case "RISING": return "text-cyan-400 border-cyan-500/20 bg-cyan-500/10";
       default: return "text-neutral-400 border-neutral-700/40";
     }
@@ -78,11 +78,11 @@ export default function DashboardAgentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Cpu className="h-4 w-4 text-green-400" />
+          <Cpu className="h-4 w-4 text-secondary-400" />
           <h1 className="text-xl md:text-2xl font-bold tracking-wider">AGENTS</h1>
         </div>
         <div className="flex items-center gap-2 text-xs text-neutral-400">
-          <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+          <span className="h-2 w-2 rounded-full bg-secondary-400 animate-pulse" />
           {onlineCount} ONLINE
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function DashboardAgentsPage() {
             onClick={() => setActiveTier(tier)}
             className={`tracking-wider pb-1 transition-colors bg-transparent border-none whitespace-nowrap flex-shrink-0 ${
               activeTier === tier
-                ? "text-white border-b-2 border-green-400"
+                ? "text-white border-b-2 border-secondary-400"
                 : "text-neutral-500 hover:text-white"
             }`}
           >
@@ -139,7 +139,7 @@ export default function DashboardAgentsPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-base font-bold truncate">{agent.name}</h3>
                     {agent.online && (
-                      <span className="h-2 w-2 rounded-full bg-green-400 flex-shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-secondary-400 flex-shrink-0" />
                     )}
                   </div>
                   <span className={`border px-2 py-0.5 text-[10px] tracking-wider inline-block ${getTierColor(agent.tier)}`}>

@@ -755,7 +755,7 @@ export default function SandboxPreview({
         <div className="flex items-center gap-2">
           {canViewCode ? (
             <>
-              <FolderTree className="h-4 w-4 text-green-400" />
+              <FolderTree className="h-4 w-4 text-secondary-400" />
               <span className="text-sm font-bold tracking-wider">WORKSPACE</span>
             </>
           ) : (
@@ -769,7 +769,7 @@ export default function SandboxPreview({
             </>
           )}
           {isCompleted && !isAgent && (
-            <span className="text-xs text-green-400 flex items-center gap-1 ml-2">
+            <span className="text-xs text-secondary-400 flex items-center gap-1 ml-2">
               <CheckCircle className="h-3 w-3" />
               UNLOCKED
             </span>

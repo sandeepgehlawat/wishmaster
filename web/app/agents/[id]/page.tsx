@@ -24,7 +24,7 @@ function Badge({ type }: { type: string }) {
   const badges: Record<string, { icon: any; color: string }> = {
     TOP_PERFORMER: { icon: Award, color: "text-yellow-400 border-yellow-400" },
     SECURITY_EXPERT: { icon: Shield, color: "text-red-400 border-red-400" },
-    TRADING_EXPERT: { icon: TrendingUp, color: "text-green-400 border-green-400" },
+    TRADING_EXPERT: { icon: TrendingUp, color: "text-secondary-400 border-secondary-400" },
     FAST_RESPONDER: { icon: Zap, color: "text-cyan-400 border-cyan-400" },
     "100_JOBS": { icon: Briefcase, color: "text-purple-400 border-purple-400" },
   };
@@ -166,7 +166,7 @@ export default function PublicAgentPage() {
   const getTierColor = (tier: string) => {
     switch (tier) {
       case "TOP_RATED": return "text-yellow-400 border-yellow-400 bg-yellow-400/10";
-      case "ESTABLISHED": return "text-green-400 border-green-400 bg-green-400/10";
+      case "ESTABLISHED": return "text-secondary-400 border-secondary-400 bg-secondary-400/10";
       case "RISING": return "text-cyan-400 border-cyan-400 bg-cyan-400/10";
       default: return "text-white/60 border-white/60";
     }
@@ -236,8 +236,8 @@ export default function PublicAgentPage() {
               <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-3">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-wider">{agentData.name}</h1>
                 {agentData.online ? (
-                  <span className="flex items-center gap-2 text-green-400 text-sm">
-                    <span className="h-3 w-3 rounded-full bg-green-400 animate-pulse" />
+                  <span className="flex items-center gap-2 text-secondary-400 text-sm">
+                    <span className="h-3 w-3 rounded-full bg-secondary-400 animate-pulse" />
                     ONLINE NOW
                   </span>
                 ) : (
@@ -426,7 +426,7 @@ export default function PublicAgentPage() {
             <div className="border-2 border-white p-4">
               <h3 className="text-xs text-white/50 tracking-wider mb-2">RESPONSE_TIME</h3>
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-green-400" />
+                <Clock className="h-5 w-5 text-secondary-400" />
                 <span className="text-xl font-bold">{agentData.responseTime}</span>
               </div>
             </div>
@@ -436,7 +436,7 @@ export default function PublicAgentPage() {
               <h3 className="text-xs text-white/50 tracking-wider mb-3">TRUST_SCORE</h3>
               <div className="h-4 bg-white/10 border border-white">
                 <div
-                  className="h-full bg-green-400"
+                  className="h-full bg-secondary-400"
                   style={{ width: `${agentData.jss}%` }}
                 />
               </div>

@@ -131,7 +131,7 @@ export function LockEscrowModal({
           </div>
           <div className="flex justify-between">
             <span className="text-xs text-white/50">WINNING BID</span>
-            <span className="font-bold text-green-400">{bidAmount.toFixed(2)} USDC</span>
+            <span className="font-bold text-secondary-400">{bidAmount.toFixed(2)} USDC</span>
           </div>
           {excess > 0 && (
             <div className="flex justify-between border-t border-white/10 pt-3">
@@ -152,8 +152,8 @@ export function LockEscrowModal({
             </div>
             <ArrowRight className="h-5 w-5 text-white/30" />
             <div className="text-center">
-              <div className="w-12 h-12 border-2 border-green-400 flex items-center justify-center mb-2 mx-auto">
-                <span className="font-bold text-green-400">{bidAmount.toFixed(0)}</span>
+              <div className="w-12 h-12 border-2 border-secondary-400 flex items-center justify-center mb-2 mx-auto">
+                <span className="font-bold text-secondary-400">{bidAmount.toFixed(0)}</span>
               </div>
               <span className="text-white/50">LOCKED</span>
             </div>
@@ -186,9 +186,9 @@ export function LockEscrowModal({
             </div>
           )}
           {state === "success" && (
-            <div className="border-2 border-green-400 bg-green-400/10 p-4 text-center">
-              <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
-              <p className="text-green-400 font-bold">ESCROW_LOCKED</p>
+            <div className="border-2 border-secondary-400 bg-secondary-400/10 p-4 text-center">
+              <CheckCircle className="h-8 w-8 text-secondary-400 mx-auto mb-2" />
+              <p className="text-secondary-400 font-bold">ESCROW_LOCKED</p>
               <p className="text-xs text-white/60 mt-1">
                 {bidAmount.toFixed(2)} USDC locked to {agentName}
                 {excess > 0 && `, ${excess.toFixed(2)} USDC refunded to you`}

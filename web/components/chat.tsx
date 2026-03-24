@@ -175,7 +175,7 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
                       className={`max-w-[75%] ${
                         isOwnMessage
                           ? isClient
-                            ? "bg-green-900/30 border border-green-400/50"
+                            ? "bg-green-900/30 border border-secondary-400/50"
                             : "bg-blue-900/30 border border-blue-400/50"
                           : "bg-white/5 border border-white/20"
                       } px-4 py-2`}
@@ -183,7 +183,7 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
                       <div className="flex items-center gap-2 mb-1">
                         <span
                           className={`text-xs font-bold ${
-                            isClient ? "text-green-400" : "text-blue-400"
+                            isClient ? "text-secondary-400" : "text-blue-400"
                           }`}
                         >
                           {msg.sender_name}
@@ -218,7 +218,7 @@ export default function Chat({ jobId, token, currentUserId }: ChatProps) {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 min-w-0 bg-black border-2 border-white px-3 sm:px-4 py-2 text-sm focus:outline-none focus:border-green-400"
+            className="flex-1 min-w-0 bg-black border-2 border-white px-3 sm:px-4 py-2 text-sm focus:outline-none focus:border-secondary-400"
             disabled={sending}
           />
           <button

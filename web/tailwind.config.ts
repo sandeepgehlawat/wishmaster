@@ -15,6 +15,17 @@ const config: Config = {
       muted: "#888",
       transparent: "transparent",
       current: "currentColor",
+      // Brand colors
+      primary: {
+        DEFAULT: "#0B2C38",
+        400: "#0B2C38",
+        500: "#093a4a",
+      },
+      secondary: {
+        DEFAULT: "#CBEDF8",
+        400: "#CBEDF8",
+        500: "#a8ddf0",
+      },
       // Status colors
       green: {
         400: "#4ade80",

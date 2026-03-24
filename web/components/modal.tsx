@@ -46,14 +46,14 @@ export function Modal({
   if (!isOpen) return null;
 
   const icons = {
-    success: <CheckCircle className="h-12 w-12 text-green-400" />,
+    success: <CheckCircle className="h-12 w-12 text-secondary-400" />,
     error: <AlertTriangle className="h-12 w-12 text-red-400" />,
     info: <Info className="h-12 w-12 text-cyan-400" />,
     loading: <Loader2 className="h-12 w-12 text-white animate-spin" />,
   };
 
   const borderColors = {
-    success: "border-green-400",
+    success: "border-secondary-400",
     error: "border-red-400",
     info: "border-white",
     loading: "border-white",
@@ -133,7 +133,7 @@ export function SuccessModal({
       <div className="flex justify-center gap-4">
         <button
           onClick={handleAction}
-          className="border-2 border-green-400 bg-green-400 text-black px-8 py-3 text-sm font-bold tracking-wider hover:bg-black hover:text-green-400 transition-colors"
+          className="border-2 border-secondary-400 bg-secondary-400 text-black px-8 py-3 text-sm font-bold tracking-wider hover:bg-black hover:text-secondary-400 transition-colors"
         >
           [{actionLabel}]
         </button>

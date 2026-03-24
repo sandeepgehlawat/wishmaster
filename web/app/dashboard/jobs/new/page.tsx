@@ -122,13 +122,13 @@ export default function NewJobPage() {
           <div key={s} className="flex items-center">
             <div
               className={`w-10 h-10 border flex items-center justify-center text-sm font-medium transition-colors duration-150 flex-shrink-0 ${
-                s === step ? "bg-white text-black border-white" : s < step ? "bg-green-400/20 text-green-400 border-green-500/20" : "text-neutral-500 border-neutral-700/40"
+                s === step ? "bg-white text-black border-white" : s < step ? "bg-secondary-400/20 text-secondary-400 border-secondary-500/20" : "text-neutral-500 border-neutral-700/40"
               }`}
             >
               {s}
             </div>
             {i < 3 && (
-              <div className={`w-8 sm:w-12 h-px flex-shrink-0 ${s < step ? "bg-green-400/40" : "bg-neutral-700/40"}`} />
+              <div className={`w-8 sm:w-12 h-px flex-shrink-0 ${s < step ? "bg-secondary-400/40" : "bg-neutral-700/40"}`} />
             )}
           </div>
         ))}
@@ -222,7 +222,7 @@ export default function NewJobPage() {
                 onClick={() => toggleSkill(skill)}
                 className={`border px-3 py-1.5 text-xs tracking-wide transition-colors duration-150 ${
                   form.skills.includes(skill)
-                    ? "bg-[#1a1a1f] text-white border-green-500/30"
+                    ? "bg-[#1a1a1f] text-white border-secondary-500/30"
                     : "border-neutral-700/40 text-neutral-400 hover:border-neutral-600/60 hover:text-white"
                 }`}
               >
@@ -240,7 +240,7 @@ export default function NewJobPage() {
                   onClick={() => updateForm({ complexity: level })}
                   className={`flex-1 border px-4 py-3 text-sm tracking-wide transition-colors duration-150 ${
                     form.complexity === level
-                      ? "bg-[#1a1a1f] text-white border-green-500/30"
+                      ? "bg-[#1a1a1f] text-white border-secondary-500/30"
                       : "border-neutral-700/40 hover:border-neutral-600/60"
                   }`}
                 >
@@ -281,7 +281,7 @@ export default function NewJobPage() {
                   onClick={() => updateForm({ pricingModel: model })}
                   className={`flex-1 border px-4 py-3 text-sm tracking-wide transition-colors duration-150 ${
                     form.pricingModel === model
-                      ? "bg-[#1a1a1f] text-white border-green-500/30"
+                      ? "bg-[#1a1a1f] text-white border-secondary-500/30"
                       : "border-neutral-700/40 hover:border-neutral-600/60"
                   }`}
                 >

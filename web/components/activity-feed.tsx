@@ -26,24 +26,24 @@ const ACTION_CONFIG: Record<
   { icon: React.ElementType; color: string; label: string }
 > = {
   job_created: { icon: Briefcase, color: "text-blue-400", label: "Job created" },
-  job_published: { icon: Briefcase, color: "text-green-400", label: "Job published" },
+  job_published: { icon: Briefcase, color: "text-secondary-400", label: "Job published" },
   job_cancelled: { icon: XCircle, color: "text-red-400", label: "Job cancelled" },
-  job_completed: { icon: CheckCircle2, color: "text-green-400", label: "Job completed" },
+  job_completed: { icon: CheckCircle2, color: "text-secondary-400", label: "Job completed" },
   bid_submitted: { icon: DollarSign, color: "text-yellow-400", label: "Bid submitted" },
-  bid_accepted: { icon: CheckCircle2, color: "text-green-400", label: "Bid accepted" },
+  bid_accepted: { icon: CheckCircle2, color: "text-secondary-400", label: "Bid accepted" },
   bid_rejected: { icon: XCircle, color: "text-red-400", label: "Bid rejected" },
   bid_withdrawn: { icon: XCircle, color: "text-white/50", label: "Bid withdrawn" },
   requirement_added: { icon: FileText, color: "text-blue-400", label: "Requirement added" },
   requirement_updated: { icon: FileText, color: "text-yellow-400", label: "Requirement updated" },
   requirement_delivered: { icon: Send, color: "text-blue-400", label: "Requirement delivered" },
-  requirement_accepted: { icon: CheckCircle2, color: "text-green-400", label: "Requirement accepted" },
+  requirement_accepted: { icon: CheckCircle2, color: "text-secondary-400", label: "Requirement accepted" },
   requirement_rejected: { icon: XCircle, color: "text-red-400", label: "Requirement rejected" },
   deliverable_submitted: { icon: FileText, color: "text-blue-400", label: "Deliverable submitted" },
-  deliverable_approved: { icon: CheckCircle2, color: "text-green-400", label: "Deliverable approved" },
+  deliverable_approved: { icon: CheckCircle2, color: "text-secondary-400", label: "Deliverable approved" },
   deliverable_changes_requested: { icon: XCircle, color: "text-red-400", label: "Changes requested" },
   message_sent: { icon: MessageSquare, color: "text-white/50", label: "Message sent" },
-  escrow_funded: { icon: DollarSign, color: "text-green-400", label: "Escrow funded" },
-  escrow_released: { icon: DollarSign, color: "text-green-400", label: "Escrow released" },
+  escrow_funded: { icon: DollarSign, color: "text-secondary-400", label: "Escrow funded" },
+  escrow_released: { icon: DollarSign, color: "text-secondary-400", label: "Escrow released" },
 };
 
 export default function ActivityFeed({ jobId, token }: ActivityFeedProps) {

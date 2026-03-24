@@ -101,7 +101,7 @@ export default function MyJobsPage() {
     switch (status) {
       case "DRAFT": return "text-neutral-400 border-neutral-700/40";
       case "OPEN": return "text-neutral-300 border-neutral-700/40";
-      case "BIDDING": return "text-green-400 border-green-500/20 bg-green-500/10";
+      case "BIDDING": return "text-secondary-400 border-secondary-500/20 bg-secondary-500/10";
       case "IN_PROGRESS": return "text-yellow-400 border-yellow-500/20 bg-yellow-500/10";
       case "DELIVERED": return "text-cyan-400 border-cyan-500/20 bg-cyan-500/10";
       case "COMPLETED": return "text-neutral-400 border-neutral-700/40";
@@ -111,8 +111,8 @@ export default function MyJobsPage() {
 
   const getEscrowColor = (status?: string) => {
     switch (status) {
-      case "FUNDED": return "text-green-400";
-      case "LOCKED": return "text-green-400";
+      case "FUNDED": return "text-secondary-400";
+      case "LOCKED": return "text-secondary-400";
       case "PENDING_RELEASE": return "text-yellow-400";
       case "RELEASED": return "text-neutral-500";
       default: return "text-neutral-500";
@@ -165,7 +165,7 @@ export default function MyJobsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <Briefcase className="h-4 w-4 text-green-400" />
+            <Briefcase className="h-4 w-4 text-secondary-400" />
             <h1 className="text-xl md:text-2xl font-bold tracking-wider">MY_JOBS</h1>
           </div>
           {pendingActions > 0 && (
@@ -204,7 +204,7 @@ export default function MyJobsPage() {
               onClick={() => setActiveFilter(status)}
               className={`tracking-wider pb-1 transition-colors bg-transparent border-none flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${
                 activeFilter === status
-                  ? "text-white border-b-2 border-green-400"
+                  ? "text-white border-b-2 border-secondary-400"
                   : "text-neutral-500 hover:text-white"
               }`}
             >
@@ -260,7 +260,7 @@ export default function MyJobsPage() {
 
                   <div className="text-right flex-shrink-0">
                     <div className="flex items-center gap-2 justify-end mb-1">
-                      <span className="font-bold text-green-400">{formatBudget(job)}</span>
+                      <span className="font-bold text-secondary-400">{formatBudget(job)}</span>
                     </div>
                     <p className={`text-xs ${getEscrowColor(job.escrow_status)}`}>
                       {job.escrow_status || "UNFUNDED"}
@@ -285,13 +285,13 @@ export default function MyJobsPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 border-l-2 border-l-green-400">
+        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 border-l-2 border-l-secondary-400">
           <p className="text-[10px] sm:text-xs text-neutral-500 mb-1 tracking-wider">TOTAL_JOBS</p>
           <p className="text-2xl font-bold">{jobs.length}</p>
         </div>
-        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 border-l-2 border-l-green-400">
+        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 border-l-2 border-l-secondary-400">
           <p className="text-[10px] sm:text-xs text-neutral-500 mb-1 tracking-wider">ACTIVE</p>
-          <p className="text-2xl font-bold text-green-400">{activeJobs}</p>
+          <p className="text-2xl font-bold text-secondary-400">{activeJobs}</p>
         </div>
         <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 border-l-2 border-l-neutral-500">
           <p className="text-[10px] sm:text-xs text-neutral-500 mb-1 tracking-wider">IN_ESCROW</p>

@@ -46,8 +46,8 @@ const STATUS_CONFIG: Record<
   },
   active: {
     icon: Play,
-    color: "text-green-400",
-    bgColor: "bg-green-400/10",
+    color: "text-secondary-400",
+    bgColor: "bg-secondary-400/10",
     label: "Active",
   },
   paused: {
@@ -232,7 +232,7 @@ export default function ServiceDetailPage() {
 
           {/* Monthly Rate */}
           <div className="text-left sm:text-right">
-            <div className="flex items-center gap-1 text-green-400 text-2xl">
+            <div className="flex items-center gap-1 text-secondary-400 text-2xl">
               <DollarSign className="h-6 w-6" />
               <span className="font-bold">{service.monthly_rate_usd}</span>
             </div>
@@ -281,7 +281,7 @@ export default function ServiceDetailPage() {
           {isAgent && service.status === "pending" && (
             <button
               onClick={handleAccept}
-              className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm hover:bg-green-400 hover:text-black transition-colors flex items-center gap-2"
+              className="border-2 border-secondary-400 text-secondary-400 px-4 py-2 text-sm hover:bg-secondary-400 hover:text-black transition-colors flex items-center gap-2"
             >
               <CheckCircle2 className="h-4 w-4" />
               Accept Service Offer
@@ -303,7 +303,7 @@ export default function ServiceDetailPage() {
           {service.status === "paused" && (
             <button
               onClick={handleResume}
-              className="border-2 border-green-400 text-green-400 px-4 py-2 text-sm hover:bg-green-400 hover:text-black transition-colors flex items-center gap-2"
+              className="border-2 border-secondary-400 text-secondary-400 px-4 py-2 text-sm hover:bg-secondary-400 hover:text-black transition-colors flex items-center gap-2"
             >
               <Play className="h-4 w-4" />
               Resume Service
@@ -364,7 +364,7 @@ export default function ServiceDetailPage() {
                     <span
                       className={`text-[10px] uppercase ${
                         record.status === "paid"
-                          ? "text-green-400"
+                          ? "text-secondary-400"
                           : record.status === "pending"
                           ? "text-yellow-400"
                           : "text-red-400"

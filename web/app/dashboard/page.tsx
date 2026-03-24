@@ -152,7 +152,7 @@ export default function DashboardPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "BIDDING": return "text-green-400 border-green-500/20 bg-green-500/10";
+      case "BIDDING": return "text-secondary-400 border-secondary-500/20 bg-secondary-500/10";
       case "IN_PROGRESS": return "text-yellow-400 border-yellow-500/20 bg-yellow-500/10";
       case "DELIVERED": return "text-cyan-400 border-cyan-500/20 bg-cyan-500/10";
       case "COMPLETED": return "text-neutral-400 border-neutral-700/40";
@@ -268,19 +268,19 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-green-400">
+        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-secondary-400">
           <div className="flex items-center gap-2 mb-2">
             <Briefcase className="h-4 w-4 text-neutral-500" />
             <p className="text-[10px] sm:text-xs text-neutral-500 tracking-wider">ACTIVE_JOBS</p>
           </div>
           <p className="text-2xl sm:text-3xl font-bold">{activeJobs.length}</p>
         </div>
-        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-green-400">
+        <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-secondary-400">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="h-4 w-4 text-green-400" />
+            <DollarSign className="h-4 w-4 text-secondary-400" />
             <p className="text-[10px] sm:text-xs text-neutral-500 tracking-wider">IN_ESCROW</p>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-green-400">{escrowSummary.total} <span className="text-sm text-neutral-500">USDC</span></p>
+          <p className="text-2xl sm:text-3xl font-bold text-secondary-400">{escrowSummary.total} <span className="text-sm text-neutral-500">USDC</span></p>
         </div>
         <div className="stat-card border border-neutral-700/40 bg-[#1a1a1f] p-4 sm:p-5 border-l-2 border-l-neutral-500">
           <div className="flex items-center gap-2 mb-2">
@@ -302,7 +302,7 @@ export default function DashboardPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Briefcase className="h-4 w-4 text-green-400" />
+            <Briefcase className="h-4 w-4 text-secondary-400" />
             <h2 className="text-lg font-bold tracking-wider">MY_JOBS</h2>
           </div>
           <Link
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-green-400">{job.final_price || job.budget_max} USDC</p>
+                    <p className="font-bold text-secondary-400">{job.final_price || job.budget_max} USDC</p>
                   </div>
                 </div>
               </Link>
@@ -365,7 +365,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <DollarSign className="h-4 w-4 text-green-400" />
+            <DollarSign className="h-4 w-4 text-secondary-400" />
             <h2 className="text-sm font-bold tracking-wider">ESCROW_BREAKDOWN</h2>
           </div>
           <div className="space-y-0">
@@ -375,7 +375,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center justify-between py-3 border-b border-neutral-700/40">
               <span className="text-sm text-neutral-400">Locked (Work in Progress)</span>
-              <span className="font-bold text-green-400">{escrowSummary.locked} USDC</span>
+              <span className="font-bold text-secondary-400">{escrowSummary.locked} USDC</span>
             </div>
             <div className="flex items-center justify-between py-3 border-b border-neutral-700/40">
               <span className="text-sm text-neutral-400">Pending Release (Review)</span>
@@ -390,7 +390,7 @@ export default function DashboardPage() {
 
         <div className="border border-neutral-700/40 bg-[#1a1a1f] p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="h-4 w-4 text-green-400" />
+            <TrendingUp className="h-4 w-4 text-secondary-400" />
             <h2 className="text-sm font-bold tracking-wider">RECENT_ACTIVITY</h2>
           </div>
           <div className="space-y-0">
@@ -404,7 +404,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-neutral-500">{job.status}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold text-green-400">{job.final_price || job.budget_max} USDC</p>
+                    <p className="text-sm font-bold text-secondary-400">{job.final_price || job.budget_max} USDC</p>
                   </div>
                 </div>
               ))

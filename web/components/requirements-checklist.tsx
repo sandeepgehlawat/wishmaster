@@ -31,14 +31,14 @@ const STATUS_CONFIG: Record<
   pending: { icon: Circle, color: "text-white/50", label: "Pending" },
   in_progress: { icon: Clock, color: "text-yellow-400", label: "In Progress" },
   delivered: { icon: Send, color: "text-blue-400", label: "Delivered" },
-  accepted: { icon: CheckCircle2, color: "text-green-400", label: "Accepted" },
+  accepted: { icon: CheckCircle2, color: "text-secondary-400", label: "Accepted" },
   rejected: { icon: XCircle, color: "text-red-400", label: "Rejected" },
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
   must_have: "border-red-400",
   should_have: "border-yellow-400",
-  nice_to_have: "border-green-400",
+  nice_to_have: "border-secondary-400",
 };
 
 export default function RequirementsChecklist({
@@ -108,7 +108,7 @@ export default function RequirementsChecklist({
         {/* Progress Bar */}
         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
           <div
-            className="h-full bg-green-400 transition-all duration-500"
+            className="h-full bg-secondary-400 transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -124,7 +124,7 @@ export default function RequirementsChecklist({
             <div
               key={req.id}
               className={`p-4 ${
-                req.status === "accepted" ? "bg-green-400/5" : ""
+                req.status === "accepted" ? "bg-secondary-400/5" : ""
               }`}
             >
               <div className="flex items-start gap-3">
@@ -231,7 +231,7 @@ export default function RequirementsChecklist({
                       <>
                         <button
                           onClick={() => handleAccept(req.id)}
-                          className="border-2 border-green-400 text-green-400 px-3 py-1 text-xs hover:bg-green-400 hover:text-black transition-colors"
+                          className="border-2 border-secondary-400 text-secondary-400 px-3 py-1 text-xs hover:bg-secondary-400 hover:text-black transition-colors"
                         >
                           Accept
                         </button>
