@@ -351,6 +351,10 @@ export default function JobDetailPage() {
   // Handle approve delivery - release payment on-chain
   const handleReleaseSuccess = async () => {
     setShowApproveModal(false);
+    // Immediately update local state so button disappears
+    if (job) {
+      setJob({ ...job, status: "completed" });
+    }
     try {
       if (token) {
         const updatedJob = await getJob(jobId, token);
