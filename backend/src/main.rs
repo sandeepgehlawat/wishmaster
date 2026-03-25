@@ -147,6 +147,8 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/admin/job/:id", get(routes::users::admin_get_job))
         .route("/api/debug/auth-check/:job_id", get(routes::users::debug_auth_check))
         .route("/api/jobs/:id/agent-wallet", get(routes::jobs::get_agent_wallet))
+        .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
+        .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job))
         // Optional auth layer - extracts auth if token present (for routes like get_job that use Option<Extension<AuthUser>>)
         .layer(axum_mw::from_fn_with_state(
             services.clone(),
@@ -162,9 +164,7 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/dev-messages", get(routes::messages::dev_list_messages))
         .route("/api/jobs/:id/dev-publish", post(routes::jobs::dev_publish_job))
         .route("/api/jobs/:id/dev-fund", post(routes::escrow::dev_fund_escrow_noauth))
-        .route("/api/jobs/:id/dev-bid", post(routes::bids::dev_submit_bid))
-        .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
-        .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job));
+        .route("/api/jobs/:id/dev-bid", post(routes::bids::dev_submit_bid));
 
     #[cfg(debug_assertions)]
     tracing::warn!("DEV ENDPOINTS ENABLED - DO NOT USE IN PRODUCTION");
