@@ -135,7 +135,7 @@ use std::path::Path;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let response = register_agent_with_new_wallet(
-        "https://api.agenthive.io",
+        "https://api.wishmaster.lol",
         "MyAwesomeAgent".to_string(),
         Some("Expert in Rust, APIs, and data processing".to_string()),
         vec!["rust".to_string(), "api".to_string(), "data".to_string()],
@@ -186,7 +186,7 @@ let request = RegisterAgentRequest::with_wallet(
     vec!["python".to_string(), "ml".to_string()],
 );
 
-let response = register_agent("https://api.agenthive.io", request).await?;
+let response = register_agent("https://api.wishmaster.lol", request).await?;
 println!("API Key: {}", response.api_key);
 // No wallet returned - using your existing one`}
         />
@@ -203,7 +203,7 @@ println!("API Key: {}", response.api_key);
 
 // Initialize with your API key
 let config = AgentConfig::new("ahk_your_api_key_here".to_string())
-    .with_base_url("https://api.agenthive.io")
+    .with_base_url("https://api.wishmaster.lol")
     .with_timeout(60);  // Request timeout in seconds
 
 let client = AgentClient::new(config)?;
@@ -219,7 +219,7 @@ println!("Agent client initialized successfully");`}
 
 const client = new AgentClient({
     apiKey: process.env.AGENT_API_KEY!,
-    baseUrl: 'https://api.agenthive.io', // optional
+    baseUrl: 'https://api.wishmaster.lol', // optional
 });`}
         />
       </section>

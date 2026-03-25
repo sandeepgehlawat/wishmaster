@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X, Briefcase } from "lucide-react";
-import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devDeliverJob, devApproveJob, getRequirements, getDeliverables, getActivities } from "@/lib/api";
+import { Loader2, CheckCircle, ExternalLink, AlertTriangle, X, Briefcase } from "lucide-react";
+import { getJob, publishJob, listBids, cancelJob, requestRevision, disputeJob, selectBid, devDeliverJob, devApproveJob, getRequirements, getDeliverables, getActivities } from "@/lib/api";
 import { FundEscrowModal } from "@/components/fund-escrow-modal";
 import { LockEscrowModal } from "@/components/lock-escrow-modal";
 import { ReleaseEscrowModal } from "@/components/release-escrow-modal";
@@ -216,6 +216,8 @@ export default function JobDetailPage() {
   const [publishError, setPublishError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalData, setSuccessModalData] = useState({ title: "", message: "" });
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorModalData, setErrorModalData] = useState({ title: "", message: "" });
 
   // Action states
   const [actionLoading, setActionLoading] = useState(false);
@@ -340,7 +342,7 @@ export default function JobDetailPage() {
       setShowDeleteModal(false);
       router.push("/dashboard/jobs");
     } catch (err: any) {
-      alert(err.message || "Failed to cancel job");
+      setErrorModalData({ title: "CANCEL_FAILED", message: err.message || "Failed to cancel job" }); setShowErrorModal(true);
     } finally {
       setActionLoading(false);
     }
@@ -356,10 +358,9 @@ export default function JobDetailPage() {
       }
     } catch {}
     const finalPrice = parseFloat(job?.final_price || "0");
-    const agentPayout = finalPrice * 0.95;
     setSuccessModalData({
       title: "JOB_COMPLETED",
-      message: `Delivery approved! Payment of ${agentPayout.toFixed(2)} USDC released to agent on-chain.`,
+      message: `Delivery approved! Payment released to agent on-chain (${finalPrice.toFixed(2)} USDC total).`,
     });
     setShowSuccessModal(true);
   };
@@ -379,7 +380,7 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      alert(err.message || "Failed to request revision");
+      setErrorModalData({ title: "REVISION_FAILED", message: err.message || "Failed to request revision" }); setShowErrorModal(true);
     } finally {
       setActionLoading(false);
     }
@@ -400,7 +401,7 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      alert(err.message || "Failed to file dispute");
+      setErrorModalData({ title: "DISPUTE_FAILED", message: err.message || "Failed to file dispute" }); setShowErrorModal(true);
     } finally {
       setActionLoading(false);
     }
@@ -413,7 +414,7 @@ export default function JobDetailPage() {
     // Find the selected bid to get agent wallet and bid amount
     const selectedBid = bids.find(b => b.id === selectedBidId);
     if (!selectedBid) {
-      alert("Bid not found");
+      setErrorModalData({ title: "ERROR", message: "Bid not found" }); setShowErrorModal(true);
       return;
     }
 
@@ -434,7 +435,7 @@ export default function JobDetailPage() {
         });
         setShowSuccessModal(true);
       } catch (err: any) {
-        alert(err.message || "Failed to select bid");
+        setErrorModalData({ title: "BID_SELECT_FAILED", message: err.message || "Failed to select bid" }); setShowErrorModal(true);
       } finally {
         setActionLoading(false);
       }
@@ -471,7 +472,7 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      alert(err.message || "Failed to finalize bid selection");
+      setErrorModalData({ title: "BID_FINALIZE_FAILED", message: err.message || "Failed to finalize bid selection" }); setShowErrorModal(true);
     } finally {
       setActionLoading(false);
     }
@@ -506,7 +507,7 @@ export default function JobDetailPage() {
       });
       setShowSuccessModal(true);
     } catch (err: any) {
-      alert(err.message || "Failed to mark as delivered");
+      setErrorModalData({ title: "DELIVER_FAILED", message: err.message || "Failed to mark as delivered" }); setShowErrorModal(true);
     } finally {
       setActionLoading(false);
     }
@@ -712,6 +713,28 @@ export default function JobDetailPage() {
         message={successModalData.message}
       />
 
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a0a0f] border border-red-500/40 max-w-md w-full p-6 font-mono relative">
+            <button onClick={() => setShowErrorModal(false)} className="absolute top-4 right-4 text-white/50 hover:text-white">
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="h-5 w-5 text-red-400" />
+              <h3 className="text-sm font-bold tracking-wider text-red-400">{errorModalData.title}</h3>
+            </div>
+            <p className="text-sm text-white/70 mb-4">{errorModalData.message}</p>
+            <button
+              onClick={() => setShowErrorModal(false)}
+              className="w-full border-2 border-white/30 px-4 py-2 text-sm font-bold tracking-wider hover:bg-white/5"
+            >
+              [CLOSE]
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={showDeleteModal}
@@ -730,8 +753,7 @@ export default function JobDetailPage() {
         onClose={() => setShowApproveModal(false)}
         onSuccess={handleReleaseSuccess}
         jobId={jobId}
-        agentPayout={parseFloat(job?.final_price || "0") * 0.95}
-        platformFee={parseFloat(job?.final_price || "0") * 0.05}
+        totalAmount={parseFloat(job?.final_price || "0")}
         agentWallet={job?.agent_wallet || ""}
         bidAmount={parseFloat(job?.final_price || "0")}
         token={token || ""}

@@ -2,7 +2,9 @@
 
 import { useEffect } from "react";
 import { X, Loader2, CheckCircle, ExternalLink, AlertTriangle } from "lucide-react";
+import { useReadContract } from "wagmi";
 import { useEscrowRelease, EscrowReleaseState } from "@/hooks/use-escrow-release";
+import { ESCROW_ABI } from "@/lib/contracts/abis";
 import { getExplorerTxUrl, getContractAddresses } from "@/lib/contracts/config";
 
 interface ReleaseEscrowModalProps {
@@ -10,8 +12,7 @@ interface ReleaseEscrowModalProps {
   onClose: () => void;
   onSuccess: () => void;
   jobId: string;
-  agentPayout: number;
-  platformFee: number;
+  totalAmount: number;
   agentWallet: string;
   bidAmount: number;
   token: string;
@@ -42,8 +43,7 @@ export function ReleaseEscrowModal({
   onClose,
   onSuccess,
   jobId,
-  agentPayout,
-  platformFee,
+  totalAmount,
   agentWallet,
   bidAmount,
   token,
@@ -51,6 +51,16 @@ export function ReleaseEscrowModal({
   const { state, error, releaseTxHash, release, reset } = useEscrowRelease();
   const contracts = getContractAddresses();
   const currentStep = getStepIndex(state);
+
+  // Read platform fee from contract
+  const { data: feeBpsData } = useReadContract({
+    address: contracts.escrow,
+    abi: ESCROW_ABI,
+    functionName: "platformFeeBps",
+  });
+  const feeBps = feeBpsData ? Number(feeBpsData) : 500; // fallback 5%
+  const platformFee = totalAmount * feeBps / 10000;
+  const agentPayout = totalAmount - platformFee;
 
   useEffect(() => {
     if (isOpen && state === "idle") {
@@ -71,7 +81,6 @@ export function ReleaseEscrowModal({
   if (!isOpen) return null;
 
   const isProcessing = !["idle", "success", "error"].includes(state);
-  const totalAmount = agentPayout + platformFee;
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">

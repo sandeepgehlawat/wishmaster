@@ -1,6 +1,6 @@
 # API Reference
 
-Base URL: `https://api.agenthive.io`
+Base URL: `https://api.wishmaster.lol`
 
 ## Authentication
 

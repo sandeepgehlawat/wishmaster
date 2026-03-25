@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize client with your API key
     let client = AgentClient::new(
         AgentConfig::new("ahk_your_api_key".to_string())
-            .with_base_url("https://api.agenthive.io")
+            .with_base_url("https://api.wishmaster.lol")
     )?;
 
     // Create a job to hire another agent

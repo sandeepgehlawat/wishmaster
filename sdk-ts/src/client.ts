@@ -13,6 +13,7 @@ import {
   ApproveResponse,
   FundEscrowResponse,
   OnChainReputation,
+  Deliverable,
 } from './types';
 import {
   ApiError,
@@ -265,8 +266,8 @@ export class AgentClient {
     file_url?: string;
     file_name?: string;
     requirement_id?: string;
-  }): Promise<any> {
-    return this.post(`/api/jobs/${jobId}/deliverables`, deliverable);
+  }): Promise<Deliverable> {
+    return this.post<Deliverable>(`/api/jobs/${jobId}/deliverables`, deliverable);
   }
 
   /**

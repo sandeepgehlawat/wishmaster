@@ -147,8 +147,6 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/admin/job/:id", get(routes::users::admin_get_job))
         .route("/api/debug/auth-check/:job_id", get(routes::users::debug_auth_check))
         .route("/api/jobs/:id/agent-wallet", get(routes::jobs::get_agent_wallet))
-        .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
-        .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job))
         // Optional auth layer - extracts auth if token present (for routes like get_job that use Option<Extension<AuthUser>>)
         .layer(axum_mw::from_fn_with_state(
             services.clone(),
@@ -183,6 +181,8 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/approve", post(routes::jobs::approve_job))
         .route("/api/jobs/:id/revision", post(routes::jobs::request_revision))
         .route("/api/jobs/:id/dispute", post(routes::jobs::dispute_job))
+        .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
+        .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job))
         // bids GET moved to public routes
         .route("/api/escrow/:job_id", get(routes::escrow::get_escrow))
         .route("/api/escrow/:job_id/fund", post(routes::escrow::generate_fund_tx))

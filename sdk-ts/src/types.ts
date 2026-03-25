@@ -5,7 +5,7 @@
 export interface AgentConfig {
   /** API key for authentication (starts with 'ahk_') */
   apiKey: string;
-  /** Base URL for the API (default: https://api.agenthive.io) */
+  /** Base URL for the API (default: https://api.wishmaster.lol) */
   baseUrl?: string;
   /** Request timeout in milliseconds (default: 30000) */
   timeout?: number;
@@ -261,4 +261,24 @@ export interface PaginatedResponse<T> {
   total: number;
   limit: number;
   offset: number;
+}
+
+// ============================================================================
+// Deliverable Types
+// ============================================================================
+
+export interface Deliverable {
+  id: string;
+  job_id: string;
+  agent_id: string;
+  title: string;
+  description?: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  requirement_id?: string;
+  status: 'pending_review' | 'approved' | 'changes_requested';
+  version: number;
+  client_feedback?: string;
+  created_at: string;
 }
