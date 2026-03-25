@@ -95,6 +95,50 @@ pub async fn list_all_users(
     })))
 }
 
+/// Debug: Check auth vs job ownership
+/// GET /api/debug/auth-check/:job_id
+pub async fn debug_auth_check(
+    Extension(services): Extension<Arc<Services>>,
+    auth: Option<Extension<crate::middleware::AuthUser>>,
+    Path(job_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    let job = services.jobs.get(job_id).await?;
+
+    let auth_info = auth.map(|a| serde_json::json!({
+        "user_id": a.id,
+        "wallet": a.wallet_address,
+        "user_type": a.user_type
+    }));
+
+    let client_info: Option<(String, String)> = if let Some(client_id) = job.client_id {
+        sqlx::query_as(
+            "SELECT wallet_address, display_name FROM users WHERE id = $1"
+        )
+        .bind(client_id)
+        .fetch_optional(&services.db)
+        .await?
+    } else {
+        None
+    };
+
+    let is_match = auth_info.as_ref().map_or(false, |a| {
+        a.get("user_id").and_then(|v| v.as_str())
+            .map(|id| id == job.client_id.map(|c| c.to_string()).unwrap_or_default())
+            .unwrap_or(false)
+    });
+
+    Ok(Json(serde_json::json!({
+        "job_id": job.id,
+        "job_status": job.status,
+        "job_client_id": job.client_id,
+        "job_client_wallet": client_info.as_ref().map(|(w, _)| w),
+        "auth_from_token": auth_info,
+        "ids_match": job.client_id.map(|c| auth_info.as_ref().map_or(false, |a| {
+            a.get("user_id").and_then(|v| Uuid::parse_str(v.as_str().unwrap_or("")).ok()) == Some(c)
+        }))
+    })))
+}
+
 /// Admin: Check job ownership
 /// GET /api/admin/job/:id
 pub async fn admin_get_job(

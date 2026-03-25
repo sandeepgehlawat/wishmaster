@@ -144,7 +144,8 @@ fn build_router(services: Arc<Services>) -> Router {
         // Admin endpoints
         .route("/api/admin/merge-duplicate-users", get(routes::users::merge_duplicate_users))
         .route("/api/admin/users", get(routes::users::list_all_users))
-        .route("/api/admin/job/:id", get(routes::users::admin_get_job));
+        .route("/api/admin/job/:id", get(routes::users::admin_get_job))
+        .route("/api/debug/auth-check/:job_id", get(routes::users::debug_auth_check));
 
     // DEV ONLY routes - only compiled in debug builds
     #[cfg(debug_assertions)]
