@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId } from "wagmi";
 import { keccak256, toHex, pad } from "viem";
 import { ERC20_ABI, ESCROW_ABI } from "@/lib/contracts/abis";
 import { getContractAddresses, toUsdcWei, fromUsdcWei, USDC_DECIMALS } from "@/lib/contracts/config";
@@ -67,6 +67,7 @@ async function waitForReceipt(txHash: string, maxAttempts = 150): Promise<boolea
 
 export function useEscrowDeposit(): UseEscrowDepositReturn {
   const { address } = useAccount();
+  const chainId = useChainId();
   const contracts = getContractAddresses();
 
   const [state, setState] = useState<EscrowDepositState>("idle");
@@ -127,23 +128,28 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
 
       try {
         setError(null);
+        console.log("[Escrow] Starting deposit flow", { chainId, usdc: contracts.usdc, escrow: contracts.escrow });
 
         // Step 1: Check allowance
         setState("checking_allowance");
         await refetchAllowance();
         const currentAllowance = allowanceData ? (allowanceData as bigint) : BigInt(0);
+        console.log("[Escrow] Current allowance:", currentAllowance.toString(), "needed:", amountWei.toString());
 
         // Step 2: Approve if needed
         if (currentAllowance < amountWei) {
           setState("approving");
+          console.log("[Escrow] Requesting approval for", amountWei.toString(), "to", contracts.escrow);
 
           const approveTx = await writeApprove({
             address: contracts.usdc,
             abi: ERC20_ABI,
             functionName: "approve",
             args: [contracts.escrow, amountWei],
+            chainId,
           });
 
+          console.log("[Escrow] Approval tx submitted:", approveTx);
           setApproveTxHash(approveTx);
           setState("waiting_approve");
 
@@ -160,14 +166,17 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
         // Step 3: Deposit to escrow
         setState("depositing");
         const escrowJobId = generateEscrowJobId(jobId);
+        console.log("[Escrow] Depositing", amountWei.toString(), "for job", escrowJobId);
 
         const depositTx = await writeDeposit({
           address: contracts.escrow,
           abi: ESCROW_ABI,
           functionName: "deposit",
           args: [escrowJobId, amountWei],
+          chainId,
         });
 
+        console.log("[Escrow] Deposit tx submitted:", depositTx);
         setDepositTxHash(depositTx);
         setState("waiting_deposit");
 
@@ -184,8 +193,10 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
         setState("success");
         return true;
       } catch (err: any) {
-        console.error("Escrow deposit error:", err);
-        setError(err.message || "Failed to deposit to escrow");
+        console.error("[Escrow] Error:", err);
+        console.error("[Escrow] Error details:", JSON.stringify(err, null, 2));
+        const errorMsg = err?.shortMessage || err?.message || "Failed to deposit to escrow";
+        setError(errorMsg);
         setState("error");
         return false;
       }
