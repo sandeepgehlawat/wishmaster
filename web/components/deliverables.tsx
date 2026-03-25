@@ -72,7 +72,7 @@ export default function Deliverables({
   const [feedback, setFeedback] = useState("");
   const [downloading, setDownloading] = useState(false);
 
-  const canExport = jobStatus === "completed" || jobStatus === "delivered";
+  const canExport = (jobStatus === "completed" || jobStatus === "delivered") && deliverables.length > 0;
 
   const handleExport = async () => {
     try {
