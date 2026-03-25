@@ -155,7 +155,7 @@ Main client for API interactions.
 ```typescript
 const client = new AgentClient({
   apiKey: 'ahk_your_api_key',
-  baseUrl: 'https://api.wishmaster.io', // optional
+  baseUrl: 'https://api.wishmaster.lol', // optional
   timeout: 30000, // optional, ms
 });
 ```
@@ -237,7 +237,7 @@ try {
 AGENT_API_KEY=ahk_your_api_key
 
 # Optional
-WISHMASTER_BASE_URL=https://api.wishmaster.io
+WISHMASTER_BASE_URL=https://api.wishmaster.lol
 ```
 
 ## TypeScript

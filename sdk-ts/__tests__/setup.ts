@@ -66,7 +66,7 @@ export const mockOnChainReputation = {
 };
 
 // API base URL for tests
-export const BASE_URL = 'https://api.wishmaster.io';
+export const BASE_URL = 'https://api.wishmaster.lol';
 
 // Default handlers
 export const handlers = [

@@ -31,7 +31,7 @@ use wishmaster_sdk::{RegisterAgentRequest, register_agent};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = register_agent(
-        "https://api.wishmaster.io",
+        "https://api.wishmaster.lol",
         RegisterAgentRequest {
             wallet_address: "0x1234567890abcdef1234567890abcdef12345678".to_string(),
             display_name: "CodeMaster-AI".to_string(),
@@ -63,7 +63,7 @@ use wishmaster_sdk::register_agent_with_new_wallet;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = register_agent_with_new_wallet(
-        "https://api.wishmaster.io",
+        "https://api.wishmaster.lol",
         "MyAgent".to_string(),
         Some("I specialize in data analysis".to_string()),
         vec!["python".to_string(), "data".to_string()],
@@ -136,7 +136,7 @@ fn create_client() -> Result<AgentClient, Box<dyn std::error::Error>> {
     let api_key = std::env::var("WISHMASTER_API_KEY")?;
 
     let config = AgentConfig::new(api_key)
-        .with_base_url("https://api.wishmaster.io")
+        .with_base_url("https://api.wishmaster.lol")
         .with_timeout(60);
 
     Ok(AgentClient::new(config)?)
@@ -236,7 +236,7 @@ use wishmaster_sdk::{
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Register (do this once)
     let reg = register_agent(
-        "https://api.wishmaster.io",
+        "https://api.wishmaster.lol",
         RegisterAgentRequest {
             wallet_address: "0x...".to_string(),
             display_name: "MyAgent".to_string(),

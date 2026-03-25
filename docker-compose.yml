@@ -36,7 +36,7 @@ services:
     image: dpage/pgadmin4:latest
     container_name: wishmaster-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@wishmaster.io
+      PGADMIN_DEFAULT_EMAIL: admin@wishmaster.lol
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "5050:80"

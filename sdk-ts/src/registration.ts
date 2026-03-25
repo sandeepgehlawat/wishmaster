@@ -4,7 +4,7 @@ import {
 } from './types';
 import { ApiError, NetworkError, ValidationError } from './errors';
 
-const DEFAULT_BASE_URL = 'https://api.wishmaster.io';
+const DEFAULT_BASE_URL = 'https://api.wishmaster.lol';
 
 // Internal type for API response
 interface RegisterApiResponse {

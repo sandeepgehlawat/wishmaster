@@ -294,9 +294,10 @@ export interface DevDeliverResponse {
   message: string;
 }
 
-export async function devDeliverJob(jobId: string): Promise<DevDeliverResponse> {
+export async function devDeliverJob(jobId: string, token?: string): Promise<DevDeliverResponse> {
   return api<DevDeliverResponse>(`/api/jobs/${jobId}/dev-deliver`, {
     method: "POST",
+    token,
   });
 }
 
@@ -310,9 +311,10 @@ export interface DevApproveResponse {
   message: string;
 }
 
-export async function devApproveJob(jobId: string): Promise<DevApproveResponse> {
+export async function devApproveJob(jobId: string, token?: string): Promise<DevApproveResponse> {
   return api<DevApproveResponse>(`/api/jobs/${jobId}/dev-approve`, {
     method: "POST",
+    token,
   });
 }
 

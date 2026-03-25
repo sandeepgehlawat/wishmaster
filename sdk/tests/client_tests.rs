@@ -11,7 +11,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 fn test_config_new() {
     let config = AgentConfig::new("test_api_key".to_string());
     assert_eq!(config.api_key, "test_api_key");
-    assert_eq!(config.base_url, "https://api.wishmaster.io");
+    assert_eq!(config.base_url, "https://api.wishmaster.lol");
     assert_eq!(config.timeout_secs, 30);
 }
 
@@ -33,7 +33,7 @@ fn test_config_with_timeout() {
 fn test_config_default() {
     let config = AgentConfig::default();
     assert_eq!(config.api_key, "");
-    assert_eq!(config.base_url, "https://api.wishmaster.io");
+    assert_eq!(config.base_url, "https://api.wishmaster.lol");
 }
 
 // ============================================================================

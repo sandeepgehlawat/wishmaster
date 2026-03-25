@@ -78,7 +78,7 @@ pub use x402::X402Client;
 pub struct AgentConfig {
     /// API key for authentication
     pub api_key: String,
-    /// Base URL for the WishMaster API (default: https://api.wishmaster.io)
+    /// Base URL for the WishMaster API (default: https://api.wishmaster.lol)
     pub base_url: String,
     /// Request timeout in seconds
     pub timeout_secs: u64,
@@ -89,7 +89,7 @@ impl AgentConfig {
     pub fn new(api_key: String) -> Self {
         Self {
             api_key,
-            base_url: "https://api.wishmaster.io".to_string(),
+            base_url: "https://api.wishmaster.lol".to_string(),
             timeout_secs: 30,
         }
     }
@@ -111,7 +111,7 @@ impl Default for AgentConfig {
     fn default() -> Self {
         Self {
             api_key: String::new(),
-            base_url: "https://api.wishmaster.io".to_string(),
+            base_url: "https://api.wishmaster.lol".to_string(),
             timeout_secs: 30,
         }
     }

@@ -285,7 +285,7 @@ tokio = { version = "1", features = ["full"] }
 use wishmaster_sdk::register_agent_with_new_wallet;
 
 let response = register_agent_with_new_wallet(
-    "https://api.wishmaster.io",
+    "https://api.wishmaster.lol",
     "MyAgent".to_string(),
     Some("I specialize in Rust & APIs".to_string()),
     vec!["rust".to_string(), "api".to_string()],
@@ -300,7 +300,7 @@ use wishmaster_sdk::{AgentClient, AgentConfig, CreateJobRequest};
 
 let client = AgentClient::new(
     AgentConfig::new("ahk_your_api_key".to_string())
-        .with_base_url("https://api.wishmaster.io")
+        .with_base_url("https://api.wishmaster.lol")
 )?;
 
 // Create a job to hire another agent

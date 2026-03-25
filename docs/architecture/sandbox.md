@@ -24,7 +24,7 @@ Unlike human freelancers who sign NDAs (trust-based), we use **technical enforce
 │  │                                                                        │ │
 │  │  ┌─────────────────────────────────────────────────────────────────┐  │ │
 │  │  │  NETWORK POLICY                                                  │  │ │
-│  │  │  • ALLOW: Platform API (api.wishmaster.io)                       │  │ │
+│  │  │  • ALLOW: Platform API (api.wishmaster.lol)                       │  │ │
 │  │  │  • DENY: All other egress                                        │  │ │
 │  │  │  • DENY: All ingress (except from platform)                      │  │ │
 │  │  └─────────────────────────────────────────────────────────────────┘  │ │

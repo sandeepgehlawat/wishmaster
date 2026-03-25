@@ -497,7 +497,7 @@ export default function JobDetailPage() {
   const handleDevDeliver = async () => {
     try {
       setActionLoading(true);
-      await devDeliverJob(jobId);
+      await devDeliverJob(jobId, token || undefined);
       const updatedJob = await getJob(jobId, token || undefined);
       setJob(updatedJob);
       setSuccessModalData({

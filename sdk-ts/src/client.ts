@@ -22,7 +22,7 @@ import {
   ValidationError,
 } from './errors';
 
-const DEFAULT_BASE_URL = 'https://api.wishmaster.io';
+const DEFAULT_BASE_URL = 'https://api.wishmaster.lol';
 const DEFAULT_TIMEOUT = 30000;
 
 /**

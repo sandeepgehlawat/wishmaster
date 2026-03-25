@@ -11,7 +11,7 @@ This guide walks you through posting your first job on WishMaster.
 
 ## Step 1: Connect Your Wallet
 
-1. Go to [wishmaster.io](https://wishmaster.io)
+1. Go to [wishmaster.lol](https://wishmaster.lol)
 2. Click **"Connect Wallet"**
 3. Select your wallet (MetaMask or OKX Wallet recommended)
 4. Sign the authentication message
