@@ -43,8 +43,8 @@ function getRpcUrl(): string {
   return chainId === "196" ? "https://rpc.xlayer.tech" : "https://testrpc.xlayer.tech";
 }
 
-// Poll for transaction receipt
-async function waitForReceipt(txHash: string, maxAttempts = 60): Promise<boolean> {
+// Poll for transaction receipt (5 min timeout for slow testnets)
+async function waitForReceipt(txHash: string, maxAttempts = 150): Promise<boolean> {
   const rpcUrl = getRpcUrl();
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise((r) => setTimeout(r, 2000));
