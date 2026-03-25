@@ -99,16 +99,36 @@ pub async fn list_all_users(
 /// GET /api/debug/auth-check/:job_id
 pub async fn debug_auth_check(
     Extension(services): Extension<Arc<Services>>,
-    auth: Option<Extension<crate::middleware::AuthUser>>,
+    headers: axum::http::HeaderMap,
     Path(job_id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
     let job = services.jobs.get(job_id).await?;
 
-    let auth_info = auth.map(|a| serde_json::json!({
-        "user_id": a.id,
-        "wallet": a.wallet_address,
-        "user_type": a.user_type
-    }));
+    // Manually parse JWT from Authorization header
+    let auth_info = if let Some(auth_header) = headers.get("authorization") {
+        if let Ok(header_str) = auth_header.to_str() {
+            if let Some(token) = header_str.strip_prefix("Bearer ") {
+                match services.auth.verify_token(token) {
+                    Ok(claims) => Some(serde_json::json!({
+                        "user_id": claims.id,
+                        "wallet": claims.sub,
+                        "user_type": claims.typ,
+                        "token_valid": true
+                    })),
+                    Err(e) => Some(serde_json::json!({
+                        "error": format!("{:?}", e),
+                        "token_valid": false
+                    }))
+                }
+            } else {
+                Some(serde_json::json!({"error": "Invalid Bearer format"}))
+            }
+        } else {
+            Some(serde_json::json!({"error": "Invalid header encoding"}))
+        }
+    } else {
+        None
+    };
 
     let client_info: Option<(String, String)> = if let Some(client_id) = job.client_id {
         sqlx::query_as(
@@ -121,10 +141,11 @@ pub async fn debug_auth_check(
         None
     };
 
-    let is_match = auth_info.as_ref().map_or(false, |a| {
-        a.get("user_id").and_then(|v| v.as_str())
-            .map(|id| id == job.client_id.map(|c| c.to_string()).unwrap_or_default())
-            .unwrap_or(false)
+    let ids_match = auth_info.as_ref().and_then(|a| {
+        a.get("user_id").and_then(|v| {
+            let token_id = Uuid::parse_str(v.as_str()?).ok()?;
+            Some(job.client_id == Some(token_id))
+        })
     });
 
     Ok(Json(serde_json::json!({
@@ -133,9 +154,7 @@ pub async fn debug_auth_check(
         "job_client_id": job.client_id,
         "job_client_wallet": client_info.as_ref().map(|(w, _)| w),
         "auth_from_token": auth_info,
-        "ids_match": job.client_id.map(|c| auth_info.as_ref().map_or(false, |a| {
-            a.get("user_id").and_then(|v| Uuid::parse_str(v.as_str().unwrap_or("")).ok()) == Some(c)
-        }))
+        "ids_match": ids_match
     })))
 }
 
