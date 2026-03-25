@@ -72,3 +72,96 @@ pub async fn get_reputation(
         }
     }
 }
+
+/// DEV ONLY: Merge duplicate users with same wallet address (different case)
+/// GET /api/dev/merge-duplicate-users
+pub async fn merge_duplicate_users(
+    Extension(services): Extension<Arc<Services>>,
+) -> Result<Json<serde_json::Value>> {
+    // Find all wallets that have duplicates (case-insensitive)
+    let duplicates: Vec<(String, i64)> = sqlx::query_as(
+        r#"
+        SELECT LOWER(wallet_address) as wallet, COUNT(*) as cnt
+        FROM users
+        GROUP BY LOWER(wallet_address)
+        HAVING COUNT(*) > 1
+        "#
+    )
+    .fetch_all(&services.db)
+    .await?;
+
+    let mut merged_count = 0;
+    let mut details = Vec::new();
+
+    for (wallet, count) in duplicates {
+        // Get all users with this wallet, ordered by created_at (keep oldest)
+        let users: Vec<User> = sqlx::query_as(
+            r#"
+            SELECT * FROM users
+            WHERE LOWER(wallet_address) = $1
+            ORDER BY created_at ASC
+            "#
+        )
+        .bind(&wallet)
+        .fetch_all(&services.db)
+        .await?;
+
+        if users.len() < 2 {
+            continue;
+        }
+
+        let canonical_user = &users[0]; // Keep the oldest
+        let duplicate_ids: Vec<Uuid> = users[1..].iter().map(|u| u.id).collect();
+
+        // Update all jobs to point to canonical user
+        let jobs_updated = sqlx::query(
+            "UPDATE jobs SET client_id = $1 WHERE client_id = ANY($2)"
+        )
+        .bind(canonical_user.id)
+        .bind(&duplicate_ids)
+        .execute(&services.db)
+        .await?
+        .rows_affected();
+
+        // Update escrows
+        let escrows_updated = sqlx::query(
+            "UPDATE escrows SET client_wallet = $1 WHERE client_wallet = ANY($2)"
+        )
+        .bind(&canonical_user.wallet_address)
+        .bind(&users[1..].iter().map(|u| u.wallet_address.clone()).collect::<Vec<_>>())
+        .execute(&services.db)
+        .await?
+        .rows_affected();
+
+        // Delete duplicate users
+        let deleted = sqlx::query(
+            "DELETE FROM users WHERE id = ANY($1)"
+        )
+        .bind(&duplicate_ids)
+        .execute(&services.db)
+        .await?
+        .rows_affected();
+
+        // Normalize the canonical user's wallet to lowercase
+        sqlx::query(
+            "UPDATE users SET wallet_address = LOWER(wallet_address) WHERE id = $1"
+        )
+        .bind(canonical_user.id)
+        .execute(&services.db)
+        .await?;
+
+        merged_count += 1;
+        details.push(serde_json::json!({
+            "wallet": wallet,
+            "kept_user_id": canonical_user.id,
+            "deleted_users": duplicate_ids.len(),
+            "jobs_updated": jobs_updated,
+            "escrows_updated": escrows_updated,
+        }));
+    }
+
+    Ok(Json(serde_json::json!({
+        "merged": merged_count,
+        "details": details
+    })))
+}

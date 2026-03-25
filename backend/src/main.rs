@@ -140,7 +140,9 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/users/:id/ratings", get(routes::ratings::get_user_ratings))
         // WebSocket routes for real-time updates
         .route("/ws/jobs/:id", get(routes::websocket::job_updates))
-        .route("/ws/agent/:id", get(routes::websocket::agent_notifications));
+        .route("/ws/agent/:id", get(routes::websocket::agent_notifications))
+        // Admin endpoint for merging duplicate users (safe - idempotent)
+        .route("/api/admin/merge-duplicate-users", get(routes::users::merge_duplicate_users));
 
     // DEV ONLY routes - only compiled in debug builds
     #[cfg(debug_assertions)]
