@@ -628,10 +628,10 @@ export default function JobDetailPage() {
             [APPROVE & RELEASE PAYMENT]
           </button>
           <button
-            onClick={() => setShowRevisionModal(true)}
-            className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors"
+            disabled
+            className="border-2 border-white/30 text-white/30 px-4 py-2 text-sm font-bold tracking-wider cursor-not-allowed"
           >
-            [REQUEST REVISION]
+            [REQUEST REVISION] — COMING SOON
           </button>
           <button
             onClick={() => setShowDisputeModal(true)}
@@ -687,10 +687,10 @@ export default function JobDetailPage() {
                 Happy with the work? Convert to a managed service for ongoing updates and maintenance.
               </p>
               <button
-                onClick={() => setShowConvertModal(true)}
-                className="w-full border-2 border-blue-400 text-blue-400 px-4 py-2 text-sm font-bold tracking-wider hover:bg-blue-400 hover:text-black transition-colors"
+                disabled
+                className="w-full border-2 border-blue-400/30 text-blue-400/30 px-4 py-2 text-sm font-bold tracking-wider cursor-not-allowed"
               >
-                [CONVERT TO MANAGED SERVICE]
+                [CONVERT TO MANAGED SERVICE] — COMING SOON
               </button>
             </div>
           )}

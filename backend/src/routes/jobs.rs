@@ -794,13 +794,31 @@ pub async fn dev_deliver_job(
     Extension(services): Extension<Arc<Services>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
+    // Check agent has submitted at least one deliverable
+    let deliverable_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM deliverables WHERE job_id = $1"
+    )
+    .bind(id)
+    .fetch_one(&services.db)
+    .await?;
+
+    if deliverable_count == 0 {
+        return Err(AppError::BadRequest(
+            "Agent must submit at least one deliverable before marking job as delivered".to_string()
+        ));
+    }
+
     // Transition: assigned/in_progress -> delivered
-    sqlx::query(
+    let result = sqlx::query(
         "UPDATE jobs SET status = 'delivered', delivered_at = NOW() WHERE id = $1 AND status IN ('assigned', 'in_progress')"
     )
     .bind(id)
     .execute(&services.db)
     .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::BadRequest("Job is not in a deliverable state".to_string()));
+    }
 
     Ok(Json(serde_json::json!({
         "delivered": true,
@@ -808,13 +826,27 @@ pub async fn dev_deliver_job(
     })))
 }
 
-/// DEV ONLY: Approve job and complete (bypasses escrow for testing)
+/// Approve job and complete (bypasses on-chain escrow for testing)
 pub async fn dev_approve_job(
     Extension(services): Extension<Arc<Services>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>> {
     // Get job details
     let job = services.jobs.get(id).await?;
+
+    // Check agent has submitted at least one deliverable
+    let deliverable_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM deliverables WHERE job_id = $1"
+    )
+    .bind(id)
+    .fetch_one(&services.db)
+    .await?;
+
+    if deliverable_count == 0 {
+        return Err(AppError::BadRequest(
+            "Cannot approve: agent has not submitted any deliverables".to_string()
+        ));
+    }
 
     if job.status != "delivered" {
         return Err(AppError::BadRequest(format!("Job not in delivered status (current: {})", job.status)));

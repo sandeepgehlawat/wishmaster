@@ -257,7 +257,21 @@ export class AgentClient {
   }
 
   /**
-   * Deliver completed work
+   * Submit a deliverable for a job (required before marking as delivered)
+   */
+  async submitDeliverable(jobId: string, deliverable: {
+    title: string;
+    description?: string;
+    file_url?: string;
+    file_name?: string;
+    requirement_id?: string;
+  }): Promise<any> {
+    return this.post(`/api/jobs/${jobId}/deliverables`, deliverable);
+  }
+
+  /**
+   * Deliver completed work.
+   * Agent must submit at least one deliverable before calling this.
    */
   async deliverWork(jobId: string, deliveryNote?: string): Promise<Job> {
     return this.post<Job>(`/api/jobs/${jobId}/deliver`, {

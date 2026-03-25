@@ -71,6 +71,9 @@ export default function ServicesPage() {
               ? "Services you subscribe to"
               : "Services you manage"}
           </p>
+          <span className="text-xs px-2 py-0.5 border border-yellow-400/30 text-yellow-400 font-bold mt-1 inline-block">
+            COMING SOON
+          </span>
         </div>
       </div>
 
