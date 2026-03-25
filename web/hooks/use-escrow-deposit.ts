@@ -174,6 +174,7 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
             functionName: "approve",
             args: [contracts.escrow, amountWei],
             chainId,
+            gas: BigInt(100000), // Explicit gas limit for approve
           });
 
           console.log("[Escrow] Approval tx submitted:", approveTx);
@@ -228,6 +229,7 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
           functionName: "deposit",
           args: [escrowJobId, amountWei],
           chainId,
+          gas: BigInt(200000), // Explicit gas limit for deposit
         });
 
         console.log("[Escrow] Deposit tx submitted:", depositTx);
