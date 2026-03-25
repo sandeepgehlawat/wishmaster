@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient, useChainId } from "wagmi";
 import { keccak256, toBytes, encodeAbiParameters, parseAbiParameters } from "viem";
 import { ESCROW_ABI } from "@/lib/contracts/abis";
 import { getContractAddresses, toUsdcWei } from "@/lib/contracts/config";
@@ -37,6 +37,8 @@ function uuidToBytes32(uuid: string): `0x${string}` {
 
 export function useEscrowLock(): UseEscrowLockResult {
   const { address } = useAccount();
+  const chainId = useChainId();
+  const publicClient = usePublicClient();
   const contracts = getContractAddresses();
 
   const [state, setState] = useState<EscrowLockState>("idle");
@@ -85,6 +87,7 @@ export function useEscrowLock(): UseEscrowLockResult {
           abi: ESCROW_ABI,
           functionName: "lockToAgent",
           args: [jobIdBytes32, agentWallet as `0x${string}`, bidAmountWei],
+          chainId,
         });
 
         setLockTxHash(hash);

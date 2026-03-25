@@ -61,10 +61,8 @@ const chains = [activeChainConfig] as const;
 export const config = createConfig({
   chains,
   connectors: [
+    injected({ target: 'metaMask' }),
     injected(),
-    // WalletConnect disabled - triggers scary permission prompts with demo projectId
-    // To enable: get a projectId from https://cloud.walletconnect.com/
-    // walletConnect({ projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }),
   ],
   transports: {
     [xlayer.id]: http(),

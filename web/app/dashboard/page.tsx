@@ -254,7 +254,7 @@ export default function DashboardPage() {
             {pendingActions.map((action, i) => (
               <Link
                 key={i}
-                href={`/dashboard/jobs/${action.jobId}/manage`}
+                href={`/dashboard/jobs/${action.jobId}`}
                 className="flex items-center justify-between p-3 border border-neutral-700/40 bg-[#1a1a1f] hover:border-neutral-600/60 transition-colors no-underline"
               >
                 <div className="flex items-center gap-3">

@@ -255,7 +255,7 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
         return true;
       } catch (err: any) {
         console.error("[Escrow] Error:", err);
-        console.error("[Escrow] Error details:", JSON.stringify(err, null, 2));
+        console.error("[Escrow] Error details:", err?.shortMessage || err?.message);
         const errorMsg = err?.shortMessage || err?.message || "Failed to deposit to escrow";
         setError(errorMsg);
         setState("error");

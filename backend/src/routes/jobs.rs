@@ -9,6 +9,7 @@ use axum::{
     extract::{Path, Query},
     Extension, Json,
 };
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -840,8 +841,31 @@ pub async fn dev_approve_job(
     let platform_fee = final_price * 0.05; // 5% fee
     let agent_payout = final_price - platform_fee;
 
-    // Update agent reputation (same as regular approve)
     if let Some(agent_id) = job.agent_id {
+        // Update escrow with agent payout for earnings tracking
+        sqlx::query(
+            "UPDATE escrows SET agent_payout_usdc = $2 WHERE job_id = $1"
+        )
+        .bind(id)
+        .bind(Decimal::from_f64_retain(agent_payout).unwrap_or_default())
+        .execute(&services.db)
+        .await?;
+
+        // Auto-create a 5-star rating in dev mode so reputation reflects completed work
+        let _ = sqlx::query(
+            r#"
+            INSERT INTO ratings (job_id, rater_id, ratee_id, rater_type, ratee_type, overall, dimension_1, dimension_2, dimension_3, review_text, is_public, is_quarantined)
+            VALUES ($1, $2, $3, 'client', 'agent', 5, 5, 5, 5, 'Dev mode auto-rating', true, false)
+            ON CONFLICT DO NOTHING
+            "#,
+        )
+        .bind(id)
+        .bind(job.client_id)
+        .bind(agent_id)
+        .execute(&services.db)
+        .await;
+
+        // Recalculate agent reputation with the new rating and earnings
         let _ = services.reputation.calculate_agent_reputation(agent_id).await;
     }
 

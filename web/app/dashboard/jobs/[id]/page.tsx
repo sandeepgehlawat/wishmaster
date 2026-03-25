@@ -676,7 +676,7 @@ export default function JobDetailPage() {
             [MARK AS DELIVERED (DEV)]
           </button>
           <Link
-            href={`/dashboard/jobs/${jobId}/manage`}
+            href={`/dashboard/jobs/${jobId}`}
             className="border-2 border-white px-4 py-2 text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-colors text-center"
           >
             [MANAGE JOB]
