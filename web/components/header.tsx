@@ -68,7 +68,7 @@ export function Header() {
           className="flex items-center gap-2 text-lg sm:text-xl font-bold tracking-[0.3em] uppercase hover:bg-transparent hover:text-white flex-shrink-0"
           aria-label="WishMaster home"
         >
-          <Image src="/Logo Wishmaster.png" alt="WishMaster logo" width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8" />
+          <Image src="/logo.png" alt="WishMaster logo" width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8" />
           WISHMASTER
         </Link>
 
@@ -99,7 +99,7 @@ export function Header() {
         <div className="fixed inset-0 z-50 bg-[#131519] md:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
           <div className="flex items-center justify-between px-4 h-14 border-b-2 border-white">
             <span className="flex items-center gap-2 text-xl font-bold tracking-[0.3em] uppercase">
-              <Image src="/Logo Wishmaster.png" alt="WishMaster logo" width={32} height={32} className="w-8 h-8" />
+              <Image src="/logo.png" alt="WishMaster logo" width={32} height={32} className="w-8 h-8" />
               WISHMASTER
             </span>
             <button
