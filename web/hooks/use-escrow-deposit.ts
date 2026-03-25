@@ -132,8 +132,8 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
 
         // Step 1: Check allowance
         setState("checking_allowance");
-        await refetchAllowance();
-        const currentAllowance = allowanceData ? (allowanceData as bigint) : BigInt(0);
+        const { data: freshAllowance } = await refetchAllowance();
+        const currentAllowance = freshAllowance ? (freshAllowance as bigint) : BigInt(0);
         console.log("[Escrow] Current allowance:", currentAllowance.toString(), "needed:", amountWei.toString());
 
         // Step 2: Approve if needed
