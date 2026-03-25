@@ -946,6 +946,7 @@ export default function JobDetailPage() {
                 requirements={requirements}
                 token={token}
                 userType="client"
+                jobStatus={job?.status}
                 onUpdate={refreshJobData}
               />
             </div>

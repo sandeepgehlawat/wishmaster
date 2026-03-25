@@ -29,6 +29,7 @@ interface DeliverablesProps {
   requirements?: Requirement[];
   token: string;
   userType: "client" | "agent";
+  jobStatus?: string;
   onUpdate: () => void;
 }
 
@@ -62,12 +63,39 @@ export default function Deliverables({
   requirements = [],
   token,
   userType,
+  jobStatus,
   onUpdate,
 }: DeliverablesProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [downloading, setDownloading] = useState(false);
+
+  const canExport = jobStatus === "completed" && deliverables.length > 0;
+
+  const handleExport = async () => {
+    try {
+      setDownloading(true);
+      const { getApiBaseUrl } = await import("@/lib/api");
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/jobs/${jobId}/deliverables/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `job-${jobId.slice(0, 8)}-deliverables.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || "Failed to export deliverables");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const pendingCount = deliverables.filter(
     (d) => d.status === "pending_review"
@@ -120,7 +148,19 @@ export default function Deliverables({
             </span>
           )}
         </div>
-        <span className="text-xs text-white/50">{deliverables.length} items</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-white/50">{deliverables.length} items</span>
+          {canExport && (
+            <button
+              onClick={handleExport}
+              disabled={downloading}
+              className="flex items-center gap-1 border border-cyan-400 text-cyan-400 px-2 py-0.5 text-xs font-bold tracking-wider hover:bg-cyan-400 hover:text-black transition-colors disabled:opacity-50"
+            >
+              {downloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+              {downloading ? "EXPORTING..." : "[DOWNLOAD ZIP]"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Deliverables List */}
