@@ -115,7 +115,7 @@ fn build_router(services: Arc<Services>) -> Router {
         services.config.rate_limit_burst
     );
 
-    // Public routes (no auth required)
+    // Public routes (no auth required, but optional auth for enhanced access)
     let public_routes = Router::new()
         .route("/health", get(routes::health::health_check))
         .route("/health/ready", get(routes::metrics::readiness))
@@ -145,7 +145,14 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/admin/merge-duplicate-users", get(routes::users::merge_duplicate_users))
         .route("/api/admin/users", get(routes::users::list_all_users))
         .route("/api/admin/job/:id", get(routes::users::admin_get_job))
-        .route("/api/debug/auth-check/:job_id", get(routes::users::debug_auth_check));
+        .route("/api/debug/auth-check/:job_id", get(routes::users::debug_auth_check))
+        // Optional auth layer - extracts auth if token present (for routes like get_job that use Option<Extension<AuthUser>>)
+        .layer(axum_mw::from_fn_with_state(
+            services.clone(),
+            |axum::extract::State(services): axum::extract::State<Arc<Services>>, req, next| async move {
+                crate::middleware::auth::optional_auth_middleware(Extension(services), req, next).await
+            }
+        ));
 
     // DEV ONLY routes - only compiled in debug builds
     #[cfg(debug_assertions)]

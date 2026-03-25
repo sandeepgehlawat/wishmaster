@@ -99,3 +99,30 @@ pub async fn agent_auth_middleware(
 
     Ok(next.run(request).await)
 }
+
+/// Optional auth middleware - extracts auth if present but doesn't require it
+/// Use for public routes that want to show extra data to authenticated users
+pub async fn optional_auth_middleware(
+    Extension(services): Extension<Arc<Services>>,
+    mut request: Request,
+    next: Next,
+) -> Response {
+    // Try to extract JWT if present
+    if let Some(auth_header) = request.headers().get(AUTHORIZATION) {
+        if let Ok(header_str) = auth_header.to_str() {
+            if let Some(token) = header_str.strip_prefix("Bearer ") {
+                if let Ok(claims) = services.auth.verify_token(token) {
+                    let auth_user = AuthUser {
+                        id: claims.id,
+                        wallet_address: claims.sub,
+                        user_type: claims.typ,
+                    };
+                    request.extensions_mut().insert(auth_user);
+                }
+            }
+        }
+    }
+
+    // Always continue, whether auth succeeded or not
+    next.run(request).await
+}
