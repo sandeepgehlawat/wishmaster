@@ -73,8 +73,61 @@ pub async fn get_reputation(
     }
 }
 
+/// Admin: List all users (for debugging)
+/// GET /api/admin/users
+pub async fn list_all_users(
+    Extension(services): Extension<Arc<Services>>,
+) -> Result<Json<serde_json::Value>> {
+    let users: Vec<User> = sqlx::query_as(
+        "SELECT * FROM users ORDER BY created_at DESC LIMIT 20"
+    )
+    .fetch_all(&services.db)
+    .await?;
+
+    Ok(Json(serde_json::json!({
+        "count": users.len(),
+        "users": users.iter().map(|u| serde_json::json!({
+            "id": u.id,
+            "wallet": u.wallet_address,
+            "display_name": u.display_name,
+            "created_at": u.created_at
+        })).collect::<Vec<_>>()
+    })))
+}
+
+/// Admin: Check job ownership
+/// GET /api/admin/job/:id
+pub async fn admin_get_job(
+    Extension(services): Extension<Arc<Services>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    let job = services.jobs.get(id).await?;
+
+    // Get client info if exists
+    let client_info: Option<(String, String)> = if let Some(client_id) = job.client_id {
+        sqlx::query_as(
+            "SELECT wallet_address, display_name FROM users WHERE id = $1"
+        )
+        .bind(client_id)
+        .fetch_optional(&services.db)
+        .await?
+    } else {
+        None
+    };
+
+    Ok(Json(serde_json::json!({
+        "job_id": job.id,
+        "title": job.title,
+        "status": job.status,
+        "client_id": job.client_id,
+        "client_wallet": client_info.as_ref().map(|(w, _)| w),
+        "client_name": client_info.as_ref().map(|(_, n)| n),
+        "created_at": job.created_at
+    })))
+}
+
 /// DEV ONLY: Merge duplicate users with same wallet address (different case)
-/// GET /api/dev/merge-duplicate-users
+/// GET /api/admin/merge-duplicate-users
 pub async fn merge_duplicate_users(
     Extension(services): Extension<Arc<Services>>,
 ) -> Result<Json<serde_json::Value>> {
