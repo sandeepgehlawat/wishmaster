@@ -159,8 +159,30 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
           setApproveTxHash(approveTx);
           setState("waiting_approve");
 
-          // Wait for approve confirmation using wagmi's publicClient
+          // Verify TX was actually broadcast by checking it exists
           if (!publicClient) throw new Error("No public client available");
+
+          // Quick check if TX exists in mempool/chain
+          let txExists = false;
+          for (let i = 0; i < 5; i++) {
+            try {
+              const tx = await publicClient.getTransaction({ hash: approveTx });
+              if (tx) {
+                txExists = true;
+                console.log("[Escrow] TX found in mempool/chain:", tx.hash);
+                break;
+              }
+            } catch (e) {
+              // TX not found yet, wait and retry
+            }
+            await new Promise(r => setTimeout(r, 2000));
+          }
+
+          if (!txExists) {
+            console.error("[Escrow] TX not found on chain after 10s - wallet may have failed to broadcast");
+            throw new Error("Transaction not broadcast. Please check your wallet's network RPC settings.");
+          }
+
           const approveReceipt = await publicClient.waitForTransactionReceipt({
             hash: approveTx,
             timeout: 300_000, // 5 minutes
