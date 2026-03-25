@@ -106,6 +106,27 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
       const expectedChainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "1952");
       console.log("[Escrow] Wallet chain:", chain?.id, "Expected:", expectedChainId);
 
+      // Force add/switch network with correct RPC
+      try {
+        const isTestnet = expectedChainId === 1952;
+        await (window as any).ethereum?.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: `0x${expectedChainId.toString(16)}`,
+            chainName: isTestnet ? 'X Layer Testnet' : 'X Layer',
+            nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
+            rpcUrls: [isTestnet ? 'https://testrpc.xlayer.tech' : 'https://rpc.xlayer.tech'],
+            blockExplorerUrls: [isTestnet ? 'https://www.oklink.com/xlayer-test' : 'https://www.oklink.com/xlayer'],
+          }],
+        });
+        console.log("[Escrow] Network config sent to wallet");
+      } catch (addError: any) {
+        // 4001 = user rejected, which is fine if already on correct network
+        if (addError.code !== 4001) {
+          console.log("[Escrow] wallet_addEthereumChain result:", addError.message);
+        }
+      }
+
       if (chain?.id !== expectedChainId) {
         console.log("[Escrow] Switching to chain", expectedChainId);
         try {
