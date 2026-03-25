@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId, usePublicClient } from "wagmi";
-import { keccak256, toHex, pad } from "viem";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId, usePublicClient, useBalance } from "wagmi";
+import { keccak256, toHex, pad, formatEther } from "viem";
 import { ERC20_ABI, ESCROW_ABI } from "@/lib/contracts/abis";
 import { getContractAddresses, toUsdcWei, fromUsdcWei, USDC_DECIMALS } from "@/lib/contracts/config";
 import { confirmEscrowFunding } from "@/lib/api";
@@ -48,6 +48,9 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
   const [error, setError] = useState<string | null>(null);
   const [approveTxHash, setApproveTxHash] = useState<`0x${string}` | null>(null);
   const [depositTxHash, setDepositTxHash] = useState<`0x${string}` | null>(null);
+
+  // Read native balance (OKB for gas)
+  const { data: nativeBalance } = useBalance({ address });
 
   // Read USDC balance
   const { data: balanceData } = useReadContract({
@@ -98,11 +101,28 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
         return false;
       }
 
+      // Check for gas (native token)
+      const gasBalance = nativeBalance?.value ?? BigInt(0);
+      console.log("[Escrow] Native balance (OKB):", formatEther(gasBalance));
+      if (gasBalance < BigInt(1e15)) { // Less than 0.001 OKB
+        setError("Insufficient OKB for gas. Please get testnet OKB from the faucet.");
+        setState("error");
+        return false;
+      }
+
+      // Check network
+      const expectedChainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "1952");
+      if (chainId !== expectedChainId) {
+        setError(`Wrong network. Please switch to X Layer ${expectedChainId === 196 ? 'Mainnet' : 'Testnet'} (Chain ID: ${expectedChainId})`);
+        setState("error");
+        return false;
+      }
+
       const amountWei = toUsdcWei(amountUsdc);
 
       try {
         setError(null);
-        console.log("[Escrow] Starting deposit flow", { chainId, usdc: contracts.usdc, escrow: contracts.escrow });
+        console.log("[Escrow] Starting deposit flow", { chainId, usdc: contracts.usdc, escrow: contracts.escrow, gasBalance: formatEther(gasBalance) });
 
         // Step 1: Check allowance
         setState("checking_allowance");
