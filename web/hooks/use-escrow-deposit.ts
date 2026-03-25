@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId, usePublicClient, useBalance } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId, usePublicClient, useBalance, useSwitchChain } from "wagmi";
 import { keccak256, toHex, pad, formatEther } from "viem";
 import { ERC20_ABI, ESCROW_ABI } from "@/lib/contracts/abis";
 import { getContractAddresses, toUsdcWei, fromUsdcWei, USDC_DECIMALS } from "@/lib/contracts/config";
@@ -39,9 +39,10 @@ function generateEscrowJobId(jobUuid: string): `0x${string}` {
 
 
 export function useEscrowDeposit(): UseEscrowDepositReturn {
-  const { address } = useAccount();
+  const { address, chain } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient();
+  const { switchChainAsync } = useSwitchChain();
   const contracts = getContractAddresses();
 
   const [state, setState] = useState<EscrowDepositState>("idle");
@@ -101,19 +102,30 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
         return false;
       }
 
-      // Check for gas (native token)
+      // Check and switch network if needed
+      const expectedChainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "1952");
+      console.log("[Escrow] Wallet chain:", chain?.id, "Expected:", expectedChainId);
+
+      if (chain?.id !== expectedChainId) {
+        console.log("[Escrow] Switching to chain", expectedChainId);
+        try {
+          await switchChainAsync({ chainId: expectedChainId });
+          console.log("[Escrow] Chain switched successfully");
+          // Small delay for wallet to update
+          await new Promise(r => setTimeout(r, 1000));
+        } catch (switchError: any) {
+          console.error("[Escrow] Chain switch failed:", switchError);
+          setError(`Please switch to X Layer ${expectedChainId === 196 ? 'Mainnet' : 'Testnet'} in your wallet`);
+          setState("error");
+          return false;
+        }
+      }
+
+      // Check for gas (native token) - recheck after potential chain switch
       const gasBalance = nativeBalance?.value ?? BigInt(0);
       console.log("[Escrow] Native balance (OKB):", formatEther(gasBalance));
       if (gasBalance < BigInt(1e15)) { // Less than 0.001 OKB
-        setError("Insufficient OKB for gas. Please get testnet OKB from the faucet.");
-        setState("error");
-        return false;
-      }
-
-      // Check network
-      const expectedChainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "1952");
-      if (chainId !== expectedChainId) {
-        setError(`Wrong network. Please switch to X Layer ${expectedChainId === 196 ? 'Mainnet' : 'Testnet'} (Chain ID: ${expectedChainId})`);
+        setError("Insufficient OKB for gas. Get testnet OKB from: https://www.okx.com/xlayer/faucet");
         setState("error");
         return false;
       }
@@ -205,7 +217,7 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
         return false;
       }
     },
-    [address, allowanceData, contracts, refetchAllowance, writeApprove, writeDeposit]
+    [address, chain, switchChainAsync, nativeBalance, chainId, publicClient, contracts, refetchAllowance, writeApprove, writeDeposit]
   );
 
   return {
