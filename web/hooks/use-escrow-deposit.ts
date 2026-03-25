@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId, usePublicClient } from "wagmi";
 import { keccak256, toHex, pad } from "viem";
 import { ERC20_ABI, ESCROW_ABI } from "@/lib/contracts/abis";
 import { getContractAddresses, toUsdcWei, fromUsdcWei, USDC_DECIMALS } from "@/lib/contracts/config";
@@ -37,37 +37,11 @@ function generateEscrowJobId(jobUuid: string): `0x${string}` {
   return keccak256(toHex(cleanUuid));
 }
 
-// Get RPC URL for current chain
-function getRpcUrl(): string {
-  const chainId = process.env.NEXT_PUBLIC_CHAIN_ID;
-  return chainId === "196" ? "https://rpc.xlayer.tech" : "https://testrpc.xlayer.tech";
-}
-
-// Poll for transaction receipt (5 min timeout for slow testnets)
-async function waitForReceipt(txHash: string, maxAttempts = 150): Promise<boolean> {
-  const rpcUrl = getRpcUrl();
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const response = await fetch(rpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "eth_getTransactionReceipt",
-        params: [txHash],
-      }),
-    });
-    const data = await response.json();
-    if (data.result?.status === "0x1") return true;
-    if (data.result?.status === "0x0") throw new Error("Transaction failed on-chain");
-  }
-  return false;
-}
 
 export function useEscrowDeposit(): UseEscrowDepositReturn {
   const { address } = useAccount();
   const chainId = useChainId();
+  const publicClient = usePublicClient();
   const contracts = getContractAddresses();
 
   const [state, setState] = useState<EscrowDepositState>("idle");
@@ -153,10 +127,15 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
           setApproveTxHash(approveTx);
           setState("waiting_approve");
 
-          // Wait for approve confirmation
-          const approveConfirmed = await waitForReceipt(approveTx);
-          if (!approveConfirmed) {
-            throw new Error("Approval transaction timed out");
+          // Wait for approve confirmation using wagmi's publicClient
+          if (!publicClient) throw new Error("No public client available");
+          const approveReceipt = await publicClient.waitForTransactionReceipt({
+            hash: approveTx,
+            timeout: 300_000, // 5 minutes
+          });
+          console.log("[Escrow] Approval confirmed:", approveReceipt.status);
+          if (approveReceipt.status !== "success") {
+            throw new Error("Approval transaction failed on-chain");
           }
 
           // Refresh allowance
@@ -180,10 +159,15 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
         setDepositTxHash(depositTx);
         setState("waiting_deposit");
 
-        // Wait for deposit confirmation
-        const depositConfirmed = await waitForReceipt(depositTx);
-        if (!depositConfirmed) {
-          throw new Error("Deposit transaction timed out");
+        // Wait for deposit confirmation using wagmi's publicClient
+        if (!publicClient) throw new Error("No public client available");
+        const depositReceipt = await publicClient.waitForTransactionReceipt({
+          hash: depositTx,
+          timeout: 300_000, // 5 minutes
+        });
+        console.log("[Escrow] Deposit confirmed:", depositReceipt.status);
+        if (depositReceipt.status !== "success") {
+          throw new Error("Deposit transaction failed on-chain");
         }
 
         // Step 4: Confirm with backend
