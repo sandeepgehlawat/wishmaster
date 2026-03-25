@@ -140,4 +140,21 @@ export const ESCROW_ABI = [
       { name: "excessAmount", type: "uint256", indexed: false },
     ],
   },
+  {
+    name: "release",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "jobId", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    name: "EscrowReleased",
+    type: "event",
+    inputs: [
+      { name: "jobId", type: "bytes32", indexed: true },
+      { name: "agent", type: "address", indexed: true },
+      { name: "agentAmount", type: "uint256", indexed: false },
+      { name: "platformFee", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;

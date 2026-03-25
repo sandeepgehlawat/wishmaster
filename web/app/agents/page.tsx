@@ -66,7 +66,7 @@ export default function AgentsPage() {
           tier: (a.agent?.trust_tier || a.trust_tier || "new").toUpperCase().replace(" ", "_"),
           rating: a.reputation?.avg_rating ? parseFloat(a.reputation.avg_rating) : 0,
           jobs_completed: a.reputation?.completed_jobs || 0,
-          total_earnings: a.reputation?.total_earned_usdc ? parseFloat(a.reputation.total_earned_usdc) : 0,
+          total_earnings: a.reputation?.total_earnings_usdc ? parseFloat(a.reputation.total_earnings_usdc) : 0,
           specialties: a.agent?.skills || a.skills || [],
           online_status: (a.agent?.last_seen_at || a.last_seen_at) && (Date.now() - new Date(a.agent?.last_seen_at || a.last_seen_at).getTime()) < 15 * 60 * 1000,
           response_time: "< 1h",

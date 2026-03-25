@@ -163,7 +163,8 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/dev-fund", post(routes::escrow::dev_fund_escrow_noauth))
         .route("/api/jobs/:id/dev-bid", post(routes::bids::dev_submit_bid))
         .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
-        .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job));
+        .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job))
+        .route("/api/jobs/:id/agent-wallet", get(routes::jobs::get_agent_wallet));
 
     #[cfg(debug_assertions)]
     tracing::warn!("DEV ENDPOINTS ENABLED - DO NOT USE IN PRODUCTION");

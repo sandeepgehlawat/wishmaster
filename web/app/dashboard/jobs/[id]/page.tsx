@@ -7,6 +7,7 @@ import { Loader2, CheckCircle, Rocket, ExternalLink, AlertTriangle, X, Briefcase
 import { getJob, publishJob, listBids, approveJob, cancelJob, requestRevision, disputeJob, selectBid, devDeliverJob, devApproveJob, getRequirements, getDeliverables, getActivities } from "@/lib/api";
 import { FundEscrowModal } from "@/components/fund-escrow-modal";
 import { LockEscrowModal } from "@/components/lock-escrow-modal";
+import { ReleaseEscrowModal } from "@/components/release-escrow-modal";
 import { useAuthStore } from "@/lib/store";
 import Chat from "@/components/chat";
 import RequirementsChecklist from "@/components/requirements-checklist";
@@ -345,39 +346,22 @@ export default function JobDetailPage() {
     }
   };
 
-  // Handle approve delivery
-  const handleApprove = async () => {
-    if (!token) return;
+  // Handle approve delivery - release payment on-chain
+  const handleReleaseSuccess = async () => {
+    setShowApproveModal(false);
     try {
-      setActionLoading(true);
-      // Try regular approve first, fall back to dev-approve if escrow issue
-      let result: { agent_payout: number; dev_mode?: boolean };
-      let isDevMode = false;
-      try {
-        result = await approveJob(jobId, token);
-      } catch (approveErr: any) {
-        // If escrow error, try dev-approve
-        if (approveErr.message?.includes("escrow") || approveErr.message?.includes("locked") || approveErr.message?.includes("Database")) {
-          result = await devApproveJob(jobId);
-          isDevMode = true;
-        } else {
-          throw approveErr;
-        }
+      if (token) {
+        const updatedJob = await getJob(jobId, token);
+        setJob(updatedJob);
       }
-      setShowApproveModal(false);
-      // Refresh job data
-      const updatedJob = await getJob(jobId, token);
-      setJob(updatedJob);
-      setSuccessModalData({
-        title: "JOB_COMPLETED",
-        message: `Delivery approved! Payment of ${result.agent_payout} USDC released to agent.${isDevMode ? " (Dev mode)" : ""}`,
-      });
-      setShowSuccessModal(true);
-    } catch (err: any) {
-      alert(err.message || "Failed to approve job");
-    } finally {
-      setActionLoading(false);
-    }
+    } catch {}
+    const finalPrice = parseFloat(job?.final_price || "0");
+    const agentPayout = finalPrice * 0.95;
+    setSuccessModalData({
+      title: "JOB_COMPLETED",
+      message: `Delivery approved! Payment of ${agentPayout.toFixed(2)} USDC released to agent on-chain.`,
+    });
+    setShowSuccessModal(true);
   };
 
   // Handle request revision
@@ -740,15 +724,17 @@ export default function JobDetailPage() {
         isLoading={actionLoading}
       />
 
-      {/* Approve Confirmation Modal */}
-      <ConfirmModal
+      {/* Release Payment Modal (on-chain) */}
+      <ReleaseEscrowModal
         isOpen={showApproveModal}
         onClose={() => setShowApproveModal(false)}
-        onConfirm={handleApprove}
-        title="APPROVE_DELIVERY"
-        message="Are you sure you want to approve this delivery? Payment will be released to the agent immediately."
-        confirmLabel="APPROVE"
-        isLoading={actionLoading}
+        onSuccess={handleReleaseSuccess}
+        jobId={jobId}
+        agentPayout={parseFloat(job?.final_price || "0") * 0.95}
+        platformFee={parseFloat(job?.final_price || "0") * 0.05}
+        agentWallet={job?.agent_wallet || ""}
+        bidAmount={parseFloat(job?.final_price || "0")}
+        token={token || ""}
       />
 
       {/* Select Bid Confirmation Modal */}

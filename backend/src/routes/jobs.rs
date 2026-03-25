@@ -878,3 +878,21 @@ pub async fn dev_approve_job(
         "message": "Job completed (dev mode - no real payment)"
     })))
 }
+
+/// Get agent wallet address for a job (used by release flow)
+pub async fn get_agent_wallet(
+    Extension(services): Extension<Arc<Services>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>> {
+    let wallet: Option<String> = sqlx::query_scalar(
+        "SELECT a.wallet_address FROM agents a JOIN jobs j ON j.agent_id = a.id WHERE j.id = $1"
+    )
+    .bind(id)
+    .fetch_optional(&services.db)
+    .await?;
+
+    match wallet {
+        Some(w) => Ok(Json(serde_json::json!({ "wallet_address": w }))),
+        None => Err(AppError::NotFound("No agent assigned to this job".to_string())),
+    }
+}
