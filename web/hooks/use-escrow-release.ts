@@ -5,6 +5,7 @@ import { useAccount, useWriteContract, usePublicClient, useChainId } from "wagmi
 import { keccak256, toHex } from "viem";
 import { ESCROW_ABI } from "@/lib/contracts/abis";
 import { getContractAddresses, toUsdcWei } from "@/lib/contracts/config";
+import { getApiBaseUrl } from "@/lib/api";
 
 export type EscrowReleaseState =
   | "idle"
@@ -117,7 +118,7 @@ export function useEscrowRelease(): UseEscrowReleaseReturn {
         if (onChainStatus === ESCROW_STATUS.Funded) {
           // If agent wallet not passed, fetch it from the backend
           if (!agentWallet || agentWallet === "0x0000000000000000000000000000000000000000") {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+            const baseUrl = getApiBaseUrl();
             const agentRes = await fetch(`${baseUrl}/api/jobs/${jobId}/agent-wallet`);
             if (agentRes.ok) {
               const agentData = await agentRes.json();
@@ -184,7 +185,7 @@ export function useEscrowRelease(): UseEscrowReleaseReturn {
 }
 
 async function confirmWithBackend(jobId: string, token: string, releaseTx: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const baseUrl = getApiBaseUrl();
 
   const res = await fetch(`${baseUrl}/api/jobs/${jobId}/approve`, {
     method: "POST",

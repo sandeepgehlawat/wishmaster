@@ -40,7 +40,7 @@ import type {
 // Determine API URL based on environment
 // In production (Railway), use the backend URL directly
 // In development, use localhost
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
   // Check if we're in the browser
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
