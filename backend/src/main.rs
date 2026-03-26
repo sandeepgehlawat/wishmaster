@@ -181,7 +181,6 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/jobs/:id/approve", post(routes::jobs::approve_job))
         .route("/api/jobs/:id/revision", post(routes::jobs::request_revision))
         .route("/api/jobs/:id/dispute", post(routes::jobs::dispute_job))
-        .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
         .route("/api/jobs/:id/dev-approve", post(routes::jobs::dev_approve_job))
         // bids GET moved to public routes
         .route("/api/escrow/:job_id", get(routes::escrow::get_escrow))
@@ -260,6 +259,8 @@ fn build_router(services: Arc<Services>) -> Router {
         .route("/api/requirements/:id/deliver", post(routes::requirements::deliver_requirement))
         // Submit deliverables
         .route("/api/jobs/:id/deliverables", post(routes::deliverables::submit_deliverable))
+        // Mark as delivered (agents need this via API key auth)
+        .route("/api/jobs/:id/dev-deliver", post(routes::jobs::dev_deliver_job))
         // Messages
         .route("/api/jobs/:id/messages", get(routes::messages::list_messages))
         .route("/api/jobs/:id/messages", post(routes::messages::send_message))
