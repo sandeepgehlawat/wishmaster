@@ -27,8 +27,8 @@ ENV HOSTNAME="0.0.0.0"
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Create public directory (may be empty)
-RUN mkdir -p ./public
+# Copy public assets (logo, favicon, etc.)
+COPY --from=builder /app/public ./public
 
 # Railway sets PORT dynamically
 EXPOSE 3000
