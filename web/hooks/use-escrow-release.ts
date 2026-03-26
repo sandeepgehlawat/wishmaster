@@ -111,7 +111,12 @@ export function useEscrowRelease(): UseEscrowReleaseReturn {
         }
 
         if (onChainStatus === ESCROW_STATUS.Pending) {
-          throw new Error("Escrow not funded on-chain. Please fund the escrow first.");
+          // No on-chain escrow — approve via backend directly
+          console.log("[Escrow Release] No on-chain escrow, approving via backend");
+          setState("confirming_backend");
+          await confirmWithBackend(jobId, token, "none");
+          setState("success");
+          return true;
         }
 
         // Step 2: Lock to agent if still in Funded state
