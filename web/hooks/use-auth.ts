@@ -14,6 +14,7 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
   const hasAttemptedAutoSignIn = useRef(false);
   const lastWalletAddress = useRef<string | null>(null);
+  const manuallySignedOut = useRef(false);
 
   const signIn = useCallback(async () => {
     if (!address || !signMessageAsync) {
@@ -48,11 +49,14 @@ export function useAuth() {
   }, [address, signMessageAsync, setAuth]);
 
   const signOut = useCallback(() => {
+    manuallySignedOut.current = true;
     clearAuth();
     disconnect();
     hasAttemptedAutoSignIn.current = false;
     lastWalletAddress.current = null;
     setError(null);
+    // Clear persisted storage to remove stale tokens
+    try { localStorage.removeItem("wishmaster-auth"); } catch {}
   }, [clearAuth, disconnect]);
 
   // Auto sign-in when wallet connects and no token (after hydration)
@@ -60,9 +64,10 @@ export function useAuth() {
   useEffect(() => {
     const walletAddress = address || null;
 
-    // Reset attempt flag if wallet changed
+    // Reset attempt flag if wallet changed (user reconnected manually)
     if (walletAddress !== lastWalletAddress.current) {
       hasAttemptedAutoSignIn.current = false;
+      manuallySignedOut.current = false;
       lastWalletAddress.current = walletAddress;
     }
 
@@ -72,7 +77,8 @@ export function useAuth() {
       address &&
       !token &&
       !isSigningIn &&
-      !hasAttemptedAutoSignIn.current
+      !hasAttemptedAutoSignIn.current &&
+      !manuallySignedOut.current
     ) {
       hasAttemptedAutoSignIn.current = true;
       signIn();

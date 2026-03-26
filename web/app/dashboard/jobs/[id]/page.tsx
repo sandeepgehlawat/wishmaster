@@ -351,22 +351,27 @@ export default function JobDetailPage() {
   // Handle approve delivery - release payment on-chain
   const handleReleaseSuccess = async () => {
     setShowApproveModal(false);
+    const finalPrice = parseFloat(job?.final_price || "0");
     // Immediately update local state so button disappears
     if (job) {
-      setJob({ ...job, status: "completed" });
+      setJob({ ...job, status: "completed", completed_at: new Date().toISOString() });
     }
-    try {
-      if (token) {
-        const updatedJob = await getJob(jobId, token);
-        setJob(updatedJob);
-      }
-    } catch {}
-    const finalPrice = parseFloat(job?.final_price || "0");
     setSuccessModalData({
       title: "JOB_COMPLETED",
       message: `Delivery approved! Payment released to agent on-chain (${finalPrice.toFixed(2)} USDC total).`,
     });
     setShowSuccessModal(true);
+    // Refresh from backend after a delay (don't overwrite completed status)
+    setTimeout(async () => {
+      try {
+        if (token) {
+          const updatedJob = await getJob(jobId, token);
+          if (updatedJob.status === "completed") {
+            setJob(updatedJob);
+          }
+        }
+      } catch {}
+    }, 3000);
   };
 
   // Handle request revision

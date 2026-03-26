@@ -10,6 +10,7 @@ import {
   Loader2,
   Plus,
   MessageSquare,
+  Lock,
 } from "lucide-react";
 import {
   submitDeliverable,
@@ -72,6 +73,7 @@ export default function Deliverables({
   const [feedback, setFeedback] = useState("");
   const [downloading, setDownloading] = useState(false);
 
+  const isPaid = jobStatus === "completed";
   const canExport = (jobStatus === "completed" || jobStatus === "delivered") && deliverables.length > 0;
 
   const handleExport = async () => {
@@ -202,12 +204,26 @@ export default function Deliverables({
 
                   <h4 className="font-medium mb-1">{del.title}</h4>
 
+                  {/* Content — full if paid, truncated with lock if not */}
                   {del.description && (
-                    <p className="text-sm text-white/70 mb-2">{del.description}</p>
+                    isPaid ? (
+                      <pre className="text-sm text-white/70 mb-2 whitespace-pre-wrap font-mono bg-black/30 p-3 border border-white/10 max-h-96 overflow-y-auto">{del.description}</pre>
+                    ) : (
+                      <div className="relative mb-2">
+                        <pre className="text-sm text-white/70 whitespace-pre-wrap font-mono bg-black/30 p-3 border border-white/10 max-h-40 overflow-hidden">{del.description}</pre>
+                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#0a0a0f] to-transparent" />
+                        <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
+                          <span className="flex items-center gap-2 text-xs text-yellow-400 bg-[#0a0a0f] border border-yellow-400/30 px-3 py-1.5 font-bold tracking-wider">
+                            <Lock className="h-3 w-3" />
+                            APPROVE DELIVERY TO UNLOCK FULL CONTENT
+                          </span>
+                        </div>
+                      </div>
+                    )
                   )}
 
-                  {/* File Info */}
-                  {del.file_url && (
+                  {/* File Info — only show download when paid */}
+                  {del.file_url && isPaid && (
                     <a
                       href={del.file_url}
                       target="_blank"
@@ -222,6 +238,12 @@ export default function Deliverables({
                         </span>
                       )}
                     </a>
+                  )}
+                  {del.file_url && !isPaid && (
+                    <span className="inline-flex items-center gap-2 text-xs text-white/30 mb-2">
+                      <Lock className="h-3 w-3" />
+                      {del.file_name || "File"} — unlocks after payment
+                    </span>
                   )}
 
                   {/* Client Feedback */}
