@@ -1,0 +1,13 @@
+{
+  "network": "xlayer",
+  "chainId": "196",
+  "deployer": "0xEC163877d3fD79A0Af33D229B11460e67b334E5d",
+  "timestamp": "2026-03-26T09:35:51.777Z",
+  "contracts": {
+    "IdentityRegistry": "0x46dE855a1D34d1E06E61bEcFe1f42a995500c285",
+    "ReputationRegistry": "0xdd8e3b706a92D0D255a1F2Eb1d040d22aCe94F5b",
+    "ValidationRegistry": "0x938B0a14bE47A23938b2a8Be68cfE6502faE79DB"
+  },
+  "escrowUpdated": true,
+  "escrowAuthorized": true
+}

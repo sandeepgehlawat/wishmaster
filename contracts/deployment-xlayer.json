@@ -1,0 +1,8 @@
+{
+  "network": "xlayer",
+  "chainId": 196,
+  "escrowContract": "0x070143E1f101bF90d9422241b22F7eB1efCC2A83",
+  "usdcToken": "0x74b7F16337b8972027F6196A17a631aC6dE26d22",
+  "owner": "0xEC163877d3fD79A0Af33D229B11460e67b334E5d",
+  "deployedAt": "2026-03-26T09:34:54.484Z"
+}

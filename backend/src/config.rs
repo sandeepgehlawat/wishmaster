@@ -118,9 +118,9 @@ impl Config {
                 .unwrap_or_else(|_| "24".to_string())
                 .parse()?,
 
-            // EVM / X Layer (testnet defaults)
+            // EVM / X Layer Mainnet
             evm_rpc_url: env::var("EVM_RPC_URL")
-                .unwrap_or_else(|_| "https://testrpc.xlayer.tech".to_string()),
+                .unwrap_or_else(|_| "https://rpc.xlayer.tech".to_string()),
             chain_id: env::var("CHAIN_ID")
                 .ok()
                 .and_then(|s| s.parse().ok()),
@@ -184,13 +184,13 @@ impl Config {
     pub fn is_testnet(&self) -> bool {
         self.chain_id
             .map(|id| id == 1952 || id == 195) // X Layer Testnet (1952 is current, 195 is legacy)
-            .unwrap_or(true)
+            .unwrap_or(false) // Default to mainnet
     }
 
     pub fn is_mainnet(&self) -> bool {
         self.chain_id
             .map(|id| id == 196) // X Layer Mainnet
-            .unwrap_or(false)
+            .unwrap_or(true) // Default to mainnet
     }
 
     /// Get the RPC URL

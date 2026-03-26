@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import { listMyJobs, getCurrentUser } from "@/lib/api";
-import UsdcFaucet from "@/components/usdc-faucet";
 import type { JobWithDetails } from "@/lib/types";
 
 // Dashboard job view derived from JobWithDetails
@@ -238,8 +237,6 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Testnet USDC Faucet — only show when balance < 10 */}
-      <UsdcFaucet hideAboveBalance={10} />
 
       {/* Urgent Actions */}
       {pendingActions.length > 0 && (

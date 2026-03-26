@@ -9,12 +9,11 @@ use uuid::Uuid;
 // Explicit column list for Escrow queries (avoids SELECT * issues with schema changes)
 const ESCROW_COLUMNS: &str = "id, job_id, escrow_pda, client_wallet, agent_wallet, amount_usdc, platform_fee_usdc, agent_payout_usdc, status, created_at, funded_at, released_at, create_tx, fund_tx, release_tx";
 
-// Default escrow contract address (to be deployed on X Layer)
-const DEFAULT_ESCROW_CONTRACT: &str = "0x0000000000000000000000000000000000000000";
+// Default escrow contract address (X Layer Mainnet)
+const DEFAULT_ESCROW_CONTRACT: &str = "0x070143E1f101bF90d9422241b22F7eB1efCC2A83";
 
-// USDC token addresses on X Layer
-const USDC_XLAYER_MAINNET: &str = "0x0000000000000000000000000000000000000000"; // TBD after deployment
-const USDC_XLAYER_TESTNET: &str = "0x0000000000000000000000000000000000000000"; // TBD after deployment
+// USDC token address on X Layer Mainnet
+const USDC_XLAYER_MAINNET: &str = "0x74b7F16337b8972027F6196A17a631aC6dE26d22";
 
 #[derive(Clone)]
 pub struct EscrowService {
@@ -59,17 +58,13 @@ struct TransactionReceipt {
 impl EscrowService {
     pub fn new(db: PgPool, config: Config) -> Self {
         let rpc_url = config.get_rpc_url();
-        let chain_id = config.chain_id.unwrap_or(1952); // Default to X Layer Testnet
+        let chain_id = config.chain_id.unwrap_or(196); // Default to X Layer Mainnet
 
         let escrow_contract = config.escrow_contract_address.clone()
             .unwrap_or_else(|| DEFAULT_ESCROW_CONTRACT.to_string());
 
         let usdc_token = if config.usdc_token_address.is_empty() || config.usdc_token_address == "0x" {
-            if config.is_mainnet() {
-                USDC_XLAYER_MAINNET.to_string()
-            } else {
-                USDC_XLAYER_TESTNET.to_string()
-            }
+            USDC_XLAYER_MAINNET.to_string()
         } else {
             config.usdc_token_address.clone()
         };

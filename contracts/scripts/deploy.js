@@ -30,10 +30,10 @@ async function main() {
       console.log("Minted 10,000 MockUSDC to deployer");
     }
   } else {
-    // USDC addresses for X Layer (update these after USDC is available)
+    // USDC addresses for X Layer
     const USDC_ADDRESSES = {
-      xlayer: "0x0000000000000000000000000000000000000000", // Update with actual mainnet USDC
-      xlayerTestnet: "0x0000000000000000000000000000000000000000", // Update with actual testnet USDC
+      xlayer: "0x74b7F16337b8972027F6196A17a631aC6dE26d22", // Official USDC on X Layer mainnet
+      xlayerTestnet: "0x0000000000000000000000000000000000000000", // Testnet uses MockUSDC
     };
 
     usdcAddress = USDC_ADDRESSES[network.name];

@@ -102,29 +102,29 @@ export function useEscrowDeposit(): UseEscrowDepositReturn {
         return false;
       }
 
-      // Check and switch network if needed
-      const expectedChainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "1952");
+      // Check and switch network if needed (X Layer Mainnet = 196)
+      const expectedChainId = 196;
       console.log("[Escrow] Wallet chain:", chain?.id, "Expected:", expectedChainId);
 
       if (chain?.id !== expectedChainId) {
-        console.log("[Escrow] Switching to chain", expectedChainId);
+        console.log("[Escrow] Switching to X Layer Mainnet");
         try {
           await switchChainAsync({ chainId: expectedChainId });
           console.log("[Escrow] Chain switched successfully");
           await new Promise(r => setTimeout(r, 1000));
         } catch (switchError: any) {
           console.error("[Escrow] Chain switch failed:", switchError);
-          setError(`Please switch to X Layer ${expectedChainId === 196 ? 'Mainnet' : 'Testnet'} in your wallet`);
+          setError("Please switch to X Layer Mainnet in your wallet");
           setState("error");
           return false;
         }
       }
 
-      // Check for gas (native token) - recheck after potential chain switch
+      // Check for gas (OKB) - recheck after potential chain switch
       const gasBalance = nativeBalance?.value ?? BigInt(0);
       console.log("[Escrow] Native balance (OKB):", formatEther(gasBalance));
       if (gasBalance < BigInt(1e15)) { // Less than 0.001 OKB
-        setError("Insufficient OKB for gas. Get testnet OKB from: https://www.okx.com/xlayer/faucet");
+        setError("Insufficient OKB for gas fees");
         setState("error");
         return false;
       }
