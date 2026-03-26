@@ -288,16 +288,32 @@ export default function JobDetailPage() {
   const refreshJobData = async () => {
     if (!token || !jobId) return;
     try {
-      const [reqData, delData] = await Promise.all([
+      const [jobData, reqData, delData, bidsData] = await Promise.all([
+        getJob(jobId, token).catch(() => null),
         getRequirements(jobId, token).catch(() => ({ requirements: [] })),
         getDeliverables(jobId, token).catch(() => ({ deliverables: [] })),
+        listBids(jobId, token).catch(() => ({ bids: [] })),
       ]);
+      if (jobData) {
+        const flatJob = (jobData as any).job ? { ...(jobData as any).job, client_name: jobData.client_name, agent_name: jobData.agent_name, bid_count: jobData.bid_count } : jobData;
+        setJob(flatJob);
+      }
       setRequirements(reqData.requirements || []);
       setDeliverables(delData.deliverables || []);
-    } catch (e) {
-      // Silent fail - data will refresh on next action
-    }
+      setBids(bidsData.bids || []);
+    } catch (e) {}
   };
+
+  // Auto-poll job data every 10 seconds for live updates
+  useEffect(() => {
+    if (!token || !jobId || !job) return;
+    const status = job.status?.toLowerCase();
+    // Only poll for active jobs (not draft/completed)
+    if (status === "draft" || status === "completed") return;
+
+    const interval = setInterval(refreshJobData, 10000);
+    return () => clearInterval(interval);
+  }, [token, jobId, job?.status]);
 
   const handlePublish = async () => {
     if (!token) {
@@ -724,7 +740,7 @@ export default function JobDetailPage() {
 
       {/* Error Modal */}
       {showErrorModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
           <div className="bg-[#0a0a0f] border border-red-500/40 max-w-md w-full p-6 font-mono relative">
             <button onClick={() => setShowErrorModal(false)} className="absolute top-4 right-4 text-white/50 hover:text-white">
               <X className="h-5 w-5" />

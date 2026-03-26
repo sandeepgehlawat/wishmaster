@@ -73,7 +73,8 @@ export default function Deliverables({
   const [feedback, setFeedback] = useState("");
   const [downloading, setDownloading] = useState(false);
 
-  const isPaid = jobStatus === "completed";
+  // Default to locked — only unlock when explicitly completed
+  const isPaid = jobStatus === "completed" ? true : false;
   const canExport = (jobStatus === "completed" || jobStatus === "delivered") && deliverables.length > 0;
 
   const handleExport = async () => {
@@ -207,15 +208,23 @@ export default function Deliverables({
                   {/* Content — full if paid, truncated with lock if not */}
                   {del.description && (
                     isPaid ? (
-                      <pre className="text-sm text-white/70 mb-2 whitespace-pre-wrap font-mono bg-black/30 p-3 border border-white/10 max-h-96 overflow-y-auto">{del.description}</pre>
+                      <div className="mb-2">
+                        <pre className="text-sm text-white/70 whitespace-pre-wrap font-mono bg-black/30 p-3 border border-green-400/20 max-h-[500px] overflow-y-auto">{del.description}</pre>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(del.description || ""); }}
+                          className="mt-1 text-xs text-green-400 hover:text-green-300 flex items-center gap-1"
+                        >
+                          <Download className="h-3 w-3" /> Copy to clipboard
+                        </button>
+                      </div>
                     ) : (
                       <div className="relative mb-2">
-                        <pre className="text-sm text-white/70 whitespace-pre-wrap font-mono bg-black/30 p-3 border border-white/10 max-h-40 overflow-hidden">{del.description}</pre>
+                        <pre className="text-sm text-white/70 whitespace-pre-wrap font-mono bg-black/30 p-3 border border-white/10 max-h-40 overflow-hidden">{del.description.slice(0, 500)}{del.description.length > 500 ? "..." : ""}</pre>
                         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#0a0a0f] to-transparent" />
                         <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
                           <span className="flex items-center gap-2 text-xs text-yellow-400 bg-[#0a0a0f] border border-yellow-400/30 px-3 py-1.5 font-bold tracking-wider">
                             <Lock className="h-3 w-3" />
-                            APPROVE DELIVERY TO UNLOCK FULL CONTENT
+                            RELEASE PAYMENT TO UNLOCK FULL CONTENT
                           </span>
                         </div>
                       </div>

@@ -136,12 +136,19 @@ impl X402Service {
             });
         }
 
-        // 2. Verify transaction on-chain
-        let tx_verified = self.verify_tx_on_chain(
-            &proof.tx_hash,
-            &cached.recipient,
-            cached.amount,
-        ).await?;
+        // 2. Verify transaction on-chain (dev mode bypass for testing)
+        let is_dev = std::env::var("ENVIRONMENT").unwrap_or_default() == "development"
+            || cfg!(debug_assertions);
+        let tx_verified = if is_dev && proof.tx_hash.starts_with("DEV_PAYMENT_") {
+            tracing::info!("[x402] Dev mode: accepting simulated payment {}", proof.tx_hash);
+            true
+        } else {
+            self.verify_tx_on_chain(
+                &proof.tx_hash,
+                &cached.recipient,
+                cached.amount,
+            ).await?
+        };
 
         if !tx_verified {
             return Ok(X402VerificationResult {
@@ -163,38 +170,54 @@ impl X402Service {
         })
     }
 
-    /// Verify transaction on-chain via RPC
+    /// Verify transaction on-chain via RPC (retries for slow indexing)
     async fn verify_tx_on_chain(
         &self,
         tx_hash: &str,
         expected_recipient: &str,
         expected_amount: u64,
     ) -> Result<bool> {
-        // Call eth_getTransactionReceipt
-        let response = self.http_client
-            .post(&self.rpc_url)
-            .json(&serde_json::json!({
-                "jsonrpc": "2.0",
-                "method": "eth_getTransactionReceipt",
-                "params": [tx_hash],
-                "id": 1
-            }))
-            .send()
-            .await
-            .map_err(|e| AppError::Internal(format!("RPC error: {}", e)))?;
+        // Retry up to 3 times with delay for slow RPC indexing
+        let mut receipt_value = None;
+        for attempt in 0..3 {
+            let response = self.http_client
+                .post(&self.rpc_url)
+                .json(&serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "method": "eth_getTransactionReceipt",
+                    "params": [tx_hash],
+                    "id": 1
+                }))
+                .send()
+                .await
+                .map_err(|e| AppError::Internal(format!("RPC error: {}", e)))?;
 
-        let result: serde_json::Value = response.json().await
-            .map_err(|e| AppError::Internal(format!("RPC parse error: {}", e)))?;
+            let result: serde_json::Value = response.json().await
+                .map_err(|e| AppError::Internal(format!("RPC parse error: {}", e)))?;
 
-        // Check if transaction succeeded
-        let receipt = match result.get("result") {
-            Some(r) if !r.is_null() => r,
-            _ => return Ok(false), // Transaction not found or pending
+            match result.get("result") {
+                Some(r) if !r.is_null() => {
+                    receipt_value = Some(r.clone());
+                    break;
+                }
+                _ => {
+                    if attempt < 2 {
+                        tracing::info!("[x402] Receipt not found yet, retrying in 2s (attempt {})", attempt + 1);
+                        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    }
+                }
+            }
+        }
+
+        let receipt = match receipt_value {
+            Some(r) => r,
+            None => return Ok(false),
         };
 
         let status = receipt.get("status")
             .and_then(|s| s.as_str())
             .unwrap_or("0x0");
+        tracing::info!("[x402] TX {} status: {}", tx_hash, status);
 
         if status != "0x1" {
             return Ok(false); // Transaction failed
@@ -233,12 +256,15 @@ impl X402Service {
                     let recipient_addr = format!("0x{}", &recipient[26..]); // Extract address from padded
 
                     if recipient_addr.to_lowercase() == expected_recipient.to_lowercase() {
-                        // Verify amount from data field
+                        // Verify amount from data field (256-bit padded, take last 16 hex chars for u64)
                         let data = log.get("data").and_then(|d| d.as_str()).unwrap_or("0x0");
                         if data.len() < 3 {
                             continue;
                         }
-                        let amount = u64::from_str_radix(&data[2..], 16).unwrap_or(0);
+                        let hex = data.trim_start_matches("0x");
+                        // Take the last 16 hex chars (64 bits) to avoid u64 overflow
+                        let trimmed = if hex.len() > 16 { &hex[hex.len()-16..] } else { hex };
+                        let amount = u64::from_str_radix(trimmed, 16).unwrap_or(0);
 
                         if amount >= expected_amount {
                             return Ok(true);
