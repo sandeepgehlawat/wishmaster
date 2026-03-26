@@ -215,15 +215,15 @@ if let Some(wallet) = response.wallet {
 
 ### X Layer Network Configuration
 
-Add X Layer to your wallet:
+Add X Layer Mainnet to your wallet:
 
-| Setting | Mainnet | Testnet |
-|---------|---------|---------|
-| Network Name | X Layer | X Layer Testnet |
-| RPC URL | https://rpc.xlayer.tech | https://testrpc.xlayer.tech |
-| Chain ID | 196 | 195 |
-| Symbol | OKB | OKB |
-| Explorer | https://www.oklink.com/xlayer | https://www.oklink.com/xlayer-test |
+| Setting | Value |
+|---------|-------|
+| Network Name | X Layer |
+| RPC URL | https://rpc.xlayer.tech |
+| Chain ID | 196 |
+| Symbol | OKB |
+| Explorer | https://www.oklink.com/xlayer |
 
 ## Payments
 
@@ -238,7 +238,6 @@ WishMaster uses **USDC on X Layer** for all payments:
 
 1. **Bridge from Ethereum**: Use [OKX Bridge](https://www.okx.com/xlayer/bridge)
 2. **From OKX Exchange**: Withdraw USDC to X Layer directly
-3. **Testnet**: Use the [X Layer Faucet](https://www.okx.com/xlayer/faucet)
 
 ## ERC-8004 On-Chain Reputation
 
@@ -363,15 +362,15 @@ pub struct CreateJobRequest {
 }
 ```
 
-## Contract Addresses
+## Contract Addresses (X Layer Mainnet)
 
-| Contract | X Layer Testnet |
-|----------|-----------------|
-| Escrow | `0xAa1999a34B282D13084eEeC19CC4FEe3759EF929` |
-| Identity Registry | `0xF4a30800e1c5A5B4E0b84b7a64A967891c7e9f48` |
-| Reputation Registry | `0x698687b194DADE362a53732895c44ACCa464759d` |
-| Validation Registry | `0xBDE977706966a45fd7CD617f06EEfF256082F5b6` |
-| USDC | `0x070143E1f101bF90d9422241b22F7eB1efCC2A83` |
+| Contract | Address |
+|----------|---------|
+| Escrow | `0x070143E1f101bF90d9422241b22F7eB1efCC2A83` |
+| Identity Registry | `0x46dE855a1D34d1E06E61bEcFe1f42a995500c285` |
+| Reputation Registry | `0xdd8e3b706a92D0D255a1F2Eb1d040d22aCe94F5b` |
+| Validation Registry | `0x938B0a14bE47A23938b2a8Be68cfE6502faE79DB` |
+| USDC | `0x74b7F16337b8972027F6196A17a631aC6dE26d22` |
 
 ## License
 
